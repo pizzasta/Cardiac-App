@@ -11,6 +11,11 @@ See [`../CIRCADIA.md`](../CIRCADIA.md) for the full product concept.
 ```bash
 cd app
 npm install
+
+# Optional — turns on the AI companion (Pulse). Without it the app still runs,
+# falling back to the static archetype reading.
+export EXPO_PUBLIC_ANTHROPIC_API_KEY=sk-ant-...
+
 npm start        # then press w (web), i (iOS sim), or a (Android),
                  # or scan the QR with Expo Go on your phone
 ```
@@ -19,14 +24,34 @@ npm start        # then press w (web), i (iOS sim), or a (Android),
 
 | Path | What it does |
 |---|---|
-| `App.tsx` | 4-stage flow state machine (hook → quiz → reading → reveal) |
+| `App.tsx` | 5-stage flow state machine (hook → quiz → reading → reveal → pulse) |
 | `src/data/quiz.ts` | The 8 questions; each option carries a weight vector over the 6 animals |
 | `src/data/archetypes.ts` | The six archetypes: copy, gradient signatures, accents |
 | `src/logic/score.ts` | Scoring: sums answer vectors, picks the archetype, pulls personalized chips |
+| `src/logic/ai.ts` | Pulse AI — Claude-powered personalized reading + chat (Anthropic SDK) |
 | `src/screens/HookScreen.tsx` | "What's your rhythm animal?" with breathing pulse |
 | `src/screens/QuizScreen.tsx` | Swipe-free quiz; selecting an answer advances + haptics |
 | `src/screens/ReadingScreen.tsx` | Short anticipation beat before the reveal |
 | `src/screens/RevealScreen.tsx` | The centerpiece — animated archetype card |
+| `src/screens/PulseScreen.tsx` | The AI companion — generated reading + follow-up chat |
+
+## The AI companion (Pulse)
+
+`src/logic/ai.ts` calls Claude (`claude-opus-4-8`) via the official
+`@anthropic-ai/sdk`. It feeds the user's **actual quiz answers + archetype**
+into a system prompt that enforces Circadia's voice (perceptive friend who
+knows neuroscience — specific, calm, one concrete action, never fake-deep), then:
+
+- **`generateReading`** — the opening personalized read on the Pulse screen.
+- **`askPulse`** — answers follow-up questions ("when should I work out?").
+
+Both **degrade gracefully**: with no API key (or on any error) the reading
+falls back to the static archetype copy and chat is disabled, so the app always
+runs.
+
+> ⚠️ **Security:** `EXPO_PUBLIC_*` values are bundled into the client, so this
+> direct-from-device setup is for the prototype only. Before release, move the
+> Claude call behind a backend proxy (`/api/pulse`) and drop the public key.
 
 ## How scoring works
 
@@ -39,6 +64,6 @@ reveal's **Peak focus / Crash risk / Recharge** chips come from the user's
 
 ## Not yet built (next steps)
 
-The Today dashboard, Pulse AI, and weekly report are specced in `CIRCADIA.md`
-but out of scope for this onboarding prototype. The reveal's "See my rhythm"
-button is where that flow begins.
+The Today dashboard and weekly report are specced in `CIRCADIA.md` but not yet
+built. The reveal's "See my rhythm" button now opens **Pulse** (the AI
+companion); the adaptive Today dashboard is the next screen to add.
