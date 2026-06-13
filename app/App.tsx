@@ -1,7 +1,14 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
+import {
+  soundSupported,
+  start as startSound,
+  stop as stopSound,
+  enableAutoStart,
+  cancelAutoStart,
+} from './src/logic/sound';
 import HookScreen from './src/screens/HookScreen';
 import QuizScreen from './src/screens/QuizScreen';
 import ReadingScreen from './src/screens/ReadingScreen';
@@ -29,6 +36,27 @@ function Flow() {
   const [showLegal, setShowLegal] = useState(false);
   const [showSignIn, setShowSignIn] = useState(false);
   const [showScience, setShowScience] = useState(false);
+  // App-wide rainforest ambience + persistent mute.
+  const [muted, setMuted] = useState(false);
+
+  useEffect(() => {
+    enableAutoStart();
+    return () => {
+      cancelAutoStart();
+      stopSound();
+    };
+  }, []);
+
+  const toggleMute = () => {
+    if (muted) {
+      startSound();
+      setMuted(false);
+    } else {
+      cancelAutoStart();
+      stopSound();
+      setMuted(true);
+    }
+  };
 
   const openPulse = (seed?: string) => {
     setPulseSeed(seed);
@@ -90,6 +118,13 @@ function Flow() {
           accent={result ? ARCHETYPES[result.animal].accent : undefined}
           onClose={() => setShowScience(false)}
         />
+      )}
+
+      {/* Persistent ambience mute — always reachable, all screens. */}
+      {soundSupported && (
+        <Pressable style={styles.soundFab} onPress={toggleMute} hitSlop={8}>
+          <Text style={styles.soundFabIcon}>{muted ? '🔇' : '🔊'}</Text>
+        </Pressable>
       )}
     </>
   );
@@ -156,4 +191,18 @@ const styles = StyleSheet.create({
     marginTop: 24,
   },
   errBtnText: { color: '#0E1424', fontSize: 16, fontWeight: '700' },
+  soundFab: {
+    position: 'absolute',
+    bottom: 104,
+    right: 16,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: 'rgba(8,21,17,0.55)',
+    borderColor: 'rgba(255,255,255,0.22)',
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  soundFabIcon: { fontSize: 18 },
 });
