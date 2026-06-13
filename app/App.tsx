@@ -11,7 +11,7 @@ import {
   cancelAutoStart,
   setVolume as setSoundVolume,
 } from './src/logic/sound';
-import HookScreen from './src/screens/HookScreen';
+import LandingScreen from './src/screens/LandingScreen';
 import QuizScreen from './src/screens/QuizScreen';
 import ReadingScreen from './src/screens/ReadingScreen';
 import RevealScreen from './src/screens/RevealScreen';
@@ -26,10 +26,10 @@ import { ARCHETYPES } from './src/data/archetypes';
 import { RhythmResult, scoreQuiz } from './src/logic/score';
 import { AuthProvider } from './src/logic/auth';
 
-type Stage = 'hook' | 'quiz' | 'reading' | 'reveal' | 'plan' | 'pulse';
+type Stage = 'landing' | 'quiz' | 'reading' | 'reveal' | 'plan' | 'pulse';
 
 function Flow() {
-  const [stage, setStage] = useState<Stage>('hook');
+  const [stage, setStage] = useState<Stage>('landing');
   const [result, setResult] = useState<RhythmResult | null>(null);
   // Kept around so the plan + Pulse can ground content in the user's answers.
   const [answers, setAnswers] = useState<Option[]>([]);
@@ -107,17 +107,18 @@ function Flow() {
   const reset = () => {
     setResult(null);
     setAnswers([]);
-    setStage('hook');
+    setStage('landing');
   };
 
   return (
     <>
-      {stage === 'hook' && (
-        <HookScreen
+      {stage === 'landing' && (
+        <LandingScreen
           onStart={() => setStage('quiz')}
           onLegal={() => setShowLegal(true)}
           onSignIn={() => setShowSignIn(true)}
           onSettings={() => setShowSettings(true)}
+          onScience={() => setShowScience(true)}
         />
       )}
       {stage === 'quiz' && <QuizScreen onComplete={handleComplete} />}
