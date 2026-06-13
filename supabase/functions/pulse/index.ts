@@ -21,9 +21,11 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 const MODEL = 'claude-opus-4-8';
 const ANTHROPIC_URL = 'https://api.anthropic.com/v1/messages';
 
-// Per-identity limit: 30 requests / 60s (on top of the client-side throttle).
-const RATE_MAX = 30;
+// Per-identity limits per 60s (on top of the client-side throttle). Chat is
+// interactive so it gets more headroom; readings are one-shot so they're tighter.
 const RATE_WINDOW_SECS = 60;
+const RATE_MAX_CHAT = 30;
+const RATE_MAX_READING = 8;
 
 const cors: Record<string, string> = {
   'Access-Control-Allow-Origin': '*',
@@ -97,9 +99,9 @@ function jwtSub(auth: string | null): string | null {
   }
 }
 
-// Returns true if allowed. Fails open (allows) if the rate-limit store is
-// unavailable, so a misconfig never takes Pulse down.
-async function withinRateLimit(req: Request): Promise<boolean> {
+// Returns true if allowed. Separate buckets per kind. Fails open (allows) if the
+// rate-limit store is unavailable, so a misconfig never takes Pulse down.
+async function withinRateLimit(req: Request, kind: string): Promise<boolean> {
   try {
     // @ts-ignore Deno.env in the edge runtime
     const url = Deno.env.get('SUPABASE_URL');
@@ -107,14 +109,16 @@ async function withinRateLimit(req: Request): Promise<boolean> {
     const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
     if (!url || !serviceKey) return true;
 
+    const bucket = kind === 'reading' ? 'r' : 'c';
+    const max = kind === 'reading' ? RATE_MAX_READING : RATE_MAX_CHAT;
     const sub = jwtSub(req.headers.get('Authorization'));
     const ip = (req.headers.get('x-forwarded-for') ?? '').split(',')[0].trim() || 'unknown';
-    const id = sub ? `pulse:u:${sub}` : `pulse:ip:${ip}`;
+    const id = sub ? `pulse:u:${sub}:${bucket}` : `pulse:ip:${ip}:${bucket}`;
 
     const admin = createClient(url, serviceKey);
     const { data, error } = await admin.rpc('check_rate_limit', {
       p_id: id,
-      p_max: RATE_MAX,
+      p_max: max,
       p_window_secs: RATE_WINDOW_SECS,
     });
     if (error) return true; // fail open
@@ -134,9 +138,10 @@ Deno.serve(async (req: Request) => {
     const key = Deno.env.get('ANTHROPIC_API_KEY');
     if (!key) return json({ error: 'ANTHROPIC_API_KEY not set' }, 500);
 
-    if (!(await withinRateLimit(req))) return json({ error: 'rate_limited' }, 429);
-
     const body = await req.json();
+
+    if (!(await withinRateLimit(req, String(body.kind ?? 'chat'))))
+      return json({ error: 'rate_limited' }, 429);
 
     let system: string;
     let messages: { role: string; content: string }[];

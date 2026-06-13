@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useTopInset } from '../hooks';
@@ -6,6 +6,7 @@ import { ARCHETYPES, TINTS } from '../data/archetypes';
 import { RhythmResult } from '../logic/score';
 import { pickStatement, STATEMENTS } from '../data/statements';
 import { shareText } from '../logic/share';
+import { canCaptureImage, captureAndShare } from '../logic/capture';
 import PulseLine from '../components/PulseLine';
 import { F, T } from '../theme';
 
@@ -23,11 +24,18 @@ export default function SignalCardScreen({
   const [index, setIndex] = useState(0);
   const [status, setStatus] = useState<'idle' | 'copied' | 'shared'>('idle');
   const statement = pickStatement(result.animal, index);
+  const cardRef = useRef<View>(null);
 
   const id = String((Object.keys(ARCHETYPES).indexOf(result.animal) + 1) * 100 + index)
     .padStart(3, '0');
 
   const onShare = async () => {
+    // Native: snapshot the card to an image and open the share sheet. Web (or on
+    // failure): fall back to sharing the statement as text.
+    if (canCaptureImage && (await captureAndShare(cardRef))) {
+      setStatus('shared');
+      return;
+    }
     const r = await shareText(`“${statement}” — my ${a.name} rhythm, mapped by Circadia.`);
     if (r === 'copied') setStatus('copied');
     else if (r === 'shared') setStatus('shared');
@@ -48,7 +56,7 @@ export default function SignalCardScreen({
 
       <View style={styles.stage}>
         {/* The card — story-shaped, screenshot-ready */}
-        <View style={styles.card}>
+        <View ref={cardRef} collapsable={false} style={styles.card}>
           <LinearGradient
             colors={['#08080A', '#120A10', `${tint}22`]}
             style={StyleSheet.absoluteFill}
@@ -84,7 +92,11 @@ export default function SignalCardScreen({
             {status === 'copied' ? 'Copied to clipboard ✓' : status === 'shared' ? 'Shared ✓' : 'Share my Signal'}
           </Text>
         </Pressable>
-        <Text style={styles.hint}>Drop it on your story — screenshot the card above.</Text>
+        <Text style={styles.hint}>
+          {canCaptureImage
+            ? 'One tap shares the card as an image.'
+            : 'Drop it on your story — screenshot the card above.'}
+        </Text>
       </View>
     </View>
   );
