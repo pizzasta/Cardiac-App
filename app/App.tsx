@@ -7,6 +7,7 @@ import ReadingScreen from './src/screens/ReadingScreen';
 import RevealScreen from './src/screens/RevealScreen';
 import PlanScreen from './src/screens/PlanScreen';
 import PulseScreen from './src/screens/PulseScreen';
+import LegalScreen from './src/screens/LegalScreen';
 import { Option } from './src/data/quiz';
 import { RhythmResult, scoreQuiz } from './src/logic/score';
 
@@ -19,6 +20,8 @@ export default function App() {
   const [answers, setAnswers] = useState<Option[]>([]);
   // A question to open Pulse with (set when a tip is tapped on the plan).
   const [pulseSeed, setPulseSeed] = useState<string | undefined>(undefined);
+  // Terms & Privacy overlay, openable from any screen.
+  const [showLegal, setShowLegal] = useState(false);
 
   const openPulse = (seed?: string) => {
     setPulseSeed(seed);
@@ -40,7 +43,9 @@ export default function App() {
   return (
     <SafeAreaProvider>
       <StatusBar style="light" />
-      {stage === 'hook' && <HookScreen onStart={() => setStage('quiz')} />}
+      {stage === 'hook' && (
+        <HookScreen onStart={() => setStage('quiz')} onLegal={() => setShowLegal(true)} />
+      )}
       {stage === 'quiz' && <QuizScreen onComplete={handleComplete} />}
       {stage === 'reading' && <ReadingScreen onDone={() => setStage('reveal')} />}
       {stage === 'reveal' && result && (
@@ -55,6 +60,7 @@ export default function App() {
           result={result}
           onBack={() => setStage('reveal')}
           onPulse={openPulse}
+          onLegal={() => setShowLegal(true)}
         />
       )}
       {stage === 'pulse' && result && (
@@ -68,6 +74,8 @@ export default function App() {
           }}
         />
       )}
+
+      {showLegal && <LegalScreen onClose={() => setShowLegal(false)} />}
     </SafeAreaProvider>
   );
 }

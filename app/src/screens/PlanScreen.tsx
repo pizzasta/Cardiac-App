@@ -11,12 +11,14 @@ export default function PlanScreen({
   result,
   onBack,
   onPulse,
+  onLegal,
 }: {
   result: RhythmResult;
   onBack: () => void;
   // Optional `seed` opens Pulse with a question already asked (e.g. "go deeper
   // on this tip"), so the tips are powered by the AI, not just static text.
   onPulse: (seed?: string) => void;
+  onLegal: () => void;
 }) {
   const a = ARCHETYPES[result.animal];
   const plan = PLANS[result.animal];
@@ -106,6 +108,9 @@ export default function PlanScreen({
         </Pressable>
 
         <Text style={styles.disclaimer}>{DISCLAIMER_FULL}</Text>
+        <Pressable onPress={onLegal} hitSlop={10}>
+          <Text style={styles.legalLink}>Terms & Privacy</Text>
+        </Pressable>
       </ScrollView>
     </View>
   );
@@ -209,5 +214,13 @@ const styles = StyleSheet.create({
     lineHeight: 17,
     textAlign: 'center',
     marginTop: 20,
+  },
+  legalLink: {
+    color: 'rgba(255,255,255,0.6)',
+    fontSize: 13,
+    fontWeight: '600',
+    textAlign: 'center',
+    textDecorationLine: 'underline',
+    marginTop: 12,
   },
 });

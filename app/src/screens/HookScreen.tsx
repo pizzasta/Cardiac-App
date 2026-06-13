@@ -2,8 +2,15 @@ import React from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import Rainforest from '../three/Rainforest';
+import { DISCLAIMER_SHORT } from '../data/disclaimer';
 
-export default function HookScreen({ onStart }: { onStart: () => void }) {
+export default function HookScreen({
+  onStart,
+  onLegal,
+}: {
+  onStart: () => void;
+  onLegal: () => void;
+}) {
   return (
     <View style={styles.fill}>
       {/* Immersive 3D rainforest backdrop (native) / layered fallback (web). */}
@@ -27,7 +34,12 @@ export default function HookScreen({ onStart }: { onStart: () => void }) {
         <Pressable style={styles.cta} onPress={onStart}>
           <Text style={styles.ctaText}>Find out  →</Text>
         </Pressable>
-        <Text style={styles.fineprint}>No signup. Just curiosity.</Text>
+        <Text style={styles.fineprint}>
+          No signup. Just curiosity. {DISCLAIMER_SHORT}
+        </Text>
+        <Pressable onPress={onLegal} hitSlop={10}>
+          <Text style={styles.legalLink}>Terms & Privacy</Text>
+        </Pressable>
       </View>
     </View>
   );
@@ -73,5 +85,14 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginTop: 14,
     fontSize: 13,
+    lineHeight: 18,
+  },
+  legalLink: {
+    color: 'rgba(255,255,255,0.6)',
+    textAlign: 'center',
+    marginTop: 8,
+    fontSize: 13,
+    fontWeight: '600',
+    textDecorationLine: 'underline',
   },
 });
