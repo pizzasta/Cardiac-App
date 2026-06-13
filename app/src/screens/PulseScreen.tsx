@@ -45,6 +45,7 @@ export default function PulseScreen({
   const speakRef = useRef(false);
   const stopListenRef = useRef<null | (() => void)>(null);
   const seededRef = useRef(false);
+  const lastSentRef = useRef(0);
   const scroller = useRef<ScrollView>(null);
 
   useEffect(() => {
@@ -77,6 +78,10 @@ export default function PulseScreen({
   const send = async (override?: string) => {
     const q = (override ?? input).trim();
     if (!q || thinking) return;
+    // Rate limit: ignore sends fired faster than ~1.2s apart (cost + abuse).
+    const now = Date.now();
+    if (now - lastSentRef.current < 1200) return;
+    lastSentRef.current = now;
     setInput('');
     const next = [...turns, { role: 'user' as const, text: q }];
     setTurns(next);

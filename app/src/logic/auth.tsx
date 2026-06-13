@@ -5,7 +5,13 @@ import * as Google from 'expo-auth-session/providers/google';
 import { makeRedirectUri } from 'expo-auth-session';
 import * as WebBrowser from 'expo-web-browser';
 import { supabase, supabaseEnabled } from './supabase';
-import { pullCheckIns, setOnboarding } from './sync';
+import {
+  clearLocalData,
+  deleteAccount as deleteAccountRemote,
+  deleteCloudData,
+  pullCheckIns,
+  setOnboarding,
+} from './sync';
 
 // Auth for Circadia. Backend is chosen automatically:
 //   • Supabase — when EXPO_PUBLIC_SUPABASE_URL + EXPO_PUBLIC_SUPABASE_ANON_KEY
@@ -44,6 +50,8 @@ interface AuthValue {
   signUpWithPassword: (email: string, password: string, name?: string) => Promise<void>;
   signOut: () => Promise<void>;
   completeOnboarding: () => Promise<void>;
+  // Erase user data. `account: true` also permanently deletes the account.
+  deleteData: (account: boolean) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthValue | null>(null);
@@ -261,6 +269,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setOnboardingComplete(true);
       await AsyncStorage.setItem(ONBOARD_KEY, 'true').catch(() => {});
       setOnboarding(true).catch(() => {}); // mirror to profile when signed in
+    },
+
+    deleteData: async (account) => {
+      await clearLocalData();
+      if (supabaseEnabled && supabase) {
+        if (account) {
+          await deleteAccountRemote(); // deletes account + cascades, then signs out
+        } else {
+          await deleteCloudData();
+          await supabase.auth.signOut().catch(() => {});
+        }
+      } else {
+        setUser(null);
+        await AsyncStorage.removeItem(STORAGE_KEY).catch(() => {});
+      }
+      setOnboardingComplete(false);
+      await AsyncStorage.removeItem(ONBOARD_KEY).catch(() => {});
     },
   };
 

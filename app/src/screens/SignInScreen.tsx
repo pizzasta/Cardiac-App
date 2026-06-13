@@ -12,6 +12,7 @@ import {
 import { LinearGradient } from 'expo-linear-gradient';
 import { useTopInset } from '../hooks';
 import { useAuth } from '../logic/auth';
+import { CONSENT_SHORT } from '../data/disclaimer';
 import { F, T } from '../theme';
 
 export default function SignInScreen({ onClose }: { onClose: () => void }) {
@@ -171,6 +172,8 @@ export default function SignInScreen({ onClose }: { onClose: () => void }) {
               We use this to save your plan. No password — this is an early prototype.
             </Text>
           )}
+
+          <Text style={styles.consent}>{CONSENT_SHORT}</Text>
         </View>
       </KeyboardAvoidingView>
     </View>
@@ -222,4 +225,6 @@ const styles = StyleSheet.create({
   disabled: { opacity: 0.45 },
   toggle: { color: 'rgba(255,255,255,0.75)', fontSize: 14, textAlign: 'center', marginTop: 18, fontWeight: '600' },
   fine: { color: 'rgba(255,255,255,0.45)', fontSize: 12, textAlign: 'center', marginTop: 18, lineHeight: 17 },
+  consent: { color: 'rgba(255,255,255,0.4)', fontSize: 11, textAlign: 'center', marginTop: 16, lineHeight: 16 },
 });
+
