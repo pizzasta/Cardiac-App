@@ -11,7 +11,7 @@ import {
 import { LinearGradient } from 'expo-linear-gradient';
 import { useTopInset } from '../hooks';
 import { useAuth } from '../logic/auth';
-import { F } from '../theme';
+import { F, T } from '../theme';
 import { RhythmResult } from '../logic/score';
 import { ARCHETYPES } from '../data/archetypes';
 import {
@@ -44,11 +44,24 @@ export default function SettingsScreen({
   onSignIn: () => void;
   onClose: () => void;
 }) {
-  const { user, signOut, supabaseEnabled } = useAuth();
+  const { user, signOut, supabaseEnabled, deleteData } = useAuth();
   const accent = result ? ARCHETYPES[result.animal].accent : '#FF2E7E';
 
   const [notifsOn, setNotifsOn] = useState(false);
   const [notifBusy, setNotifBusy] = useState(false);
+  const [confirm, setConfirm] = useState<null | 'data' | 'account'>(null);
+  const [delBusy, setDelBusy] = useState(false);
+
+  const runDelete = async (account: boolean) => {
+    setDelBusy(true);
+    try {
+      await deleteData(account);
+    } finally {
+      setDelBusy(false);
+      setConfirm(null);
+      onClose();
+    }
+  };
 
   useEffect(() => {
     notifsEnabled().then(setNotifsOn);
@@ -183,6 +196,71 @@ export default function SettingsScreen({
             <Text style={styles.note}>On the web we can only ask permission — the phone app delivers daily reminders.</Text>
           )}
         </View>
+
+        {/* DATA & PRIVACY */}
+        <Text style={styles.section}>DATA & PRIVACY</Text>
+        <View style={styles.card}>
+          <Text style={styles.rowTitle}>Delete my data</Text>
+          <Text style={styles.rowSub}>
+            Removes your check-ins, results and answers
+            {user && supabaseEnabled ? ' from this device and the cloud' : ' from this device'}. This
+            can’t be undone.
+          </Text>
+          {confirm === 'data' ? (
+            <View style={styles.confirmRow}>
+              <Pressable
+                style={[styles.btn, styles.btnDanger, { flex: 1 }]}
+                onPress={() => runDelete(false)}
+                disabled={delBusy}
+              >
+                {delBusy ? (
+                  <ActivityIndicator color="#fff" />
+                ) : (
+                  <Text style={styles.btnDangerText}>Yes, delete</Text>
+                )}
+              </Pressable>
+              <Pressable
+                style={[styles.btn, styles.btnGhost, { flex: 1 }]}
+                onPress={() => setConfirm(null)}
+                disabled={delBusy}
+              >
+                <Text style={styles.btnGhostText}>Cancel</Text>
+              </Pressable>
+            </View>
+          ) : (
+            <Pressable style={[styles.btn, styles.btnGhost]} onPress={() => setConfirm('data')}>
+              <Text style={styles.btnGhostText}>Delete my data</Text>
+            </Pressable>
+          )}
+
+          {user && supabaseEnabled &&
+            (confirm === 'account' ? (
+              <View style={styles.confirmRow}>
+                <Pressable
+                  style={[styles.btn, styles.btnDanger, { flex: 1 }]}
+                  onPress={() => runDelete(true)}
+                  disabled={delBusy}
+                >
+                  {delBusy ? (
+                    <ActivityIndicator color="#fff" />
+                  ) : (
+                    <Text style={styles.btnDangerText}>Delete account</Text>
+                  )}
+                </Pressable>
+                <Pressable
+                  style={[styles.btn, styles.btnGhost, { flex: 1 }]}
+                  onPress={() => setConfirm(null)}
+                  disabled={delBusy}
+                >
+                  <Text style={styles.btnGhostText}>Cancel</Text>
+                </Pressable>
+              </View>
+            ) : (
+              <Pressable onPress={() => setConfirm('account')} hitSlop={8}>
+                <Text style={styles.deleteAccount}>Delete my account permanently</Text>
+              </Pressable>
+            ))}
+        </View>
       </ScrollView>
     </View>
   );
@@ -224,6 +302,16 @@ const styles = StyleSheet.create({
   btnText: { color: '#08080A', fontSize: 15, fontWeight: '700' },
   btnGhost: { borderWidth: 1, borderColor: 'rgba(255,255,255,0.25)' },
   btnGhostText: { color: '#fff', fontSize: 15, fontWeight: '700' },
+  btnDanger: { backgroundColor: T.accent2 },
+  btnDangerText: { color: '#fff', fontSize: 15, fontWeight: '700' },
+  confirmRow: { flexDirection: 'row', gap: 10, marginTop: 16 },
+  deleteAccount: {
+    color: T.accent2,
+    fontSize: 13,
+    fontWeight: '600',
+    textAlign: 'center',
+    marginTop: 16,
+  },
   toggle: { width: 56, height: 32, borderRadius: 16, padding: 3, justifyContent: 'center', alignItems: 'center' },
   toggleOff: { backgroundColor: 'rgba(255,255,255,0.15)' },
   knob: { width: 26, height: 26, borderRadius: 13, backgroundColor: '#fff' },

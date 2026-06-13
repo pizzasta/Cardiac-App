@@ -90,6 +90,50 @@ export async function fetchStreak(): Promise<{ current: number; longest: number 
   }
 }
 
+// ── Data deletion (privacy: right to delete) ────────────────────────────────
+
+// Wipe all on-device user data (keeps sound/volume prefs).
+export async function clearLocalData() {
+  try {
+    await AsyncStorage.multiRemove(['circadia.pulselog', 'circadia.onboarded', 'circadia.user']);
+  } catch {
+    /* best-effort */
+  }
+}
+
+// Delete the signed-in user's cloud rows (RLS lets users delete their own).
+export async function deleteCloudData() {
+  try {
+    if (!supabase) return;
+    const uid = await currentUserId();
+    if (!uid) return;
+    await supabase.from('onboarding_answers').delete().eq('user_id', uid);
+    await supabase.from('check_ins').delete().eq('user_id', uid);
+    await supabase.from('results').delete().eq('user_id', uid);
+    await supabase
+      .from('profiles')
+      .update({ onboarding_complete: false, current_archetype_id: null })
+      .eq('id', uid);
+  } catch {
+    /* best-effort */
+  }
+}
+
+// Permanently delete the account (and cascade all data) via the RPC.
+export async function deleteAccount(): Promise<boolean> {
+  try {
+    if (!supabase) return false;
+    const uid = await currentUserId();
+    if (!uid) return false;
+    const { error } = await supabase.rpc('delete_account');
+    if (error) return false;
+    await supabase.auth.signOut().catch(() => {});
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 // Subscribe to realtime changes on the signed-in user's check-ins. Returns an
 // unsubscribe function. No-op (returns a noop) when Supabase is off.
 export function subscribeCheckIns(onChange: () => void): () => void {
@@ -145,10 +189,19 @@ export async function pullCheckIns() {
     if (!supabase) return;
     const uid = await currentUserId();
     if (!uid) return;
+    // Bounded: the dashboard only ever shows recent history.
+    const floor = new Date();
+    floor.setDate(floor.getDate() - 180);
+    const since = `${floor.getFullYear()}-${String(floor.getMonth() + 1).padStart(2, '0')}-${String(
+      floor.getDate()
+    ).padStart(2, '0')}`;
     const { data } = await supabase
       .from('check_ins')
       .select('local_date, level, reason')
-      .eq('user_id', uid);
+      .eq('user_id', uid)
+      .gte('local_date', since)
+      .order('local_date', { ascending: false })
+      .limit(366);
     if (!data) return;
 
     const raw = await AsyncStorage.getItem(PULSELOG_KEY);

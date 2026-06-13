@@ -52,15 +52,32 @@ export default function LegalScreen({ onClose }: { onClose: () => void }) {
           </Text>
         </Section>
 
-        <Section title="Your data">
+        <Section title="What we collect">
           <Text style={styles.p}>
-            Your quiz answers are used to generate your archetype and plan. In this version they live
-            on your device. If you enable the AI companion, the messages you send are transmitted to
-            our AI provider (Anthropic) to generate a reply — please don’t share sensitive medical
-            details there.
+            Your quiz answers, archetype/result, and daily check-ins. These always work on your
+            device. If you create an account, they also sync to our backend (Supabase) so you can
+            pick up across devices. If you sign in with Google, we receive your name and email.
           </Text>
           <Text style={styles.p}>
-            We don’t sell your data. You can clear it any time by retaking the quiz or removing the app.
+            We use this only to give you your results and trends. We don’t sell your data or use it
+            for advertising.
+          </Text>
+        </Section>
+
+        <Section title="Deleting your data">
+          <Text style={styles.p}>
+            Settings → Data &amp; Privacy lets you delete your data at any time. “Delete my data”
+            clears your check-ins, results, and answers (on device, and in the cloud if you’re signed
+            in). “Delete my account” removes your account and everything tied to it for good.
+          </Text>
+        </Section>
+
+        <Section title="Your privacy rights">
+          <Text style={styles.p}>
+            Depending on where you live (for example California, Colorado, or the EU/UK), you may
+            have the right to access, correct, or delete your data, and to opt out of any sale —
+            which we don’t do. You can exercise the core of these rights yourself in the app, or
+            email us and we’ll help.
           </Text>
         </Section>
 
@@ -72,8 +89,15 @@ export default function LegalScreen({ onClose }: { onClose: () => void }) {
           </Text>
         </Section>
 
+        <Section title="Who can use Circadia">
+          <Text style={styles.p}>
+            Circadia is for adults (18+). It isn’t designed for or directed at children, and we don’t
+            knowingly collect their data.
+          </Text>
+        </Section>
+
         <Section title="Contact">
-          <Text style={styles.p}>Questions? Reach us at support@circadia.app.</Text>
+          <Text style={styles.p}>Questions or a privacy request? Reach us at support@circadia.app.</Text>
         </Section>
 
         <Text style={styles.footer}>
