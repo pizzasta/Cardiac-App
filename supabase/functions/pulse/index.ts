@@ -15,8 +15,15 @@
 //     question?: string }                 // chat only
 // Also accepts a legacy passthrough: { system, messages, max_tokens, model }.
 
+// @ts-ignore esm import resolved by the Supabase Edge (Deno) runtime
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+
 const MODEL = 'claude-opus-4-8';
 const ANTHROPIC_URL = 'https://api.anthropic.com/v1/messages';
+
+// Per-identity limit: 30 requests / 60s (on top of the client-side throttle).
+const RATE_MAX = 30;
+const RATE_WINDOW_SECS = 60;
 
 const cors: Record<string, string> = {
   'Access-Control-Allow-Origin': '*',
@@ -76,6 +83,47 @@ function json(obj: unknown, status = 200): Response {
   });
 }
 
+// Extract the Supabase user id from a JWT (null for the anon key / no token).
+function jwtSub(auth: string | null): string | null {
+  if (!auth) return null;
+  const token = auth.replace(/^Bearer\s+/i, '');
+  const parts = token.split('.');
+  if (parts.length < 2) return null;
+  try {
+    const payload = JSON.parse(atob(parts[1].replace(/-/g, '+').replace(/_/g, '/')));
+    return typeof payload.sub === 'string' && payload.role !== 'anon' ? payload.sub : null;
+  } catch {
+    return null;
+  }
+}
+
+// Returns true if allowed. Fails open (allows) if the rate-limit store is
+// unavailable, so a misconfig never takes Pulse down.
+async function withinRateLimit(req: Request): Promise<boolean> {
+  try {
+    // @ts-ignore Deno.env in the edge runtime
+    const url = Deno.env.get('SUPABASE_URL');
+    // @ts-ignore Deno.env in the edge runtime
+    const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+    if (!url || !serviceKey) return true;
+
+    const sub = jwtSub(req.headers.get('Authorization'));
+    const ip = (req.headers.get('x-forwarded-for') ?? '').split(',')[0].trim() || 'unknown';
+    const id = sub ? `pulse:u:${sub}` : `pulse:ip:${ip}`;
+
+    const admin = createClient(url, serviceKey);
+    const { data, error } = await admin.rpc('check_rate_limit', {
+      p_id: id,
+      p_max: RATE_MAX,
+      p_window_secs: RATE_WINDOW_SECS,
+    });
+    if (error) return true; // fail open
+    return data !== false;
+  } catch {
+    return true;
+  }
+}
+
 // @ts-ignore Deno global is provided by the Supabase Edge runtime.
 Deno.serve(async (req: Request) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: cors });
@@ -85,6 +133,8 @@ Deno.serve(async (req: Request) => {
     // @ts-ignore Deno.env in the edge runtime
     const key = Deno.env.get('ANTHROPIC_API_KEY');
     if (!key) return json({ error: 'ANTHROPIC_API_KEY not set' }, 500);
+
+    if (!(await withinRateLimit(req))) return json({ error: 'rate_limited' }, 429);
 
     const body = await req.json();
 
