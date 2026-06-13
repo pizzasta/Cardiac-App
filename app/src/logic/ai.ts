@@ -6,20 +6,25 @@ import { RhythmResult } from './score';
 // ---------------------------------------------------------------------------
 // Pulse — Circadia's AI companion.
 //
-// Two ways to reach Claude, in priority order:
-//   1. A backend proxy (EXPO_PUBLIC_PULSE_ENDPOINT) that holds the API key
-//      server-side. This is the production path — no secret ships to clients.
-//      See server/pulse-worker.js for a deployable Cloudflare Worker.
-//   2. Direct from the client with EXPO_PUBLIC_ANTHROPIC_API_KEY — dev only,
+// Three ways to reach Claude, in priority order:
+//   1. A Supabase Edge Function (EXPO_PUBLIC_PULSE_FN) that holds the key AND
+//      owns the system prompt server-side — the client sends only the user's
+//      data. This is the recommended production path. See
+//      supabase/functions/pulse/index.ts.
+//   2. A generic backend proxy (EXPO_PUBLIC_PULSE_ENDPOINT) that holds the key
+//      but takes a client-built prompt (e.g. the Cloudflare worker).
+//   3. Direct from the client with EXPO_PUBLIC_ANTHROPIC_API_KEY — dev only,
 //      since EXPO_PUBLIC_* values are bundled into the app.
-// If neither is set, Pulse degrades to static copy so the app still runs.
+// If none is set, Pulse degrades to static copy so the app still runs.
 // ---------------------------------------------------------------------------
 
 const MODEL = 'claude-opus-4-8';
+const SUPA_FN = process.env.EXPO_PUBLIC_PULSE_FN;
+const SUPA_ANON = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY;
 const ENDPOINT = process.env.EXPO_PUBLIC_PULSE_ENDPOINT;
 const API_KEY = process.env.EXPO_PUBLIC_ANTHROPIC_API_KEY;
 
-export const hasAI = () => !!ENDPOINT || !!API_KEY;
+export const hasAI = () => !!SUPA_FN || !!ENDPOINT || !!API_KEY;
 
 const client =
   !ENDPOINT && API_KEY
@@ -67,6 +72,34 @@ BOUNDARIES:
 
 type Msg = { role: 'user' | 'assistant'; content: string };
 
+// The pieces the edge function needs to build the prompt server-side (so the
+// system prompt + guardrails live on the server, not in the client bundle).
+function profilePieces(result: RhythmResult, answers: Option[]) {
+  const a = ARCHETYPES[result.animal];
+  return {
+    archetype: { name: a.name, oneLiner: a.oneLiner },
+    chips: { peak: result.peak, crash: result.crash, recharge: result.recharge },
+    profileLines: answers.map((opt, i) => `${QUIZ[i].prompt} → ${opt.label}`),
+  };
+}
+
+// Preferred path: POST structured data to the Supabase Edge Function, which
+// owns the prompt and the key.
+async function callSupabaseFn(kind: 'reading' | 'chat', payload: Record<string, unknown>): Promise<string> {
+  const res = await fetch(SUPA_FN as string, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${SUPA_ANON ?? ''}`,
+      apikey: SUPA_ANON ?? '',
+    },
+    body: JSON.stringify({ kind, ...payload }),
+  });
+  if (!res.ok) throw new Error(`pulse-fn ${res.status}`);
+  const data = await res.json();
+  return String(data.text ?? '').trim();
+}
+
 // Production path: POST to the backend proxy, which holds the API key.
 async function callBackend(system: string, messages: Msg[], maxTokens: number): Promise<string> {
   const res = await fetch(ENDPOINT as string, {
@@ -102,6 +135,13 @@ export async function generateReading(
   answers: Option[]
 ): Promise<string> {
   if (!hasAI()) return ARCHETYPES[result.animal].reading;
+  if (SUPA_FN) {
+    try {
+      return await callSupabaseFn('reading', profilePieces(result, answers));
+    } catch {
+      return ARCHETYPES[result.animal].reading;
+    }
+  }
   try {
     return await complete(
       systemPrompt(result, answers),
@@ -128,6 +168,17 @@ export async function askPulse(
 ): Promise<string> {
   if (!hasAI()) {
     return "I'm offline right now — add an API key to talk to me. But going on your rhythm: protect your crash window, and don't make it the day's first hard thing.";
+  }
+  if (SUPA_FN) {
+    try {
+      return await callSupabaseFn('chat', {
+        ...profilePieces(result, answers),
+        history,
+        question,
+      });
+    } catch {
+      return 'Something glitched on my end. Try that again in a moment.';
+    }
   }
   try {
     return await complete(

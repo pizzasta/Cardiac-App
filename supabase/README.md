@@ -46,7 +46,19 @@ Prefer to do it by hand? Paste `migrations/0001_init.sql` then
 cd app && npm run gen:types     # writes src/types/db.ts from the live schema
 ```
 
-## 5. Local development (optional)
+## 5. AI proxy (Pulse) — keep the Anthropic key off the client
+The `functions/pulse` Edge Function holds the Anthropic key and owns Pulse's
+system prompt + safety guardrails. The app sends only the user's data.
+
+```bash
+npx supabase functions deploy pulse
+npx supabase secrets set ANTHROPIC_API_KEY=sk-ant-...
+```
+Then set `EXPO_PUBLIC_PULSE_FN` in `app/.env` to the function URL
+(`https://<ref>.functions.supabase.co/pulse`). Without it, Pulse falls back to
+the legacy proxy / dev key / static copy.
+
+## 6. Local development (optional)
 ```bash
 npx supabase start              # local Postgres + Auth + Studio (port 54323)
 npx supabase db reset           # re-apply all migrations to the local DB
