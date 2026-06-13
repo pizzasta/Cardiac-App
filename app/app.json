@@ -22,7 +22,7 @@
       "bundler": "metro"
     },
     "experiments": {
-      "baseUrl": "/cardiac-app"
+      "baseUrl": "/Cardiac-App"
     }
   }
 }
