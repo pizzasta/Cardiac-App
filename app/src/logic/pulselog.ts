@@ -115,6 +115,53 @@ export function trendInsight(log: PulseEntry[]): string {
   return 'Mostly steady — that’s the state good things get built in.';
 }
 
+// Smart check-in time: when should we nudge for the daily Pulse?
+// - Cold start: the archetype's crash window (passed as `fallback`).
+// - With history: align ~30 min before when they actually tend to check in
+//   (meet the habit), then shift earlier if they've been mostly flat/wired so
+//   the nudge catches the dip before it deepens. Clamped to a humane window.
+export function suggestCheckInTime(
+  log: PulseEntry[],
+  fallback: { hour: number; minute: number }
+): { hour: number; minute: number; why: string } {
+  const recent = log.slice(-14);
+  if (recent.length < 3) {
+    return { ...fallback, why: 'Set to your rhythm type’s crash window.' };
+  }
+
+  const hours = recent
+    .map((e) => {
+      const d = new Date(e.ts);
+      return d.getHours() + d.getMinutes() / 60;
+    })
+    .sort((a, b) => a - b);
+  const median = hours[Math.floor(hours.length / 2)];
+
+  const counts: Record<Level, number> = { wired: 0, steady: 0, flat: 0 };
+  recent.forEach((e) => (counts[e.level] += 1));
+  const top = (Object.entries(counts) as [Level, number][]).sort((a, b) => b[1] - a[1])[0][0];
+
+  let shift = 0;
+  let why = 'Timed to when you usually check in.';
+  if (top === 'flat') {
+    shift = -1;
+    why = 'You’ve been running low — nudging earlier to catch the dip.';
+  } else if (top === 'wired') {
+    shift = -0.5;
+    why = 'You’ve been running hot — nudging earlier to land it sooner.';
+  }
+
+  let h = median - 0.5 + shift; // 30 min before the habitual time, plus trend
+  h = Math.max(8, Math.min(21.5, h));
+  let hour = Math.floor(h);
+  let minute = Math.round(((h - hour) * 60) / 5) * 5;
+  if (minute === 60) {
+    hour += 1;
+    minute = 0;
+  }
+  return { hour, minute, why };
+}
+
 export function readFor(animalName: string, level: Level): { read: string; move: string } {
   if (level === 'wired')
     return {

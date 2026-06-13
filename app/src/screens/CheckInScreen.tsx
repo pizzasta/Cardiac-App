@@ -22,6 +22,7 @@ import {
   readFor,
   REASONS,
 } from '../logic/pulselog';
+import { refreshSmartNudge } from '../logic/notifications';
 import PulseLine from '../components/PulseLine';
 import { F, T } from '../theme';
 
@@ -59,6 +60,8 @@ export default function CheckInScreen({
   const save = async () => {
     if (!level) return;
     await logToday(level, reason);
+    // Re-time the smart nudge to the emerging pattern (native; no-op on web).
+    refreshSmartNudge(result.animal).catch(() => {});
     setSaved(true);
     if (Platform.OS !== 'web') {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);

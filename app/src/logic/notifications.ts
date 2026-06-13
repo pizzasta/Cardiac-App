@@ -29,3 +29,9 @@ export async function enable(_animal: AnimalId): Promise<boolean> {
 export async function disable(): Promise<void> {
   /* Browser notification permission is managed in site settings; nothing to cancel. */
 }
+
+// Smart check-in nudge is native-only (recurring local notifications). No-op on
+// web so callers can stay platform-agnostic.
+export async function refreshSmartNudge(_animal: AnimalId): Promise<void> {
+  /* no-op on web */
+}

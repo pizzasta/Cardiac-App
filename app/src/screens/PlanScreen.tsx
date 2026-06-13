@@ -16,6 +16,7 @@ import { DEEP_DIVE } from '../data/deepdive';
 import { DISCLAIMER_FULL } from '../data/disclaimer';
 import { RhythmResult } from '../logic/score';
 import { canSchedule, disable as disableNotifs, enable as enableNotifs, isEnabled } from '../logic/notifications';
+import { load as loadLog, suggestCheckInTime } from '../logic/pulselog';
 import { useAuth } from '../logic/auth';
 import Atmosphere from '../components/Atmosphere';
 import { F } from '../theme';
@@ -57,10 +58,20 @@ export default function PlanScreen({
 
   const [notifsOn, setNotifsOn] = useState(false);
   const [notifBusy, setNotifBusy] = useState(false);
+  const [checkInTime, setCheckInTime] = useState<{ hour: number; minute: number; why: string } | null>(
+    null
+  );
 
   useEffect(() => {
     isEnabled().then(setNotifsOn);
   }, []);
+
+  useEffect(() => {
+    const base = REMINDERS[result.animal][0];
+    loadLog().then((log) =>
+      setCheckInTime(suggestCheckInTime(log, { hour: base.hour, minute: base.minute }))
+    );
+  }, [result.animal]);
 
   const toggleNotifs = async () => {
     if (notifBusy) return;
@@ -179,6 +190,19 @@ export default function PlanScreen({
               </Text>
             ))}
           </View>
+
+          {checkInTime && (
+            <View style={styles.smartRow}>
+              <Text style={styles.smartLabel}>SMART CHECK-IN</Text>
+              <Text style={styles.smartTime}>
+                <Text style={{ color: a.accent, fontWeight: '700' }}>
+                  {fmtTime(checkInTime.hour, checkInTime.minute)}
+                </Text>
+                {'  '}
+                {checkInTime.why}
+              </Text>
+            </View>
+          )}
 
           {!canSchedule && (
             <Text style={styles.notifWeb}>
@@ -363,6 +387,14 @@ const styles = StyleSheet.create({
   knobOff: { alignSelf: 'flex-start' },
   notifTimes: { marginTop: 14, gap: 6 },
   notifTime: { color: 'rgba(255,255,255,0.85)', fontSize: 14 },
+  smartRow: {
+    marginTop: 14,
+    paddingTop: 14,
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(255,255,255,0.1)',
+  },
+  smartLabel: { color: 'rgba(255,255,255,0.55)', fontSize: 11, fontFamily: F.mono, letterSpacing: 1 },
+  smartTime: { color: 'rgba(255,255,255,0.8)', fontSize: 13, lineHeight: 19, marginTop: 6 },
   notifWeb: { color: 'rgba(255,255,255,0.5)', fontSize: 12, lineHeight: 17, marginTop: 12 },
   timeline: {},
   flowRow: { flexDirection: 'row', gap: 14 },
