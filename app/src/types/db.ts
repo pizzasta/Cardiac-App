@@ -1,6 +1,7 @@
 // TypeScript types for the Circadia Supabase schema (supabase/migrations/0001_init.sql).
 // Shaped to match supabase-js's generic so `createClient<Database>` gives typed
-// queries. Hand-written here; can be regenerated with `supabase gen types`.
+// queries. Hand-written here; regenerate from the live schema with
+// `npm run gen:types` (after `npx supabase link --project-ref <ref>`).
 
 export type Level = 'wired' | 'steady' | 'flat';
 
