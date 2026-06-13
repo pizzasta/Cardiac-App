@@ -34,6 +34,27 @@ npm start        # then press w (web), i (iOS sim), or a (Android),
 | `src/screens/ReadingScreen.tsx` | Short anticipation beat before the reveal |
 | `src/screens/RevealScreen.tsx` | The centerpiece — animated archetype card |
 | `src/screens/PulseScreen.tsx` | The AI companion — generated reading + follow-up chat |
+| `src/three/Rainforest.native.tsx` | 3D Amazon-rainforest backdrop (Three.js / `@react-three/fiber` on `expo-gl`) |
+| `src/three/Rainforest.tsx` | Web fallback — layered-gradient rainforest (no Three.js) |
+
+## The 3D rainforest backdrop
+
+The Hook screen ("What's your rhythm animal?") renders an immersive, stylized
+Amazon-rainforest scene tuned to Circadia's dusk palette — deep teal-green
+depth fog, an instanced layered canopy, a faint shaft of canopy light, and
+bioluminescent spores drifting up through the trees, under a slow breathing
+camera.
+
+- **Native (iOS/Android):** real 3D via Three.js + `@react-three/fiber` on
+  `expo-gl` (`Rainforest.native.tsx`). Trees and foliage are `InstancedMesh`;
+  spores are a single animated `Points` — kept light for mobile.
+- **Web:** a CSS/gradient approximation (`Rainforest.tsx`) so the Pages bundle
+  stays light — **Three.js is not included in the web build** (Metro resolves
+  the `.native` vs base file per platform).
+
+`metro.config.js` enables package exports and stubs `node:` builtins so the
+native bundle resolves cleanly (the Anthropic SDK references `node:fs` in a
+credentials path the app never executes).
 
 ## The AI companion (Pulse)
 
