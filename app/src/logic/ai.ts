@@ -6,20 +6,25 @@ import { RhythmResult } from './score';
 // ---------------------------------------------------------------------------
 // Pulse — Circadia's AI companion.
 //
-// SECURITY NOTE: For a real release this MUST go through a backend proxy.
-// EXPO_PUBLIC_* values are bundled into the client, so the key here would ship
-// to users. This direct-from-client setup is for the prototype only; swap
-// `callClaude` to hit your own `/api/pulse` endpoint before launch.
+// Two ways to reach Claude, in priority order:
+//   1. A backend proxy (EXPO_PUBLIC_PULSE_ENDPOINT) that holds the API key
+//      server-side. This is the production path — no secret ships to clients.
+//      See server/pulse-worker.js for a deployable Cloudflare Worker.
+//   2. Direct from the client with EXPO_PUBLIC_ANTHROPIC_API_KEY — dev only,
+//      since EXPO_PUBLIC_* values are bundled into the app.
+// If neither is set, Pulse degrades to static copy so the app still runs.
 // ---------------------------------------------------------------------------
 
 const MODEL = 'claude-opus-4-8';
+const ENDPOINT = process.env.EXPO_PUBLIC_PULSE_ENDPOINT;
 const API_KEY = process.env.EXPO_PUBLIC_ANTHROPIC_API_KEY;
 
-export const hasAI = () => !!API_KEY;
+export const hasAI = () => !!ENDPOINT || !!API_KEY;
 
-const client = API_KEY
-  ? new Anthropic({ apiKey: API_KEY, dangerouslyAllowBrowser: true })
-  : null;
+const client =
+  !ENDPOINT && API_KEY
+    ? new Anthropic({ apiKey: API_KEY, dangerouslyAllowBrowser: true })
+    : null;
 
 export interface ChatTurn {
   role: 'user' | 'assistant';
@@ -53,23 +58,34 @@ BOUNDARIES:
 - If they describe something clinical or concerning (e.g. persistent insomnia, panic, deep lows, self-harm), say plainly that this is worth talking to a qualified professional about — calm, brief, no alarm — then offer what you genuinely can help with.`;
 }
 
-async function callClaude(
-  system: string,
-  messages: { role: 'user' | 'assistant'; content: string }[],
-  maxTokens: number
-): Promise<string> {
-  if (!client) throw new Error('no-api-key');
-  const res = await client.messages.create({
-    model: MODEL,
-    max_tokens: maxTokens,
-    system,
-    messages,
+type Msg = { role: 'user' | 'assistant'; content: string };
+
+// Production path: POST to the backend proxy, which holds the API key.
+async function callBackend(system: string, messages: Msg[], maxTokens: number): Promise<string> {
+  const res = await fetch(ENDPOINT as string, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ system, messages, max_tokens: maxTokens, model: MODEL }),
   });
+  if (!res.ok) throw new Error(`backend ${res.status}`);
+  const data = await res.json();
+  return String(data.text ?? '').trim();
+}
+
+// Dev path: call Claude directly from the client.
+async function callClient(system: string, messages: Msg[], maxTokens: number): Promise<string> {
+  if (!client) throw new Error('no-api-key');
+  const res = await client.messages.create({ model: MODEL, max_tokens: maxTokens, system, messages });
   return res.content
     .filter((b): b is Anthropic.TextBlock => b.type === 'text')
     .map((b) => b.text)
     .join('')
     .trim();
+}
+
+async function complete(system: string, messages: Msg[], maxTokens: number): Promise<string> {
+  if (ENDPOINT) return callBackend(system, messages, maxTokens);
+  return callClient(system, messages, maxTokens);
 }
 
 // The opening personalized reading shown when Pulse first loads.
@@ -80,7 +96,7 @@ export async function generateReading(
 ): Promise<string> {
   if (!hasAI()) return ARCHETYPES[result.animal].reading;
   try {
-    return await callClaude(
+    return await complete(
       systemPrompt(result, answers),
       [
         {
@@ -107,7 +123,7 @@ export async function askPulse(
     return "I'm offline right now — add an API key to talk to me. But going on your rhythm: protect your crash window, and don't make it the day's first hard thing.";
   }
   try {
-    return await callClaude(
+    return await complete(
       systemPrompt(result, answers),
       [
         ...history.map((t) => ({ role: t.role, content: t.text })),
