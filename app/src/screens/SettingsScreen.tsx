@@ -44,7 +44,7 @@ export default function SettingsScreen({
   onSignIn: () => void;
   onClose: () => void;
 }) {
-  const { user, signOut } = useAuth();
+  const { user, signOut, supabaseEnabled } = useAuth();
   const accent = result ? ARCHETYPES[result.animal].accent : '#FF2E7E';
 
   const [notifsOn, setNotifsOn] = useState(false);
@@ -97,6 +97,11 @@ export default function SettingsScreen({
             <>
               <Text style={styles.rowTitle}>{user.name}</Text>
               <Text style={styles.rowSub}>{user.email || 'Signed in'}</Text>
+              <Text style={[styles.synced, { color: accent }]}>
+                {supabaseEnabled
+                  ? `☁ Synced to cloud · via ${user.provider === 'google' ? 'Google' : 'email'}`
+                  : '✓ Saved on this device'}
+              </Text>
               <Pressable style={[styles.btn, styles.btnGhost]} onPress={signOut}>
                 <Text style={styles.btnGhostText}>Sign out</Text>
               </Pressable>
@@ -214,6 +219,7 @@ const styles = StyleSheet.create({
   rowBetween: { flexDirection: 'row', alignItems: 'center' },
   rowTitle: { color: '#fff', fontSize: 16, fontWeight: '700' },
   rowSub: { color: 'rgba(255,255,255,0.7)', fontSize: 13, lineHeight: 19, marginTop: 3 },
+  synced: { fontSize: 12, fontFamily: F.mono, letterSpacing: 0.5, marginTop: 10 },
   btn: { borderRadius: 24, paddingVertical: 13, alignItems: 'center', marginTop: 16 },
   btnText: { color: '#08080A', fontSize: 15, fontWeight: '700' },
   btnGhost: { borderWidth: 1, borderColor: 'rgba(255,255,255,0.25)' },

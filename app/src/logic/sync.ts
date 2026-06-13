@@ -90,6 +90,30 @@ export async function fetchStreak(): Promise<{ current: number; longest: number 
   }
 }
 
+// Subscribe to realtime changes on the signed-in user's check-ins. Returns an
+// unsubscribe function. No-op (returns a noop) when Supabase is off.
+export function subscribeCheckIns(onChange: () => void): () => void {
+  if (!supabase) return () => {};
+  let channel: ReturnType<NonNullable<typeof supabase>['channel']> | null = null;
+  let cancelled = false;
+  (async () => {
+    const uid = await currentUserId();
+    if (!uid || cancelled || !supabase) return;
+    channel = supabase
+      .channel(`check_ins:${uid}`)
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'check_ins', filter: `user_id=eq.${uid}` },
+        () => onChange()
+      )
+      .subscribe();
+  })();
+  return () => {
+    cancelled = true;
+    if (channel && supabase) supabase.removeChannel(channel);
+  };
+}
+
 // Number of distinct weeks with check-ins, from the emotional_trends view.
 export async function fetchWeeksTracked(): Promise<number | null> {
   try {

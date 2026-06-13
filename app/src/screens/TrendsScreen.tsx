@@ -16,7 +16,7 @@ import {
   yFor,
 } from '../logic/pulselog';
 import { useAuth } from '../logic/auth';
-import { fetchStreak, fetchWeeksTracked, pullCheckIns } from '../logic/sync';
+import { fetchStreak, fetchWeeksTracked, pullCheckIns, subscribeCheckIns } from '../logic/sync';
 import { F, T } from '../theme';
 
 const DAYS = 14;
@@ -46,20 +46,24 @@ export default function TrendsScreen({
   }, []);
 
   // When signed in, pull the cloud copy and read the authoritative streak +
-  // weeks-tracked from Supabase (streaks table + emotional_trends view).
+  // weeks-tracked from Supabase (streaks table + emotional_trends view), and
+  // subscribe to realtime check-in changes so other devices update live.
   useEffect(() => {
     if (!user) return;
     let active = true;
-    (async () => {
+    const refresh = async () => {
       await pullCheckIns();
       if (!active) return;
       const fresh = await load();
       if (active) setLog(fresh);
       fetchStreak().then((s) => active && setServer(s));
       fetchWeeksTracked().then((w) => active && setWeeks(w));
-    })();
+    };
+    refresh();
+    const unsubscribe = subscribeCheckIns(refresh);
     return () => {
       active = false;
+      unsubscribe();
     };
   }, [user]);
 
