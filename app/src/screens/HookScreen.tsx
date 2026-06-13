@@ -3,7 +3,13 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import Rainforest from '../three/Rainforest';
 import { DISCLAIMER_SHORT } from '../data/disclaimer';
-import { soundSupported, start as startSound, stop as stopSound } from '../logic/sound';
+import {
+  soundSupported,
+  start as startSound,
+  stop as stopSound,
+  enableAutoStart,
+  cancelAutoStart,
+} from '../logic/sound';
 
 export default function HookScreen({
   onStart,
@@ -14,17 +20,21 @@ export default function HookScreen({
   onLegal: () => void;
   onSignIn: () => void;
 }) {
-  const [soundOn, setSoundOn] = useState(false);
+  // Default on: the ambience auto-starts (on load if allowed, otherwise on the
+  // first interaction). The pill lets you mute.
+  const [soundOn, setSoundOn] = useState(soundSupported);
 
-  // Stop the ambience when leaving the intro.
   useEffect(() => {
+    enableAutoStart();
     return () => {
+      cancelAutoStart();
       stopSound();
     };
   }, []);
 
   const toggleSound = () => {
     if (soundOn) {
+      cancelAutoStart();
       stopSound();
       setSoundOn(false);
     } else {
@@ -45,9 +55,7 @@ export default function HookScreen({
 
       {soundSupported && (
         <Pressable style={styles.soundPill} onPress={toggleSound} hitSlop={8}>
-          <Text style={styles.soundText}>
-            {soundOn ? '🔊  Rainforest on' : '🔈  Tap for rainforest'}
-          </Text>
+          <Text style={styles.soundText}>{soundOn ? '🔊  Rainforest on' : '🔇  Muted'}</Text>
         </Pressable>
       )}
 
