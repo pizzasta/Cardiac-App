@@ -8,10 +8,12 @@ export default function HookScreen({
   onStart,
   onLegal,
   onSignIn,
+  onSettings,
 }: {
   onStart: () => void;
   onLegal: () => void;
   onSignIn: () => void;
+  onSettings: () => void;
 }) {
   return (
     <View style={styles.fill}>
@@ -44,8 +46,12 @@ export default function HookScreen({
             <Text style={styles.legalLink}>Sign in</Text>
           </Pressable>
           <Text style={styles.linkDot}>·</Text>
+          <Pressable onPress={onSettings} hitSlop={10}>
+            <Text style={styles.legalLink}>Settings</Text>
+          </Pressable>
+          <Text style={styles.linkDot}>·</Text>
           <Pressable onPress={onLegal} hitSlop={10}>
-            <Text style={styles.legalLink}>Terms & Privacy</Text>
+            <Text style={styles.legalLink}>Terms</Text>
           </Pressable>
         </View>
       </View>

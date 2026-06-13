@@ -21,3 +21,11 @@ export function enableAutoStart(): void {
 export function cancelAutoStart(): void {
   /* no-op */
 }
+
+export function setVolume(_v: number): void {
+  /* no-op */
+}
+
+export function getVolume(): number {
+  return 0.6;
+}

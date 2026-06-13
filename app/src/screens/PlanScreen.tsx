@@ -32,6 +32,7 @@ export default function PlanScreen({
   onLegal,
   onSignIn,
   onScience,
+  onSettings,
 }: {
   result: RhythmResult;
   onBack: () => void;
@@ -41,6 +42,7 @@ export default function PlanScreen({
   onLegal: () => void;
   onSignIn: () => void;
   onScience: () => void;
+  onSettings: () => void;
 }) {
   const a = ARCHETYPES[result.animal];
   const plan = PLANS[result.animal];
@@ -88,7 +90,9 @@ export default function PlanScreen({
           <Text style={styles.back}>‹ Back</Text>
         </Pressable>
         <Text style={styles.headerTitle}>Your rhythm plan</Text>
-        <View style={{ width: 48 }} />
+        <Pressable onPress={onSettings} hitSlop={12} style={styles.gear}>
+          <Text style={styles.gearIcon}>⚙︎</Text>
+        </Pressable>
       </View>
 
       <ScrollView contentContainerStyle={styles.body}>
@@ -259,6 +263,8 @@ const styles = StyleSheet.create({
   },
   back: { color: 'rgba(255,255,255,0.85)', fontSize: 16, fontWeight: '600', width: 48 },
   headerTitle: { color: '#fff', fontSize: 18, fontWeight: '800' },
+  gear: { width: 48, alignItems: 'flex-end' },
+  gearIcon: { color: 'rgba(255,255,255,0.85)', fontSize: 20 },
   body: { paddingHorizontal: 22, paddingBottom: 40 },
   animal: { color: '#fff', fontSize: 30, fontWeight: '900', marginTop: 8 },
   intro: { color: 'rgba(255,255,255,0.82)', fontSize: 15, lineHeight: 22, marginTop: 8 },
