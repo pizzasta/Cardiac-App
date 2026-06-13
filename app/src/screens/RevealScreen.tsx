@@ -12,6 +12,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
 import { ARCHETYPES } from '../data/archetypes';
 import { RhythmResult } from '../logic/score';
+import Rainforest from '../three/Rainforest';
 
 export default function RevealScreen({
   result,
@@ -62,7 +63,14 @@ export default function RevealScreen({
   const glowOpacity = breath.interpolate({ inputRange: [0, 1], outputRange: [0.3, 0.55] });
 
   return (
-    <LinearGradient colors={a.gradient} style={styles.fill}>
+    <View style={styles.fill}>
+      {/* Rainforest backdrop, tinted to this archetype's accent. */}
+      <Rainforest style={StyleSheet.absoluteFill} accent={a.accent} />
+      <LinearGradient
+        colors={[`${a.gradient[0]}aa`, `${a.gradient[1]}66`, 'rgba(8,21,17,0.85)']}
+        style={StyleSheet.absoluteFill}
+      />
+
       <Animated.View
         style={[
           styles.card,
@@ -98,7 +106,7 @@ export default function RevealScreen({
       <Pressable onPress={onRetake} hitSlop={12}>
         <Text style={styles.retake}>Retake the quiz</Text>
       </Pressable>
-    </LinearGradient>
+    </View>
   );
 }
 
@@ -120,7 +128,7 @@ function Chip({
 }
 
 const styles = StyleSheet.create({
-  fill: { flex: 1, paddingHorizontal: 24, paddingTop: 80, paddingBottom: 40 },
+  fill: { flex: 1, paddingHorizontal: 24, paddingTop: 80, paddingBottom: 40, backgroundColor: '#081511' },
   card: {
     flex: 1,
     backgroundColor: 'rgba(14,20,36,0.45)',
