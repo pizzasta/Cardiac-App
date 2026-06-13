@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import {
   soundSupported,
   start as startSound,
@@ -36,12 +37,20 @@ function Flow() {
   const [showLegal, setShowLegal] = useState(false);
   const [showSignIn, setShowSignIn] = useState(false);
   const [showScience, setShowScience] = useState(false);
-  // App-wide rainforest ambience + persistent mute.
+  // App-wide rainforest ambience + persistent mute (remembered across visits).
   const [muted, setMuted] = useState(false);
 
   useEffect(() => {
-    enableAutoStart();
+    let active = true;
+    AsyncStorage.getItem('circadia.muted')
+      .then((v) => {
+        if (!active) return;
+        if (v === 'true') setMuted(true); // honor a saved mute — stay silent
+        else enableAutoStart(); // default: ambience on
+      })
+      .catch(() => enableAutoStart());
     return () => {
+      active = false;
       cancelAutoStart();
       stopSound();
     };
@@ -51,10 +60,12 @@ function Flow() {
     if (muted) {
       startSound();
       setMuted(false);
+      AsyncStorage.setItem('circadia.muted', 'false').catch(() => {});
     } else {
       cancelAutoStart();
       stopSound();
       setMuted(true);
+      AsyncStorage.setItem('circadia.muted', 'true').catch(() => {});
     }
   };
 
