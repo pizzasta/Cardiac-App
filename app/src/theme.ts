@@ -14,3 +14,11 @@ export const T = {
   // Shared dark backdrop gradient (top -> bottom), faint pink at the floor.
   bgGradient: ['#08080A', '#121014', '#1A0C14'] as [string, string, string],
 };
+
+// Type families. Display = confident technical grotesque; mono = the "OS
+// readout" voice for labels, kickers, and data. Body stays the system font.
+export const F = {
+  display: 'SpaceGrotesk_700Bold',
+  mono: 'JetBrainsMono_500Medium',
+};
+

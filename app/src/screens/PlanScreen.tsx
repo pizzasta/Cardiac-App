@@ -18,6 +18,7 @@ import { RhythmResult } from '../logic/score';
 import { canSchedule, disable as disableNotifs, enable as enableNotifs, isEnabled } from '../logic/notifications';
 import { useAuth } from '../logic/auth';
 import Atmosphere from '../components/Atmosphere';
+import { F } from '../theme';
 
 function fmtTime(hour: number, minute: number): string {
   const ampm = hour < 12 ? 'AM' : 'PM';
@@ -262,11 +263,11 @@ const styles = StyleSheet.create({
     paddingBottom: 8,
   },
   back: { color: 'rgba(255,255,255,0.85)', fontSize: 16, fontWeight: '600', width: 48 },
-  headerTitle: { color: '#fff', fontSize: 18, fontWeight: '800' },
+  headerTitle: { color: '#fff', fontSize: 18, fontFamily: F.display },
   gear: { width: 48, alignItems: 'flex-end' },
   gearIcon: { color: 'rgba(255,255,255,0.85)', fontSize: 20 },
   body: { paddingHorizontal: 22, paddingBottom: 40 },
-  animal: { color: '#fff', fontSize: 30, fontWeight: '900', marginTop: 8 },
+  animal: { color: '#fff', fontSize: 30, fontFamily: F.display, marginTop: 8 },
   intro: { color: 'rgba(255,255,255,0.82)', fontSize: 15, lineHeight: 22, marginTop: 8 },
   chips: { flexDirection: 'row', gap: 10, marginTop: 18 },
   chip: {
@@ -282,7 +283,7 @@ const styles = StyleSheet.create({
   section: {
     color: 'rgba(255,255,255,0.6)',
     fontSize: 12,
-    fontWeight: '700',
+    fontFamily: F.mono,
     letterSpacing: 1.5,
     marginTop: 30,
     marginBottom: 14,

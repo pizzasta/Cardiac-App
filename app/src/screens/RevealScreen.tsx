@@ -1,6 +1,7 @@
 import React, { useEffect, useRef } from 'react';
 import {
   Animated,
+  Easing,
   Platform,
   Pressable,
   ScrollView,
@@ -13,6 +14,7 @@ import * as Haptics from 'expo-haptics';
 import { ARCHETYPES } from '../data/archetypes';
 import { RhythmResult } from '../logic/score';
 import { DISCLAIMER_SHORT } from '../data/disclaimer';
+import { F } from '../theme';
 import AnimalEmblem from '../three/AnimalEmblem';
 
 export default function RevealScreen({
@@ -26,22 +28,33 @@ export default function RevealScreen({
 }) {
   const a = ARCHETYPES[result.animal];
 
-  // Entrance: the content lifts and fades in as the animal comes to life.
+  // Entrance: the content lifts and fades in, then the animal arrives on a
+  // single heartbeat — one thump with a pink glow bloom.
   const enter = useRef(new Animated.Value(0)).current;
+  const beat = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
-    if (Platform.OS !== 'web') {
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-    }
     Animated.spring(enter, {
       toValue: 1,
       friction: 7,
       tension: 50,
       useNativeDriver: true,
     }).start();
-  }, [enter]);
+
+    Animated.sequence([
+      Animated.delay(160),
+      Animated.timing(beat, { toValue: 1, duration: 150, easing: Easing.out(Easing.quad), useNativeDriver: true }),
+      Animated.timing(beat, { toValue: 0, duration: 260, easing: Easing.inOut(Easing.ease), useNativeDriver: true }),
+    ]).start();
+
+    if (Platform.OS !== 'web') {
+      setTimeout(() => Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success), 160);
+    }
+  }, [enter, beat]);
 
   const lift = enter.interpolate({ inputRange: [0, 1], outputRange: [24, 0] });
+  const beatScale = beat.interpolate({ inputRange: [0, 1], outputRange: [1, 1.07] });
+  const glowOpacity = beat.interpolate({ inputRange: [0, 1], outputRange: [0.12, 0.6] });
 
   return (
     <View style={styles.fill}>
@@ -55,16 +68,22 @@ export default function RevealScreen({
         <Animated.View style={{ opacity: enter, transform: [{ translateY: lift }] }}>
           <Text style={styles.kicker}>YOU’RE A</Text>
 
-          {/* The moving 3D animal — the hero of the reveal. */}
-          <View style={[styles.emblem, { borderColor: `${a.accent}55` }]}>
-            <AnimalEmblem
-              animal={a.id}
-              accent={a.accent}
-              emoji={a.emoji}
-              bg={a.gradient[1]}
-              style={StyleSheet.absoluteFill}
+          {/* The moving 3D animal — the hero, arriving on a heartbeat. */}
+          <Animated.View style={[styles.emblemWrap, { transform: [{ scale: beatScale }] }]}>
+            <Animated.View
+              pointerEvents="none"
+              style={[styles.emblemGlow, { backgroundColor: a.accent, opacity: glowOpacity }]}
             />
-          </View>
+            <View style={[styles.emblem, { borderColor: `${a.accent}55` }]}>
+              <AnimalEmblem
+                animal={a.id}
+                accent={a.accent}
+                emoji={a.emoji}
+                bg={a.gradient[1]}
+                style={StyleSheet.absoluteFill}
+              />
+            </View>
+          </Animated.View>
 
           <Text style={styles.name}>{a.name}</Text>
           <Text style={styles.oneLiner}>{a.oneLiner}</Text>
@@ -114,10 +133,17 @@ const styles = StyleSheet.create({
   body: { paddingHorizontal: 24, paddingTop: 70, paddingBottom: 44, alignItems: 'center' },
   kicker: {
     color: 'rgba(255,255,255,0.7)',
-    letterSpacing: 5,
-    fontSize: 13,
-    fontWeight: '700',
+    letterSpacing: 4,
+    fontSize: 12,
+    fontFamily: F.mono,
     textAlign: 'center',
+  },
+  emblemWrap: { alignItems: 'center', justifyContent: 'center', marginVertical: 18 },
+  emblemGlow: {
+    position: 'absolute',
+    width: 240,
+    height: 240,
+    borderRadius: 120,
   },
   emblem: {
     width: 220,
@@ -126,9 +152,8 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     overflow: 'hidden',
     alignSelf: 'center',
-    marginVertical: 18,
   },
-  name: { color: '#fff', fontSize: 44, fontWeight: '900', textAlign: 'center' },
+  name: { color: '#fff', fontSize: 44, fontFamily: F.display, textAlign: 'center' },
   oneLiner: {
     color: 'rgba(255,255,255,0.85)',
     fontSize: 16,
@@ -153,7 +178,7 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     paddingHorizontal: 16,
   },
-  traitLabel: { fontSize: 11, fontWeight: '800', letterSpacing: 1, marginBottom: 4 },
+  traitLabel: { fontSize: 11, fontFamily: F.mono, letterSpacing: 1, marginBottom: 4 },
   traitText: { color: '#fff', fontSize: 14, lineHeight: 20 },
   chips: { flexDirection: 'row', gap: 10, marginTop: 18, width: '100%', maxWidth: 360 },
   chip: {
@@ -164,7 +189,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
     alignItems: 'center',
   },
-  chipLabel: { fontSize: 11, fontWeight: '700', letterSpacing: 0.5 },
+  chipLabel: { fontSize: 11, fontFamily: F.mono, letterSpacing: 0.5 },
   chipValue: { color: '#fff', fontSize: 13, fontWeight: '600', marginTop: 4, textAlign: 'center' },
   cta: {
     backgroundColor: '#fff',
