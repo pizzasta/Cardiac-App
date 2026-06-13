@@ -2,6 +2,12 @@ import Anthropic from '@anthropic-ai/sdk';
 import { ARCHETYPES } from '../data/archetypes';
 import { Option, QUIZ } from '../data/quiz';
 import { RhythmResult } from './score';
+import { supabase } from './supabase';
+
+// Sentinel returned by the function path when the server rate-limit trips, so
+// callers can surface a friendly message instead of a generic error.
+const RATE_LIMITED = '__rate_limited__';
+const RATE_LIMIT_MSG = 'You’re going a little fast for me — give it a few seconds and try again.';
 
 // ---------------------------------------------------------------------------
 // Pulse — Circadia's AI companion.
@@ -86,15 +92,27 @@ function profilePieces(result: RhythmResult, answers: Option[]) {
 // Preferred path: POST structured data to the Supabase Edge Function, which
 // owns the prompt and the key.
 async function callSupabaseFn(kind: 'reading' | 'chat', payload: Record<string, unknown>): Promise<string> {
+  // Send the signed-in user's token so rate limiting is per-user (falls back to
+  // the anon key — then the server limits by IP).
+  let token = SUPA_ANON ?? '';
+  try {
+    if (supabase) {
+      const { data } = await supabase.auth.getSession();
+      if (data.session?.access_token) token = data.session.access_token;
+    }
+  } catch {
+    /* use anon */
+  }
   const res = await fetch(SUPA_FN as string, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      Authorization: `Bearer ${SUPA_ANON ?? ''}`,
+      Authorization: `Bearer ${token}`,
       apikey: SUPA_ANON ?? '',
     },
     body: JSON.stringify({ kind, ...payload }),
   });
+  if (res.status === 429) return RATE_LIMITED;
   if (!res.ok) throw new Error(`pulse-fn ${res.status}`);
   const data = await res.json();
   return String(data.text ?? '').trim();
@@ -137,7 +155,8 @@ export async function generateReading(
   if (!hasAI()) return ARCHETYPES[result.animal].reading;
   if (SUPA_FN) {
     try {
-      return await callSupabaseFn('reading', profilePieces(result, answers));
+      const text = await callSupabaseFn('reading', profilePieces(result, answers));
+      return text === RATE_LIMITED ? ARCHETYPES[result.animal].reading : text;
     } catch {
       return ARCHETYPES[result.animal].reading;
     }
@@ -171,11 +190,12 @@ export async function askPulse(
   }
   if (SUPA_FN) {
     try {
-      return await callSupabaseFn('chat', {
+      const text = await callSupabaseFn('chat', {
         ...profilePieces(result, answers),
         history,
         question,
       });
+      return text === RATE_LIMITED ? RATE_LIMIT_MSG : text;
     } catch {
       return 'Something glitched on my end. Try that again in a moment.';
     }
