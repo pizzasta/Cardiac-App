@@ -17,6 +17,13 @@ export default function App() {
   const [result, setResult] = useState<RhythmResult | null>(null);
   // Kept around so the plan + Pulse can ground content in the user's answers.
   const [answers, setAnswers] = useState<Option[]>([]);
+  // A question to open Pulse with (set when a tip is tapped on the plan).
+  const [pulseSeed, setPulseSeed] = useState<string | undefined>(undefined);
+
+  const openPulse = (seed?: string) => {
+    setPulseSeed(seed);
+    setStage('pulse');
+  };
 
   const handleComplete = (picked: Option[]) => {
     setAnswers(picked);
@@ -47,11 +54,19 @@ export default function App() {
         <PlanScreen
           result={result}
           onBack={() => setStage('reveal')}
-          onPulse={() => setStage('pulse')}
+          onPulse={openPulse}
         />
       )}
       {stage === 'pulse' && result && (
-        <PulseScreen result={result} answers={answers} onBack={() => setStage('plan')} />
+        <PulseScreen
+          result={result}
+          answers={answers}
+          seed={pulseSeed}
+          onBack={() => {
+            setPulseSeed(undefined);
+            setStage('plan');
+          }}
+        />
       )}
     </SafeAreaProvider>
   );

@@ -23,10 +23,14 @@ export default function PulseScreen({
   result,
   answers,
   onBack,
+  seed,
 }: {
   result: RhythmResult;
   answers: Option[];
   onBack: () => void;
+  // If set (e.g. from tapping a tip on the Plan screen), Pulse opens with this
+  // question already asked.
+  seed?: string;
 }) {
   const a = ARCHETYPES[result.animal];
   const [reading, setReading] = useState<string | null>(null);
@@ -37,6 +41,7 @@ export default function PulseScreen({
   const [speak, setSpeak] = useState(false);
   const speakRef = useRef(false);
   const stopListenRef = useRef<null | (() => void)>(null);
+  const seededRef = useRef(false);
   const scroller = useRef<ScrollView>(null);
 
   useEffect(() => {
@@ -45,6 +50,15 @@ export default function PulseScreen({
       Speech.stop();
     };
   }, [result, answers]);
+
+  // Auto-ask the seeded question (e.g. "go deeper on this tip") once on open.
+  useEffect(() => {
+    if (seed && !seededRef.current) {
+      seededRef.current = true;
+      send(seed);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [seed]);
 
   const say = (text: string) => {
     if (speakRef.current) Speech.speak(text, { rate: 0.98, pitch: 1.0 });
