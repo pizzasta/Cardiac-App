@@ -1,6 +1,7 @@
 import React from 'react';
 import { Linking, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
+import { useTopInset } from '../hooks';
 import { SCIENCE } from '../data/science';
 
 // "The science" — verified, cited reasons circadian rhythm matters. Each card
@@ -13,11 +14,12 @@ export default function ScienceScreen({
   accent?: string;
   onClose: () => void;
 }) {
+  const topInset = useTopInset();
   return (
     <View style={styles.fill}>
       <LinearGradient colors={['#08080A', '#141016', '#08080A']} style={StyleSheet.absoluteFill} />
 
-      <View style={styles.header}>
+      <View style={[styles.header, { paddingTop: topInset }]}>
         <Pressable onPress={onClose} hitSlop={12}>
           <Text style={styles.back}>‹ Back</Text>
         </Pressable>

@@ -10,6 +10,7 @@ import {
   View,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
+import { useTopInset } from '../hooks';
 import * as Speech from 'expo-speech';
 import { ARCHETYPES } from '../data/archetypes';
 import { Option } from '../data/quiz';
@@ -104,6 +105,7 @@ export default function PulseScreen({
     );
   };
 
+  const topInset = useTopInset();
   return (
     <View style={styles.fill}>
       <Atmosphere style={StyleSheet.absoluteFill} accent={a.accent} />
@@ -116,7 +118,7 @@ export default function PulseScreen({
         style={styles.fill}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       >
-        <View style={styles.header}>
+        <View style={[styles.header, { paddingTop: topInset }]}>
           <Pressable onPress={onBack} hitSlop={12}>
             <Text style={styles.back}>‹ Back</Text>
           </Pressable>

@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import {
+  ActivityIndicator,
   KeyboardAvoidingView,
   Platform,
   Pressable,
@@ -9,19 +10,64 @@ import {
   View,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
+import { useTopInset } from '../hooks';
 import { useAuth } from '../logic/auth';
+import { F, T } from '../theme';
 
 export default function SignInScreen({ onClose }: { onClose: () => void }) {
-  const { user, googleAvailable, signInWithGoogle, signInWithEmail } = useAuth();
+  const {
+    user,
+    supabaseEnabled,
+    googleAvailable,
+    authError,
+    signInWithGoogle,
+    signInWithEmail,
+    signInWithPassword,
+    signUpWithPassword,
+  } = useAuth();
+  const topInset = useTopInset();
+
+  const [mode, setMode] = useState<'signin' | 'signup'>('signin');
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [busy, setBusy] = useState(false);
 
-  // Close once a session exists (covers the async Google round-trip).
+  // Close once a session exists (covers the async OAuth round-trip).
   useEffect(() => {
     if (user) onClose();
   }, [user, onClose]);
 
   const emailValid = /\S+@\S+\.\S+/.test(email);
+  const passwordValid = password.length >= 6;
+  const canSubmit = supabaseEnabled ? emailValid && passwordValid : emailValid;
+
+  const submit = async () => {
+    if (!canSubmit || busy) return;
+    setBusy(true);
+    try {
+      if (!supabaseEnabled) {
+        await signInWithEmail(name, email);
+      } else if (mode === 'signup') {
+        await signUpWithPassword(email, password, name);
+      } else {
+        await signInWithPassword(email, password);
+      }
+    } catch {
+      /* authError is surfaced from the context */
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const onGoogle = async () => {
+    setBusy(true);
+    try {
+      await signInWithGoogle();
+    } finally {
+      setBusy(false);
+    }
+  };
 
   return (
     <View style={styles.fill}>
@@ -30,7 +76,7 @@ export default function SignInScreen({ onClose }: { onClose: () => void }) {
         style={styles.fill}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       >
-        <View style={styles.header}>
+        <View style={[styles.header, { paddingTop: topInset }]}>
           <Pressable onPress={onClose} hitSlop={12}>
             <Text style={styles.back}>‹ Back</Text>
           </Pressable>
@@ -38,23 +84,23 @@ export default function SignInScreen({ onClose }: { onClose: () => void }) {
         </View>
 
         <View style={styles.body}>
-          <Text style={styles.title}>Save your rhythm</Text>
+          <Text style={styles.title}>
+            {supabaseEnabled && mode === 'signup' ? 'Create your account' : 'Save your rhythm'}
+          </Text>
           <Text style={styles.sub}>
             Sign in to unlock your detailed plan and keep it across devices.
           </Text>
 
           <Pressable
-            style={[styles.google, !googleAvailable && styles.disabled]}
-            onPress={signInWithGoogle}
-            disabled={!googleAvailable}
+            style={[styles.google, (!googleAvailable || busy) && styles.disabled]}
+            onPress={onGoogle}
+            disabled={!googleAvailable || busy}
           >
             <Text style={styles.googleG}>G</Text>
             <Text style={styles.googleText}>Continue with Google</Text>
           </Pressable>
           {!googleAvailable && (
-            <Text style={styles.note}>
-              Google sign-in activates once Google OAuth client IDs are configured.
-            </Text>
+            <Text style={styles.note}>Google sign-in activates once OAuth is configured.</Text>
           )}
 
           <View style={styles.divider}>
@@ -63,14 +109,17 @@ export default function SignInScreen({ onClose }: { onClose: () => void }) {
             <View style={styles.line} />
           </View>
 
-          <TextInput
-            style={styles.input}
-            value={name}
-            onChangeText={setName}
-            placeholder="Name (optional)"
-            placeholderTextColor="rgba(255,255,255,0.45)"
-            autoCapitalize="words"
-          />
+          {/* Name: signup (Supabase) or the passwordless fallback. */}
+          {(!supabaseEnabled || mode === 'signup') && (
+            <TextInput
+              style={styles.input}
+              value={name}
+              onChangeText={setName}
+              placeholder="Name (optional)"
+              placeholderTextColor="rgba(255,255,255,0.45)"
+              autoCapitalize="words"
+            />
+          )}
           <TextInput
             style={styles.input}
             value={email}
@@ -81,17 +130,47 @@ export default function SignInScreen({ onClose }: { onClose: () => void }) {
             autoCapitalize="none"
             autoCorrect={false}
           />
+          {supabaseEnabled && (
+            <TextInput
+              style={styles.input}
+              value={password}
+              onChangeText={setPassword}
+              placeholder="Password (6+ characters)"
+              placeholderTextColor="rgba(255,255,255,0.45)"
+              secureTextEntry
+              autoCapitalize="none"
+            />
+          )}
+
+          {authError && <Text style={styles.error}>{authError}</Text>}
+
           <Pressable
-            style={[styles.cta, !emailValid && styles.disabled]}
-            disabled={!emailValid}
-            onPress={() => signInWithEmail(name, email)}
+            style={[styles.cta, (!canSubmit || busy) && styles.disabled]}
+            disabled={!canSubmit || busy}
+            onPress={submit}
           >
-            <Text style={styles.ctaText}>Continue</Text>
+            {busy ? (
+              <ActivityIndicator color="#08080A" />
+            ) : (
+              <Text style={styles.ctaText}>
+                {supabaseEnabled ? (mode === 'signup' ? 'Create account' : 'Sign in') : 'Continue'}
+              </Text>
+            )}
           </Pressable>
 
-          <Text style={styles.fine}>
-            We use this to save your plan. No password — this is an early prototype.
-          </Text>
+          {supabaseEnabled ? (
+            <Pressable onPress={() => setMode(mode === 'signin' ? 'signup' : 'signin')} hitSlop={10}>
+              <Text style={styles.toggle}>
+                {mode === 'signin'
+                  ? 'New here? Create an account'
+                  : 'Already have an account? Sign in'}
+              </Text>
+            </Pressable>
+          ) : (
+            <Text style={styles.fine}>
+              We use this to save your plan. No password — this is an early prototype.
+            </Text>
+          )}
         </View>
       </KeyboardAvoidingView>
     </View>
@@ -100,10 +179,10 @@ export default function SignInScreen({ onClose }: { onClose: () => void }) {
 
 const styles = StyleSheet.create({
   fill: { ...StyleSheet.absoluteFillObject, backgroundColor: '#08080A' },
-  header: { flexDirection: 'row', justifyContent: 'space-between', paddingTop: 60, paddingHorizontal: 18 },
+  header: { flexDirection: 'row', justifyContent: 'space-between', paddingHorizontal: 18 },
   back: { color: 'rgba(255,255,255,0.85)', fontSize: 16, fontWeight: '600', width: 48 },
   body: { flex: 1, paddingHorizontal: 28, justifyContent: 'center' },
-  title: { color: '#fff', fontSize: 34, fontWeight: '900' },
+  title: { color: '#fff', fontSize: 34, fontFamily: F.display },
   sub: { color: 'rgba(255,255,255,0.78)', fontSize: 16, lineHeight: 23, marginTop: 10, marginBottom: 28 },
   google: {
     flexDirection: 'row',
@@ -131,8 +210,9 @@ const styles = StyleSheet.create({
     fontSize: 15,
     marginBottom: 12,
   },
+  error: { color: T.accent, fontSize: 13, lineHeight: 19, marginBottom: 12, marginTop: -2 },
   cta: {
-    backgroundColor: '#FF2E7E',
+    backgroundColor: T.accent,
     borderRadius: 28,
     paddingVertical: 16,
     alignItems: 'center',
@@ -140,5 +220,6 @@ const styles = StyleSheet.create({
   },
   ctaText: { color: '#08080A', fontSize: 16, fontWeight: '700' },
   disabled: { opacity: 0.45 },
+  toggle: { color: 'rgba(255,255,255,0.75)', fontSize: 14, textAlign: 'center', marginTop: 18, fontWeight: '600' },
   fine: { color: 'rgba(255,255,255,0.45)', fontSize: 12, textAlign: 'center', marginTop: 18, lineHeight: 17 },
 });

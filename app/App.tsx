@@ -28,7 +28,7 @@ import FadeIn from './src/components/FadeIn';
 import { Option } from './src/data/quiz';
 import { ARCHETYPES } from './src/data/archetypes';
 import { RhythmResult, scoreQuiz } from './src/logic/score';
-import { AuthProvider } from './src/logic/auth';
+import { AuthProvider, useAuth } from './src/logic/auth';
 import { useFonts, SpaceGrotesk_700Bold } from '@expo-google-fonts/space-grotesk';
 import { JetBrainsMono_500Medium } from '@expo-google-fonts/jetbrains-mono';
 import { T } from './src/theme';
@@ -53,6 +53,7 @@ function Flow() {
   // App-wide rainforest ambience + persistent mute/volume (remembered across visits).
   const [muted, setMuted] = useState(false);
   const [volume, setVolume] = useState(0.6);
+  const { completeOnboarding } = useAuth();
 
   useEffect(() => {
     let active = true;
@@ -112,6 +113,9 @@ function Flow() {
     setAnswers(picked);
     setResult(scoreQuiz(picked));
     setStage('reading');
+    // The quiz is the onboarding — mark it done so returning users can be routed
+    // straight to their plan/dashboard.
+    completeOnboarding().catch(() => {});
   };
 
   const reset = () => {

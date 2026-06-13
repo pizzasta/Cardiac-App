@@ -9,6 +9,7 @@ import {
   View,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
+import { useTopInset } from '../hooks';
 import { useAuth } from '../logic/auth';
 import { F } from '../theme';
 import { RhythmResult } from '../logic/score';
@@ -75,11 +76,12 @@ export default function SettingsScreen({
     Math.abs(v.value - volume) < Math.abs(best.value - volume) ? v : best
   ).value;
 
+  const topInset = useTopInset();
   return (
     <View style={styles.fill}>
       <LinearGradient colors={['#08080A', '#141016', '#08080A']} style={StyleSheet.absoluteFill} />
 
-      <View style={styles.header}>
+      <View style={[styles.header, { paddingTop: topInset }]}>
         <Pressable onPress={onClose} hitSlop={12}>
           <Text style={styles.back}>‹ Back</Text>
         </Pressable>

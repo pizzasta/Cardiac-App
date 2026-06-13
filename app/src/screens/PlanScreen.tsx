@@ -9,6 +9,7 @@ import {
   View,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
+import { useTopInset } from '../hooks';
 import { ARCHETYPES } from '../data/archetypes';
 import { PLANS } from '../data/plans';
 import { REMINDERS } from '../data/reminders';
@@ -17,7 +18,7 @@ import { DISCLAIMER_FULL } from '../data/disclaimer';
 import { RhythmResult } from '../logic/score';
 import { canSchedule, disable as disableNotifs, enable as enableNotifs, isEnabled } from '../logic/notifications';
 import { load as loadLog, suggestCheckInTime } from '../logic/pulselog';
-import { useAuth } from '../logic/auth';
+import Protected from '../components/Protected';
 import Atmosphere from '../components/Atmosphere';
 import { F } from '../theme';
 
@@ -54,7 +55,6 @@ export default function PlanScreen({
 }) {
   const a = ARCHETYPES[result.animal];
   const plan = PLANS[result.animal];
-  const { user } = useAuth();
 
   const [notifsOn, setNotifsOn] = useState(false);
   const [notifBusy, setNotifBusy] = useState(false);
@@ -95,6 +95,7 @@ export default function PlanScreen({
     }
   };
 
+  const topInset = useTopInset();
   return (
     <View style={styles.fill}>
       <Atmosphere style={StyleSheet.absoluteFill} accent={a.accent} />
@@ -103,7 +104,7 @@ export default function PlanScreen({
         style={StyleSheet.absoluteFill}
       />
 
-      <View style={styles.header}>
+      <View style={[styles.header, { paddingTop: topInset }]}>
         <Pressable onPress={onBack} hitSlop={12}>
           <Text style={styles.back}>‹ Back</Text>
         </Pressable>
@@ -248,7 +249,12 @@ export default function PlanScreen({
         ))}
 
         <Text style={styles.section}>DETAILED PLAN</Text>
-        {user ? (
+        <Protected
+          onSignIn={onSignIn}
+          accent={a.accent}
+          title="🔒 Unlock your detailed plan"
+          message="Sign in to get your weekly-grain plan — deeper scheduling, caffeine and recovery timing, and the patterns to track for your rhythm."
+        >
           <View style={styles.deepCard}>
             {DEEP_DIVE[result.animal].map((d, i) => (
               <View key={i} style={styles.deepRow}>
@@ -257,18 +263,7 @@ export default function PlanScreen({
               </View>
             ))}
           </View>
-        ) : (
-          <Pressable style={[styles.lockCard, { borderColor: `${a.accent}55` }]} onPress={onSignIn}>
-            <Text style={styles.lockTitle}>🔒 Unlock your detailed plan</Text>
-            <Text style={styles.lockText}>
-              Sign in to get your weekly-grain plan — deeper scheduling, caffeine and recovery
-              timing, and the patterns to track for your rhythm.
-            </Text>
-            <View style={[styles.lockBtn, { backgroundColor: a.accent }]}>
-              <Text style={styles.lockBtnText}>Sign in to unlock</Text>
-            </View>
-          </Pressable>
-        )}
+        </Protected>
 
         <Pressable style={[styles.cta, { backgroundColor: a.accent }]} onPress={() => onPulse()}>
           <Text style={styles.ctaText}>Talk to Pulse  →</Text>

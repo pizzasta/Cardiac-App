@@ -9,6 +9,7 @@ import {
   View,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
+import { useTopInset } from '../hooks';
 import * as Haptics from 'expo-haptics';
 import { ARCHETYPES } from '../data/archetypes';
 import { RhythmResult } from '../logic/score';
@@ -75,11 +76,12 @@ export default function CheckInScreen({
   const beatScale = beat.interpolate({ inputRange: [0, 1], outputRange: [1, 1.06] });
   const read = level ? readFor(a.name, level) : null;
 
+  const topInset = useTopInset();
   return (
     <View style={styles.fill}>
       <LinearGradient colors={T.bgGradient} style={StyleSheet.absoluteFill} />
 
-      <View style={styles.header}>
+      <View style={[styles.header, { paddingTop: topInset }]}>
         <Pressable onPress={onClose} hitSlop={12}>
           <Text style={styles.back}>‹ Close</Text>
         </Pressable>
