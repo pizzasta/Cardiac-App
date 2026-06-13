@@ -117,3 +117,26 @@ export async function stop(): Promise<void> {
     birdTimer = null;
   }
 }
+
+// Browsers won't autoplay audio until a user gesture. enableAutoStart tries to
+// start immediately (works if the page already has audio permission) and, if
+// not, starts on the very first tap/touch/key anywhere — so the ambience comes
+// on automatically without the user hunting for a toggle.
+let killAuto: () => void = () => {};
+
+export function enableAutoStart(): void {
+  if (!soundSupported) return;
+  start();
+  const events: (keyof WindowEventMap)[] = ['pointerdown', 'touchstart', 'keydown'];
+  const kick = () => {
+    start();
+    killAuto();
+  };
+  killAuto = () => events.forEach((e) => window.removeEventListener(e, kick));
+  events.forEach((e) => window.addEventListener(e, kick, { once: true }));
+}
+
+export function cancelAutoStart(): void {
+  killAuto();
+  killAuto = () => {};
+}

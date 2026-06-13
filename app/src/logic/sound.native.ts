@@ -13,3 +13,11 @@ export async function start(): Promise<void> {
 export async function stop(): Promise<void> {
   /* no-op */
 }
+
+export function enableAutoStart(): void {
+  /* no-op */
+}
+
+export function cancelAutoStart(): void {
+  /* no-op */
+}
