@@ -64,7 +64,7 @@ export default function Rainforest({
 }) {
   return (
     <View style={[styles.fill, style]}>
-      <LinearGradient colors={['#0c2018', '#10392c', '#081511']} style={StyleSheet.absoluteFill} />
+      <LinearGradient colors={['#0c2018', '#10392c', '#08080A']} style={StyleSheet.absoluteFill} />
 
       {/* layered canopy silhouettes — far to near */}
       <View style={[styles.canopy, { top: -40, opacity: 0.35, backgroundColor: '#13402f' }]} />

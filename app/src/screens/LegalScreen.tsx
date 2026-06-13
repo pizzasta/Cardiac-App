@@ -21,7 +21,7 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 export default function LegalScreen({ onClose }: { onClose: () => void }) {
   return (
     <View style={styles.fill}>
-      <LinearGradient colors={['#0E1424', '#10231d', '#081511']} style={StyleSheet.absoluteFill} />
+      <LinearGradient colors={['#08080A', '#10231d', '#08080A']} style={StyleSheet.absoluteFill} />
 
       <View style={styles.header}>
         <Pressable onPress={onClose} hitSlop={12}>
@@ -83,7 +83,7 @@ export default function LegalScreen({ onClose }: { onClose: () => void }) {
 }
 
 const styles = StyleSheet.create({
-  fill: { ...StyleSheet.absoluteFillObject, backgroundColor: '#081511' },
+  fill: { ...StyleSheet.absoluteFillObject, backgroundColor: '#08080A' },
   header: {
     flexDirection: 'row',
     alignItems: 'center',

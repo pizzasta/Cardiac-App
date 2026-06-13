@@ -25,7 +25,7 @@ export default function SignInScreen({ onClose }: { onClose: () => void }) {
 
   return (
     <View style={styles.fill}>
-      <LinearGradient colors={['#0E1424', '#10231d', '#081511']} style={StyleSheet.absoluteFill} />
+      <LinearGradient colors={['#08080A', '#10231d', '#08080A']} style={StyleSheet.absoluteFill} />
       <KeyboardAvoidingView
         style={styles.fill}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
@@ -99,7 +99,7 @@ export default function SignInScreen({ onClose }: { onClose: () => void }) {
 }
 
 const styles = StyleSheet.create({
-  fill: { ...StyleSheet.absoluteFillObject, backgroundColor: '#081511' },
+  fill: { ...StyleSheet.absoluteFillObject, backgroundColor: '#08080A' },
   header: { flexDirection: 'row', justifyContent: 'space-between', paddingTop: 60, paddingHorizontal: 18 },
   back: { color: 'rgba(255,255,255,0.85)', fontSize: 16, fontWeight: '600', width: 48 },
   body: { flex: 1, paddingHorizontal: 28, justifyContent: 'center' },
@@ -115,7 +115,7 @@ const styles = StyleSheet.create({
     paddingVertical: 16,
   },
   googleG: { color: '#4285F4', fontSize: 20, fontWeight: '900' },
-  googleText: { color: '#0E1424', fontSize: 16, fontWeight: '700' },
+  googleText: { color: '#08080A', fontSize: 16, fontWeight: '700' },
   note: { color: 'rgba(255,255,255,0.5)', fontSize: 12, textAlign: 'center', marginTop: 8, lineHeight: 17 },
   divider: { flexDirection: 'row', alignItems: 'center', gap: 12, marginVertical: 22 },
   line: { flex: 1, height: 1, backgroundColor: 'rgba(255,255,255,0.15)' },
@@ -132,13 +132,13 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   cta: {
-    backgroundColor: '#2BD9C8',
+    backgroundColor: '#FF2E7E',
     borderRadius: 28,
     paddingVertical: 16,
     alignItems: 'center',
     marginTop: 4,
   },
-  ctaText: { color: '#0E1424', fontSize: 16, fontWeight: '700' },
+  ctaText: { color: '#08080A', fontSize: 16, fontWeight: '700' },
   disabled: { opacity: 0.45 },
   fine: { color: 'rgba(255,255,255,0.45)', fontSize: 12, textAlign: 'center', marginTop: 18, lineHeight: 17 },
 });

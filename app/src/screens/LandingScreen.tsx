@@ -8,11 +8,12 @@ import {
   View,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import Rainforest from '../three/Rainforest';
+import Atmosphere from '../components/Atmosphere';
 import { ARCHETYPES } from '../data/archetypes';
 import { DISCLAIMER_SHORT } from '../data/disclaimer';
+import { T } from '../theme';
 
-const ACCENT = '#2BD9C8';
+const ACCENT = T.accent;
 
 const STEPS = [
   { n: '1', t: 'Answer 8 questions', s: 'Sixty seconds. No account, no fluff.' },
@@ -64,9 +65,9 @@ export default function LandingScreen({
       <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
         {/* HERO */}
         <View style={[styles.hero, { minHeight: Math.max(560, height) }]}>
-          <Rainforest style={StyleSheet.absoluteFill} accent={ACCENT} />
+          <Atmosphere style={StyleSheet.absoluteFill} accent={ACCENT} />
           <LinearGradient
-            colors={['rgba(8,21,17,0.15)', 'rgba(8,21,17,0.55)', 'rgba(8,21,17,0.95)']}
+            colors={['rgba(8,8,10,0.15)', 'rgba(8,8,10,0.55)', 'rgba(8,8,10,0.95)']}
             style={StyleSheet.absoluteFill}
           />
 
@@ -206,7 +207,7 @@ function Section({ label, children }: { label?: string; children: React.ReactNod
 }
 
 const styles = StyleSheet.create({
-  fill: { flex: 1, backgroundColor: '#081511' },
+  fill: { flex: 1, backgroundColor: '#08080A' },
   scroll: { paddingBottom: 40 },
 
   hero: { paddingHorizontal: 28, justifyContent: 'flex-end', paddingBottom: 56 },
@@ -245,14 +246,14 @@ const styles = StyleSheet.create({
   animalEmoji: { fontSize: 28 },
   animalName: { color: '#fff', fontSize: 13, fontWeight: '600', marginTop: 6 },
 
-  featCard: { backgroundColor: 'rgba(14,20,36,0.5)', borderColor: 'rgba(255,255,255,0.1)', borderWidth: 1, borderRadius: 16, padding: 16, marginBottom: 10 },
+  featCard: { backgroundColor: 'rgba(18,18,20,0.5)', borderColor: 'rgba(255,255,255,0.1)', borderWidth: 1, borderRadius: 16, padding: 16, marginBottom: 10 },
   featTitle: { color: '#fff', fontSize: 16, fontWeight: '700' },
   featSub: { color: 'rgba(255,255,255,0.72)', fontSize: 14, lineHeight: 20, marginTop: 4 },
 
   bubble: { maxWidth: '88%', borderRadius: 18, paddingVertical: 12, paddingHorizontal: 16, marginBottom: 10 },
   userBubble: { alignSelf: 'flex-end', backgroundColor: 'rgba(255,255,255,0.92)' },
   pulseBubble: { alignSelf: 'flex-start', backgroundColor: 'rgba(255,255,255,0.10)', borderColor: 'rgba(255,255,255,0.14)', borderWidth: 1 },
-  userText: { color: '#0E1424', fontSize: 15, fontWeight: '600' },
+  userText: { color: '#08080A', fontSize: 15, fontWeight: '600' },
   pulseText: { color: '#fff', fontSize: 15, lineHeight: 22 },
 
   stayRow: { flexDirection: 'row', gap: 10, marginBottom: 12 },
@@ -263,7 +264,7 @@ const styles = StyleSheet.create({
   scienceLink: { color: ACCENT, fontSize: 15, fontWeight: '700', marginTop: 10 },
 
   cta: { backgroundColor: '#fff', borderRadius: 30, paddingVertical: 17, alignItems: 'center', marginTop: 20, alignSelf: 'center', width: '100%', maxWidth: 380 },
-  ctaText: { color: '#0E1424', fontSize: 17, fontWeight: '700' },
+  ctaText: { color: '#08080A', fontSize: 17, fontWeight: '700' },
 
   footer: { paddingHorizontal: 28, paddingTop: 28, alignItems: 'center', gap: 12 },
   footNote: { color: 'rgba(255,255,255,0.45)', fontSize: 12, textAlign: 'center' },

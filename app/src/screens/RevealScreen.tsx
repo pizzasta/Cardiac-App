@@ -47,7 +47,7 @@ export default function RevealScreen({
     <View style={styles.fill}>
       <LinearGradient colors={a.gradient} style={StyleSheet.absoluteFill} />
       <LinearGradient
-        colors={['rgba(8,21,17,0.2)', 'rgba(8,21,17,0.55)']}
+        colors={['rgba(8,8,10,0.2)', 'rgba(8,8,10,0.55)']}
         style={StyleSheet.absoluteFill}
       />
 
@@ -110,7 +110,7 @@ function Chip({ label, value, accent }: { label: string; value: string; accent: 
 }
 
 const styles = StyleSheet.create({
-  fill: { flex: 1, backgroundColor: '#081511' },
+  fill: { flex: 1, backgroundColor: '#08080A' },
   body: { paddingHorizontal: 24, paddingTop: 70, paddingBottom: 44, alignItems: 'center' },
   kicker: {
     color: 'rgba(255,255,255,0.7)',
@@ -147,7 +147,7 @@ const styles = StyleSheet.create({
   },
   traits: { width: '100%', maxWidth: 360, gap: 10, marginTop: 22 },
   traitCard: {
-    backgroundColor: 'rgba(14,20,36,0.4)',
+    backgroundColor: 'rgba(18,18,20,0.4)',
     borderRadius: 16,
     borderWidth: 1,
     paddingVertical: 12,
@@ -176,7 +176,7 @@ const styles = StyleSheet.create({
     maxWidth: 360,
     width: '100%',
   },
-  ctaText: { color: '#0E1424', fontSize: 18, fontWeight: '700' },
+  ctaText: { color: '#08080A', fontSize: 18, fontWeight: '700' },
   retake: {
     color: 'rgba(255,255,255,0.7)',
     textAlign: 'center',
