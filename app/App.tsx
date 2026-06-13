@@ -9,7 +9,9 @@ import PlanScreen from './src/screens/PlanScreen';
 import PulseScreen from './src/screens/PulseScreen';
 import LegalScreen from './src/screens/LegalScreen';
 import SignInScreen from './src/screens/SignInScreen';
+import ScienceScreen from './src/screens/ScienceScreen';
 import { Option } from './src/data/quiz';
+import { ARCHETYPES } from './src/data/archetypes';
 import { RhythmResult, scoreQuiz } from './src/logic/score';
 import { AuthProvider } from './src/logic/auth';
 
@@ -25,6 +27,7 @@ function Flow() {
   // Overlays, openable from any screen.
   const [showLegal, setShowLegal] = useState(false);
   const [showSignIn, setShowSignIn] = useState(false);
+  const [showScience, setShowScience] = useState(false);
 
   const openPulse = (seed?: string) => {
     setPulseSeed(seed);
@@ -64,6 +67,7 @@ function Flow() {
           onPulse={openPulse}
           onLegal={() => setShowLegal(true)}
           onSignIn={() => setShowSignIn(true)}
+          onScience={() => setShowScience(true)}
         />
       )}
       {stage === 'pulse' && result && (
@@ -80,6 +84,12 @@ function Flow() {
 
       {showLegal && <LegalScreen onClose={() => setShowLegal(false)} />}
       {showSignIn && <SignInScreen onClose={() => setShowSignIn(false)} />}
+      {showScience && (
+        <ScienceScreen
+          accent={result ? ARCHETYPES[result.animal].accent : undefined}
+          onClose={() => setShowScience(false)}
+        />
+      )}
     </>
   );
 }
