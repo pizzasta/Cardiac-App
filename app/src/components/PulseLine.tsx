@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useMemo, useRef } from 'react';
 import { Animated, Easing, StyleProp, View, ViewStyle } from 'react-native';
 import Svg, { Polyline } from 'react-native-svg';
 import { T } from '../theme';
@@ -33,7 +33,7 @@ function beatPoints(height: number): string {
   return pts.join(' ');
 }
 
-export default function PulseLine({
+function PulseLine({
   height = 64,
   color = T.accent,
   glow = T.accent2,
@@ -47,7 +47,7 @@ export default function PulseLine({
   style?: StyleProp<ViewStyle>;
 }) {
   const x = useRef(new Animated.Value(0)).current;
-  const points = beatPoints(height);
+  const points = useMemo(() => beatPoints(height), [height]);
 
   useEffect(() => {
     const loop = Animated.loop(
@@ -76,3 +76,7 @@ export default function PulseLine({
     </View>
   );
 }
+
+// Memoized: the waveform animates on its own clock and shouldn't re-render when
+// a parent updates (e.g. typing in the Pulse chat).
+export default React.memo(PulseLine);

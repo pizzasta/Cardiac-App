@@ -77,7 +77,7 @@ export default function SettingsScreen({
 
   return (
     <View style={styles.fill}>
-      <LinearGradient colors={['#08080A', '#10231d', '#08080A']} style={StyleSheet.absoluteFill} />
+      <LinearGradient colors={['#08080A', '#141016', '#08080A']} style={StyleSheet.absoluteFill} />
 
       <View style={styles.header}>
         <Pressable onPress={onClose} hitSlop={12}>

@@ -24,6 +24,7 @@ import SettingsScreen from './src/screens/SettingsScreen';
 import CheckInScreen from './src/screens/CheckInScreen';
 import TrendsScreen from './src/screens/TrendsScreen';
 import SignalCardScreen from './src/screens/SignalCardScreen';
+import FadeIn from './src/components/FadeIn';
 import { Option } from './src/data/quiz';
 import { ARCHETYPES } from './src/data/archetypes';
 import { RhythmResult, scoreQuiz } from './src/logic/score';
@@ -122,48 +123,64 @@ function Flow() {
   return (
     <>
       {stage === 'landing' && (
-        <LandingScreen
-          onStart={() => setStage('quiz')}
-          onLegal={() => setShowLegal(true)}
-          onSignIn={() => setShowSignIn(true)}
-          onSettings={() => setShowSettings(true)}
-          onScience={() => setShowScience(true)}
-        />
+        <FadeIn key="landing">
+          <LandingScreen
+            onStart={() => setStage('quiz')}
+            onLegal={() => setShowLegal(true)}
+            onSignIn={() => setShowSignIn(true)}
+            onSettings={() => setShowSettings(true)}
+            onScience={() => setShowScience(true)}
+          />
+        </FadeIn>
       )}
-      {stage === 'quiz' && <QuizScreen onComplete={handleComplete} />}
-      {stage === 'reading' && <ReadingScreen onDone={() => setStage('reveal')} />}
+      {stage === 'quiz' && (
+        <FadeIn key="quiz">
+          <QuizScreen onComplete={handleComplete} />
+        </FadeIn>
+      )}
+      {stage === 'reading' && (
+        <FadeIn key="reading">
+          <ReadingScreen onDone={() => setStage('reveal')} />
+        </FadeIn>
+      )}
       {stage === 'reveal' && result && (
-        <RevealScreen
-          result={result}
-          onRetake={reset}
-          onContinue={() => setStage('plan')}
-          onShare={() => setShowCard(true)}
-        />
+        <FadeIn key="reveal">
+          <RevealScreen
+            result={result}
+            onRetake={reset}
+            onContinue={() => setStage('plan')}
+            onShare={() => setShowCard(true)}
+          />
+        </FadeIn>
       )}
       {stage === 'plan' && result && (
-        <PlanScreen
-          result={result}
-          onBack={() => setStage('reveal')}
-          onPulse={openPulse}
-          onLegal={() => setShowLegal(true)}
-          onSignIn={() => setShowSignIn(true)}
-          onScience={() => setShowScience(true)}
-          onSettings={() => setShowSettings(true)}
-          onCheckIn={() => setShowCheckIn(true)}
-          onTrends={() => setShowTrends(true)}
-          onShareCard={() => setShowCard(true)}
-        />
+        <FadeIn key="plan">
+          <PlanScreen
+            result={result}
+            onBack={() => setStage('reveal')}
+            onPulse={openPulse}
+            onLegal={() => setShowLegal(true)}
+            onSignIn={() => setShowSignIn(true)}
+            onScience={() => setShowScience(true)}
+            onSettings={() => setShowSettings(true)}
+            onCheckIn={() => setShowCheckIn(true)}
+            onTrends={() => setShowTrends(true)}
+            onShareCard={() => setShowCard(true)}
+          />
+        </FadeIn>
       )}
       {stage === 'pulse' && result && (
-        <PulseScreen
-          result={result}
-          answers={answers}
-          seed={pulseSeed}
-          onBack={() => {
-            setPulseSeed(undefined);
-            setStage('plan');
-          }}
-        />
+        <FadeIn key="pulse">
+          <PulseScreen
+            result={result}
+            answers={answers}
+            seed={pulseSeed}
+            onBack={() => {
+              setPulseSeed(undefined);
+              setStage('plan');
+            }}
+          />
+        </FadeIn>
       )}
 
       {showLegal && <LegalScreen onClose={() => setShowLegal(false)} />}
@@ -273,7 +290,13 @@ export default function App() {
       <AuthProvider>
         <SafeAreaProvider>
           <StatusBar style="light" />
-          {ready ? <Flow /> : <View style={{ flex: 1, backgroundColor: T.bg }} />}
+          {/* Centered max-width column: phones fill it; tablet/desktop get a
+              premium centered app instead of edge-to-edge stretch. */}
+          <View style={styles.appBg}>
+            <View style={styles.appColumn}>
+              {ready ? <Flow /> : <View style={{ flex: 1, backgroundColor: T.bg }} />}
+            </View>
+          </View>
         </SafeAreaProvider>
       </AuthProvider>
     </ErrorBoundary>
@@ -281,6 +304,8 @@ export default function App() {
 }
 
 const styles = StyleSheet.create({
+  appBg: { flex: 1, backgroundColor: '#000', alignItems: 'center' },
+  appColumn: { flex: 1, width: '100%', maxWidth: 520, overflow: 'hidden' },
   errFill: {
     flex: 1,
     backgroundColor: T.bg,

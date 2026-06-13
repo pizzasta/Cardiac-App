@@ -8,7 +8,7 @@ import { T } from '../theme';
 // and the living ECG pulse line. Replaces the old rainforest visuals (the
 // rainforest *sound* lives on separately).
 
-export default function Atmosphere({
+function Atmosphere({
   accent = T.accent,
   style,
   pulse = true,
@@ -26,6 +26,10 @@ export default function Atmosphere({
     </View>
   );
 }
+
+// Memoized: the backdrop is static aside from its own animation, so it
+// shouldn't re-render with parent state (e.g. the Pulse chat input).
+export default React.memo(Atmosphere);
 
 const styles = StyleSheet.create({
   base: { backgroundColor: T.bg, overflow: 'hidden' },
