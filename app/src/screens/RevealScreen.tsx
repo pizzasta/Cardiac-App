@@ -21,10 +21,12 @@ export default function RevealScreen({
   result,
   onContinue,
   onRetake,
+  onShare,
 }: {
   result: RhythmResult;
   onContinue: () => void;
   onRetake: () => void;
+  onShare: () => void;
 }) {
   const a = ARCHETYPES[result.animal];
 
@@ -108,6 +110,9 @@ export default function RevealScreen({
 
           <Pressable style={styles.cta} onPress={onContinue}>
             <Text style={styles.ctaText}>See my rhythm  →</Text>
+          </Pressable>
+          <Pressable style={[styles.shareBtn, { borderColor: `${a.accent}66` }]} onPress={onShare}>
+            <Text style={[styles.shareText, { color: a.accent }]}>Share this  ↗</Text>
           </Pressable>
           <Pressable onPress={onRetake} hitSlop={12}>
             <Text style={styles.retake}>Retake the quiz</Text>
@@ -202,6 +207,17 @@ const styles = StyleSheet.create({
     width: '100%',
   },
   ctaText: { color: '#08080A', fontSize: 18, fontWeight: '700' },
+  shareBtn: {
+    borderWidth: 1,
+    borderRadius: 30,
+    paddingVertical: 14,
+    alignItems: 'center',
+    marginTop: 12,
+    alignSelf: 'stretch',
+    maxWidth: 360,
+    width: '100%',
+  },
+  shareText: { fontSize: 15, fontWeight: '700' },
   retake: {
     color: 'rgba(255,255,255,0.7)',
     textAlign: 'center',

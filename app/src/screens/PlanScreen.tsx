@@ -34,6 +34,9 @@ export default function PlanScreen({
   onSignIn,
   onScience,
   onSettings,
+  onCheckIn,
+  onTrends,
+  onShareCard,
 }: {
   result: RhythmResult;
   onBack: () => void;
@@ -44,6 +47,9 @@ export default function PlanScreen({
   onSignIn: () => void;
   onScience: () => void;
   onSettings: () => void;
+  onCheckIn: () => void;
+  onTrends: () => void;
+  onShareCard: () => void;
 }) {
   const a = ARCHETYPES[result.animal];
   const plan = PLANS[result.animal];
@@ -106,6 +112,23 @@ export default function PlanScreen({
           <Chip label="Peak" value={result.peak} accent={a.accent} />
           <Chip label="Crash" value={result.crash} accent={a.accent} />
           <Chip label="Recharge" value={result.recharge} accent={a.accent} />
+        </View>
+
+        <Text style={styles.section}>DAILY PULSE</Text>
+        <Pressable style={[styles.pulseCard, { borderColor: `${a.accent}55` }]} onPress={onCheckIn}>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.pulseTitle}>Check in — 10 seconds</Text>
+            <Text style={styles.pulseSub}>Log today’s signal. No streak to protect, just an honest read.</Text>
+          </View>
+          <Text style={[styles.pulseArrow, { color: a.accent }]}>→</Text>
+        </Pressable>
+        <View style={styles.pulseLinks}>
+          <Pressable onPress={onTrends} hitSlop={8}>
+            <Text style={[styles.pulseLink, { color: a.accent }]}>See your trends</Text>
+          </Pressable>
+          <Pressable onPress={onShareCard} hitSlop={8}>
+            <Text style={[styles.pulseLink, { color: a.accent }]}>Share your Signal Card ↗</Text>
+          </Pressable>
         </View>
 
         <Text style={styles.section}>SLEEP WINDOW</Text>
@@ -288,6 +311,21 @@ const styles = StyleSheet.create({
     marginTop: 30,
     marginBottom: 14,
   },
+  pulseCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    backgroundColor: 'rgba(18,18,20,0.5)',
+    borderWidth: 1,
+    borderRadius: 18,
+    paddingVertical: 18,
+    paddingHorizontal: 18,
+  },
+  pulseTitle: { color: '#fff', fontSize: 16, fontWeight: '700' },
+  pulseSub: { color: 'rgba(255,255,255,0.7)', fontSize: 13, lineHeight: 19, marginTop: 3 },
+  pulseArrow: { fontSize: 22, fontWeight: '800' },
+  pulseLinks: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 14 },
+  pulseLink: { fontSize: 14, fontWeight: '700' },
   sleepCard: {
     backgroundColor: 'rgba(18,18,20,0.5)',
     borderColor: 'rgba(255,255,255,0.14)',
