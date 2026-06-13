@@ -7,7 +7,17 @@ import { LinearGradient } from 'expo-linear-gradient';
 // mood with layered gradients, soft canopy silhouettes, and drifting spores —
 // no Three.js, so the web/Pages bundle stays light.
 
-function Spore({ delay, left, size }: { delay: number; left: string; size: number }) {
+function Spore({
+  delay,
+  left,
+  size,
+  accent,
+}: {
+  delay: number;
+  left: string;
+  size: number;
+  accent: string;
+}) {
   const rise = useRef(new Animated.Value(0)).current;
   useEffect(() => {
     const loop = Animated.loop(
@@ -30,13 +40,28 @@ function Spore({ delay, left, size }: { delay: number; left: string; size: numbe
     <Animated.View
       style={[
         styles.spore,
-        { left: left as any, width: size, height: size, borderRadius: size / 2, opacity, transform: [{ translateY }] },
+        {
+          left: left as any,
+          width: size,
+          height: size,
+          borderRadius: size / 2,
+          opacity,
+          backgroundColor: accent,
+          shadowColor: accent,
+          transform: [{ translateY }],
+        },
       ]}
     />
   );
 }
 
-export default function Rainforest({ style }: { style?: StyleProp<ViewStyle> }) {
+export default function Rainforest({
+  style,
+  accent = '#5fe6c0',
+}: {
+  style?: StyleProp<ViewStyle>;
+  accent?: string;
+}) {
   return (
     <View style={[styles.fill, style]}>
       <LinearGradient colors={['#0c2018', '#10392c', '#081511']} style={StyleSheet.absoluteFill} />
@@ -54,11 +79,11 @@ export default function Rainforest({ style }: { style?: StyleProp<ViewStyle> }) 
       />
 
       {/* drifting bioluminescent spores */}
-      <Spore delay={0} left="20%" size={6} />
-      <Spore delay={2200} left="48%" size={4} />
-      <Spore delay={4200} left="68%" size={7} />
-      <Spore delay={6200} left="82%" size={4} />
-      <Spore delay={1200} left="34%" size={5} />
+      <Spore delay={0} left="20%" size={6} accent={accent} />
+      <Spore delay={2200} left="48%" size={4} accent={accent} />
+      <Spore delay={4200} left="68%" size={7} accent={accent} />
+      <Spore delay={6200} left="82%" size={4} accent={accent} />
+      <Spore delay={1200} left="34%" size={5} accent={accent} />
 
       {/* trunk silhouettes */}
       <View style={[styles.trunk, { left: '12%', width: 26 }]} />

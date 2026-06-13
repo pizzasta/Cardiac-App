@@ -33,9 +33,33 @@ npm start        # then press w (web), i (iOS sim), or a (Android),
 | `src/screens/QuizScreen.tsx` | Swipe-free quiz; selecting an answer advances + haptics |
 | `src/screens/ReadingScreen.tsx` | Short anticipation beat before the reveal |
 | `src/screens/RevealScreen.tsx` | The centerpiece — animated archetype card |
-| `src/screens/PulseScreen.tsx` | The AI companion — generated reading + follow-up chat |
+| `src/screens/PlanScreen.tsx` | Archetype rhythm plan — adaptive daily flow + tips |
+| `src/screens/PulseScreen.tsx` | The AI companion — reading + chat + voice |
+| `src/data/plans.ts` | Per-archetype rhythm plans (daily flow + tips) |
+| `src/logic/voice.ts` / `.native.ts` | Speech-to-text (Web Speech API on web; native fallback) |
 | `src/three/Rainforest.native.tsx` | 3D Amazon-rainforest backdrop (Three.js / `@react-three/fiber` on `expo-gl`) |
 | `src/three/Rainforest.tsx` | Web fallback — layered-gradient rainforest (no Three.js) |
+
+The flow is now **hook → quiz → reading → reveal → plan → pulse**, and the
+tinted rainforest sits behind the reveal, plan, and Pulse screens (each themed
+to the archetype's accent).
+
+## The rhythm plan
+
+After the reveal, "See my rhythm" opens a per-archetype **rhythm plan**
+(`src/data/plans.ts`): a time-anchored daily flow (e.g. a Dolphin's "1:45 —
+crash incoming, water not coffee") plus targeted tips for focus, recovery,
+sleep, and the archetype's specific failure mode. Each plan is grounded in that
+animal's peak window, crash, and recharge style — not generic wellness copy.
+
+## Voice (Pulse)
+
+Pulse is voice-activated:
+- **Speech-to-text** — tap the mic and talk; on **web** this uses the browser's
+  Web Speech API (`voice.ts`). On **native** it degrades gracefully (`voice.native.ts`)
+  — on-device STT needs a custom dev build, not Expo Go — and the mic hides.
+- **Spoken replies** — the 🔊 toggle has Pulse speak its answers via
+  `expo-speech` (works on native and web). Tap the reading card to hear it.
 
 ## The 3D rainforest backdrop
 

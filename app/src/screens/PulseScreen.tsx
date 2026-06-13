@@ -1,8 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
-  Animated,
-  Easing,
   KeyboardAvoidingView,
   Platform,
   Pressable,
@@ -13,10 +11,13 @@ import {
   View,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
+import * as Speech from 'expo-speech';
 import { ARCHETYPES } from '../data/archetypes';
 import { Option } from '../data/quiz';
 import { RhythmResult } from '../logic/score';
 import { askPulse, ChatTurn, generateReading, hasAI } from '../logic/ai';
+import { listen, voiceSupported } from '../logic/voice';
+import Rainforest from '../three/Rainforest';
 
 export default function PulseScreen({
   result,
@@ -32,26 +33,32 @@ export default function PulseScreen({
   const [turns, setTurns] = useState<ChatTurn[]>([]);
   const [input, setInput] = useState('');
   const [thinking, setThinking] = useState(false);
+  const [listening, setListening] = useState(false);
+  const [speak, setSpeak] = useState(false);
+  const speakRef = useRef(false);
+  const stopListenRef = useRef<null | (() => void)>(null);
   const scroller = useRef<ScrollView>(null);
-
-  // Breathing pulse on the orb while Pulse "reads".
-  const pulse = useRef(new Animated.Value(0)).current;
-  useEffect(() => {
-    Animated.loop(
-      Animated.sequence([
-        Animated.timing(pulse, { toValue: 1, duration: 1400, easing: Easing.inOut(Easing.ease), useNativeDriver: true }),
-        Animated.timing(pulse, { toValue: 0, duration: 1400, easing: Easing.inOut(Easing.ease), useNativeDriver: true }),
-      ])
-    ).start();
-  }, [pulse]);
-  const orbScale = pulse.interpolate({ inputRange: [0, 1], outputRange: [0.9, 1.15] });
 
   useEffect(() => {
     generateReading(result, answers).then(setReading);
+    return () => {
+      Speech.stop();
+    };
   }, [result, answers]);
 
-  const send = async () => {
-    const q = input.trim();
+  const say = (text: string) => {
+    if (speakRef.current) Speech.speak(text, { rate: 0.98, pitch: 1.0 });
+  };
+
+  const toggleSpeak = () => {
+    const next = !speak;
+    setSpeak(next);
+    speakRef.current = next;
+    if (!next) Speech.stop();
+  };
+
+  const send = async (override?: string) => {
+    const q = (override ?? input).trim();
     if (!q || thinking) return;
     setInput('');
     const next = [...turns, { role: 'user' as const, text: q }];
@@ -60,10 +67,35 @@ export default function PulseScreen({
     const reply = await askPulse(result, answers, turns, q);
     setTurns([...next, { role: 'assistant', text: reply }]);
     setThinking(false);
+    say(reply);
+  };
+
+  const toggleMic = () => {
+    if (listening) {
+      stopListenRef.current?.();
+      setListening(false);
+      return;
+    }
+    Speech.stop();
+    setListening(true);
+    stopListenRef.current = listen(
+      (text) => {
+        setListening(false);
+        send(text);
+      },
+      () => setListening(false),
+      () => setListening(false)
+    );
   };
 
   return (
-    <LinearGradient colors={a.gradient} style={styles.fill}>
+    <View style={styles.fill}>
+      <Rainforest style={StyleSheet.absoluteFill} accent={a.accent} />
+      <LinearGradient
+        colors={[`${a.gradient[0]}cc`, 'rgba(8,21,17,0.8)', 'rgba(8,21,17,0.94)']}
+        style={StyleSheet.absoluteFill}
+      />
+
       <KeyboardAvoidingView
         style={styles.fill}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
@@ -72,10 +104,12 @@ export default function PulseScreen({
           <Pressable onPress={onBack} hitSlop={12}>
             <Text style={styles.back}>‹ Back</Text>
           </Pressable>
-          <Text style={styles.headerTitle}>
-            {a.emoji}  Pulse
-          </Text>
-          <View style={{ width: 48 }} />
+          <Text style={styles.headerTitle}>{a.emoji}  Pulse</Text>
+          <Pressable onPress={toggleSpeak} hitSlop={12} style={styles.speaker}>
+            <Text style={[styles.speakerIcon, speak && { color: a.accent }]}>
+              {speak ? '🔊' : '🔇'}
+            </Text>
+          </Pressable>
         </View>
 
         <ScrollView
@@ -84,18 +118,14 @@ export default function PulseScreen({
           contentContainerStyle={styles.body}
           onContentSizeChange={() => scroller.current?.scrollToEnd({ animated: true })}
         >
-          {/* The opening reading */}
-          <View style={styles.readingCard}>
+          <Pressable style={styles.readingCard} onPress={() => reading && say(reading)}>
             <Text style={[styles.readingKicker, { color: a.accent }]}>YOUR FIRST READ</Text>
             {reading ? (
               <Text style={styles.readingText}>{reading}</Text>
             ) : (
-              <View style={styles.readingLoading}>
-                <Animated.View style={[styles.orb, { backgroundColor: a.accent, transform: [{ scale: orbScale }] }]} />
-                <Text style={styles.readingPending}>Reading your patterns…</Text>
-              </View>
+              <Text style={styles.readingPending}>Reading your patterns…</Text>
             )}
-          </View>
+          </Pressable>
 
           {turns.map((t, i) => (
             <View
@@ -114,36 +144,56 @@ export default function PulseScreen({
 
           {turns.length === 0 && reading && (
             <Text style={styles.hint}>
-              Ask me anything — “when should I work out?”, “why am I so tired at 2pm?”
+              {voiceSupported
+                ? 'Tap the mic and talk, or type. Tap the reading to hear it.'
+                : 'Ask me anything — “when should I work out?”, “why am I tired at 2pm?”'}
             </Text>
           )}
         </ScrollView>
 
         <View style={styles.inputRow}>
+          {voiceSupported && (
+            <Pressable
+              style={[
+                styles.micBtn,
+                { borderColor: a.accent },
+                listening && { backgroundColor: a.accent },
+              ]}
+              onPress={toggleMic}
+            >
+              <Text style={[styles.micIcon, listening && { color: '#0E1424' }]}>🎙</Text>
+            </Pressable>
+          )}
           <TextInput
             style={styles.input}
             value={input}
             onChangeText={setInput}
-            placeholder={hasAI() ? 'Ask Pulse…' : 'Add an API key to chat'}
+            placeholder={
+              listening ? 'Listening…' : hasAI() ? 'Ask Pulse…' : 'Add an API key to chat'
+            }
             placeholderTextColor="rgba(255,255,255,0.45)"
-            editable={hasAI()}
-            onSubmitEditing={send}
+            editable={hasAI() && !listening}
+            onSubmitEditing={() => send()}
             returnKeyType="send"
           />
           <Pressable
-            style={[styles.sendBtn, { backgroundColor: a.accent }, (!input.trim() || thinking) && styles.sendDisabled]}
-            onPress={send}
+            style={[
+              styles.sendBtn,
+              { backgroundColor: a.accent },
+              (!input.trim() || thinking) && styles.sendDisabled,
+            ]}
+            onPress={() => send()}
           >
             <Text style={styles.sendText}>↑</Text>
           </Pressable>
         </View>
       </KeyboardAvoidingView>
-    </LinearGradient>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  fill: { flex: 1 },
+  fill: { flex: 1, backgroundColor: '#081511' },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -154,9 +204,11 @@ const styles = StyleSheet.create({
   },
   back: { color: 'rgba(255,255,255,0.85)', fontSize: 16, fontWeight: '600', width: 48 },
   headerTitle: { color: '#fff', fontSize: 18, fontWeight: '800' },
+  speaker: { width: 48, alignItems: 'flex-end' },
+  speakerIcon: { fontSize: 18, color: 'rgba(255,255,255,0.6)' },
   body: { paddingHorizontal: 18, paddingBottom: 18 },
   readingCard: {
-    backgroundColor: 'rgba(14,20,36,0.5)',
+    backgroundColor: 'rgba(14,20,36,0.55)',
     borderColor: 'rgba(255,255,255,0.16)',
     borderWidth: 1,
     borderRadius: 22,
@@ -166,8 +218,6 @@ const styles = StyleSheet.create({
   },
   readingKicker: { fontSize: 12, fontWeight: '700', letterSpacing: 1, marginBottom: 10 },
   readingText: { color: '#fff', fontSize: 17, lineHeight: 25, fontWeight: '500' },
-  readingLoading: { alignItems: 'center', paddingVertical: 16, gap: 14 },
-  orb: { width: 54, height: 54, borderRadius: 27, opacity: 0.6 },
   readingPending: { color: 'rgba(255,255,255,0.7)', fontSize: 14 },
   bubble: { maxWidth: '85%', borderRadius: 18, paddingVertical: 12, paddingHorizontal: 16, marginBottom: 10 },
   userBubble: { alignSelf: 'flex-end', backgroundColor: 'rgba(255,255,255,0.92)' },
@@ -176,6 +226,15 @@ const styles = StyleSheet.create({
   pulseText: { color: '#fff', fontSize: 15, lineHeight: 22 },
   hint: { color: 'rgba(255,255,255,0.55)', fontSize: 13, textAlign: 'center', marginTop: 8, lineHeight: 19 },
   inputRow: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 16, paddingBottom: 28, paddingTop: 6 },
+  micBtn: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    borderWidth: 1.5,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  micIcon: { fontSize: 18, color: '#fff' },
   input: {
     flex: 1,
     backgroundColor: 'rgba(255,255,255,0.10)',

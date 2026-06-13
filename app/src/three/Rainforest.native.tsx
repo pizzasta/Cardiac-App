@@ -97,7 +97,7 @@ function Forest() {
   );
 }
 
-function Spores() {
+function Spores({ accent }: { accent: string }) {
   const ref = useRef<THREE.Points>(null);
 
   const { geometry, speeds } = useMemo(() => {
@@ -130,7 +130,7 @@ function Spores() {
   return (
     <points ref={ref} geometry={geometry}>
       <pointsMaterial
-        color="#5fe6c0"
+        color={accent}
         size={0.18}
         transparent
         opacity={0.85}
@@ -163,9 +163,7 @@ function LightShafts() {
   );
 }
 
-function Scene() {
-  const camera = useRef<THREE.PerspectiveCamera>(null);
-
+function Scene({ accent }: { accent: string }) {
   // Slow, calm camera drift — a held breath, not a flythrough.
   useFrame((state) => {
     const t = state.clock.elapsedTime;
@@ -182,11 +180,11 @@ function Scene() {
       <ambientLight intensity={0.45} color="#8fd6b0" />
       {/* warm canopy light */}
       <directionalLight position={[6, 18, -4]} intensity={1.1} color="#ffe6b0" />
-      {/* teal bounce for the bioluminescent feel */}
-      <pointLight position={[-6, 3, 2]} intensity={0.6} color="#2bd9c8" distance={30} />
+      {/* accent bounce for the bioluminescent feel */}
+      <pointLight position={[-6, 3, 2]} intensity={0.6} color={accent} distance={30} />
 
       <Forest />
-      <Spores />
+      <Spores accent={accent} />
       <LightShafts />
 
       {/* forest floor */}
@@ -198,7 +196,13 @@ function Scene() {
   );
 }
 
-export default function Rainforest({ style }: { style?: any }) {
+export default function Rainforest({
+  style,
+  accent = '#5fe6c0',
+}: {
+  style?: any;
+  accent?: string;
+}) {
   return (
     <Canvas
       style={style}
@@ -206,7 +210,7 @@ export default function Rainforest({ style }: { style?: any }) {
       camera={{ position: [0, 1.2, 6], fov: 70, near: 0.1, far: 60 }}
       onCreated={({ gl }) => gl.setClearColor(FOG_COLOR)}
     >
-      <Scene />
+      <Scene accent={accent} />
     </Canvas>
   );
 }

@@ -5,16 +5,17 @@ import HookScreen from './src/screens/HookScreen';
 import QuizScreen from './src/screens/QuizScreen';
 import ReadingScreen from './src/screens/ReadingScreen';
 import RevealScreen from './src/screens/RevealScreen';
+import PlanScreen from './src/screens/PlanScreen';
 import PulseScreen from './src/screens/PulseScreen';
 import { Option } from './src/data/quiz';
 import { RhythmResult, scoreQuiz } from './src/logic/score';
 
-type Stage = 'hook' | 'quiz' | 'reading' | 'reveal' | 'pulse';
+type Stage = 'hook' | 'quiz' | 'reading' | 'reveal' | 'plan' | 'pulse';
 
 export default function App() {
   const [stage, setStage] = useState<Stage>('hook');
   const [result, setResult] = useState<RhythmResult | null>(null);
-  // Kept around so Pulse can ground its reading in the user's actual answers.
+  // Kept around so the plan + Pulse can ground content in the user's answers.
   const [answers, setAnswers] = useState<Option[]>([]);
 
   const handleComplete = (picked: Option[]) => {
@@ -39,11 +40,18 @@ export default function App() {
         <RevealScreen
           result={result}
           onRetake={reset}
-          onContinue={() => setStage('pulse')}
+          onContinue={() => setStage('plan')}
+        />
+      )}
+      {stage === 'plan' && result && (
+        <PlanScreen
+          result={result}
+          onBack={() => setStage('reveal')}
+          onPulse={() => setStage('pulse')}
         />
       )}
       {stage === 'pulse' && result && (
-        <PulseScreen result={result} answers={answers} onBack={() => setStage('reveal')} />
+        <PulseScreen result={result} answers={answers} onBack={() => setStage('plan')} />
       )}
     </SafeAreaProvider>
   );
