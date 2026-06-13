@@ -1,11 +1,27 @@
-import React from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import {
+  ActivityIndicator,
+  Alert,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+} from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { ARCHETYPES } from '../data/archetypes';
 import { PLANS } from '../data/plans';
+import { REMINDERS } from '../data/reminders';
 import { DISCLAIMER_FULL } from '../data/disclaimer';
 import { RhythmResult } from '../logic/score';
+import { canSchedule, disable as disableNotifs, enable as enableNotifs, isEnabled } from '../logic/notifications';
 import Rainforest from '../three/Rainforest';
+
+function fmtTime(hour: number, minute: number): string {
+  const ampm = hour < 12 ? 'AM' : 'PM';
+  const h = hour % 12 === 0 ? 12 : hour % 12;
+  return `${h}:${String(minute).padStart(2, '0')} ${ampm}`;
+}
 
 export default function PlanScreen({
   result,
@@ -22,6 +38,35 @@ export default function PlanScreen({
 }) {
   const a = ARCHETYPES[result.animal];
   const plan = PLANS[result.animal];
+
+  const [notifsOn, setNotifsOn] = useState(false);
+  const [notifBusy, setNotifBusy] = useState(false);
+
+  useEffect(() => {
+    isEnabled().then(setNotifsOn);
+  }, []);
+
+  const toggleNotifs = async () => {
+    if (notifBusy) return;
+    setNotifBusy(true);
+    try {
+      if (notifsOn) {
+        await disableNotifs();
+        setNotifsOn(false);
+      } else {
+        const ok = await enableNotifs(result.animal);
+        setNotifsOn(ok);
+        if (!ok) {
+          Alert.alert(
+            'Notifications blocked',
+            'Enable notifications for Circadia in your device settings, then try again.'
+          );
+        }
+      }
+    } finally {
+      setNotifBusy(false);
+    }
+  };
 
   return (
     <View style={styles.fill}>
@@ -65,6 +110,46 @@ export default function PlanScreen({
             </View>
           </View>
           <Text style={styles.sleepNote}>{plan.sleep.note}</Text>
+        </View>
+
+        <Text style={styles.section}>DAILY NUDGES</Text>
+        <View style={styles.notifCard}>
+          <View style={styles.notifTop}>
+            <View style={{ flex: 1, paddingRight: 12 }}>
+              <Text style={styles.notifTitle}>Rhythm reminders</Text>
+              <Text style={styles.notifSub}>
+                {notifsOn
+                  ? 'On — gentle nudges at your key moments.'
+                  : 'Get nudged at your crash window and wind-down.'}
+              </Text>
+            </View>
+            <Pressable
+              style={[styles.toggle, notifsOn ? { backgroundColor: a.accent } : styles.toggleOff]}
+              onPress={toggleNotifs}
+              disabled={notifBusy}
+            >
+              {notifBusy ? (
+                <ActivityIndicator color={notifsOn ? '#0E1424' : '#fff'} size="small" />
+              ) : (
+                <View style={[styles.knob, notifsOn ? styles.knobOn : styles.knobOff]} />
+              )}
+            </Pressable>
+          </View>
+
+          <View style={styles.notifTimes}>
+            {REMINDERS[result.animal].map((r, i) => (
+              <Text key={i} style={styles.notifTime}>
+                <Text style={{ color: a.accent, fontWeight: '700' }}>{fmtTime(r.hour, r.minute)}</Text>
+                {'  '}{r.title}
+              </Text>
+            ))}
+          </View>
+
+          {!canSchedule && (
+            <Text style={styles.notifWeb}>
+              On the web we can only ask permission — install the phone app for daily reminders.
+            </Text>
+          )}
         </View>
 
         <Text style={styles.section}>TODAY’S FLOW</Text>
@@ -172,6 +257,31 @@ const styles = StyleSheet.create({
   sleepTime: { fontSize: 26, fontWeight: '900', marginTop: 4 },
   sleepArrow: { color: 'rgba(255,255,255,0.4)', fontSize: 22, fontWeight: '700' },
   sleepNote: { color: 'rgba(255,255,255,0.8)', fontSize: 14, lineHeight: 20, marginTop: 14, textAlign: 'center' },
+  notifCard: {
+    backgroundColor: 'rgba(14,20,36,0.5)',
+    borderColor: 'rgba(255,255,255,0.14)',
+    borderWidth: 1,
+    borderRadius: 18,
+    padding: 18,
+  },
+  notifTop: { flexDirection: 'row', alignItems: 'center' },
+  notifTitle: { color: '#fff', fontSize: 16, fontWeight: '700' },
+  notifSub: { color: 'rgba(255,255,255,0.7)', fontSize: 13, lineHeight: 19, marginTop: 3 },
+  toggle: {
+    width: 56,
+    height: 32,
+    borderRadius: 16,
+    padding: 3,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  toggleOff: { backgroundColor: 'rgba(255,255,255,0.15)' },
+  knob: { width: 26, height: 26, borderRadius: 13, backgroundColor: '#fff' },
+  knobOn: { alignSelf: 'flex-end' },
+  knobOff: { alignSelf: 'flex-start' },
+  notifTimes: { marginTop: 14, gap: 6 },
+  notifTime: { color: 'rgba(255,255,255,0.85)', fontSize: 14 },
+  notifWeb: { color: 'rgba(255,255,255,0.5)', fontSize: 12, lineHeight: 17, marginTop: 12 },
   timeline: {},
   flowRow: { flexDirection: 'row', gap: 14 },
   timeCol: { alignItems: 'center', width: 52 },
