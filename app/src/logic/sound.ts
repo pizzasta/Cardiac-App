@@ -10,8 +10,24 @@ export const soundSupported =
 let ctx: AudioContext | null = null;
 let master: GainNode | null = null;
 let started = false;
+let volume = 0.6; // user setting, 0..1
+const MAX_GAIN = 0.35; // 1.0 volume maps to this gain so it never blows out
 let birdTimer: ReturnType<typeof setTimeout> | null = null;
 const sources: AudioScheduledSourceNode[] = [];
+
+const targetGain = () => volume * MAX_GAIN;
+
+export function setVolume(v: number): void {
+  volume = Math.max(0, Math.min(1, v));
+  if (ctx && master && started) {
+    master.gain.cancelScheduledValues(ctx.currentTime);
+    master.gain.linearRampToValueAtTime(targetGain(), ctx.currentTime + 0.2);
+  }
+}
+
+export function getVolume(): number {
+  return volume;
+}
 
 function noiseBuffer(context: AudioContext, type: 'white' | 'brown'): AudioBuffer {
   const len = context.sampleRate * 2;
@@ -105,7 +121,7 @@ export async function start(): Promise<void> {
   }
 
   master!.gain.cancelScheduledValues(context.currentTime);
-  master!.gain.linearRampToValueAtTime(0.22, context.currentTime + 1.5);
+  master!.gain.linearRampToValueAtTime(targetGain(), context.currentTime + 1.5);
 }
 
 export async function stop(): Promise<void> {

@@ -9,6 +9,7 @@ import {
   stop as stopSound,
   enableAutoStart,
   cancelAutoStart,
+  setVolume as setSoundVolume,
 } from './src/logic/sound';
 import HookScreen from './src/screens/HookScreen';
 import QuizScreen from './src/screens/QuizScreen';
@@ -19,6 +20,7 @@ import PulseScreen from './src/screens/PulseScreen';
 import LegalScreen from './src/screens/LegalScreen';
 import SignInScreen from './src/screens/SignInScreen';
 import ScienceScreen from './src/screens/ScienceScreen';
+import SettingsScreen from './src/screens/SettingsScreen';
 import { Option } from './src/data/quiz';
 import { ARCHETYPES } from './src/data/archetypes';
 import { RhythmResult, scoreQuiz } from './src/logic/score';
@@ -37,18 +39,29 @@ function Flow() {
   const [showLegal, setShowLegal] = useState(false);
   const [showSignIn, setShowSignIn] = useState(false);
   const [showScience, setShowScience] = useState(false);
-  // App-wide rainforest ambience + persistent mute (remembered across visits).
+  const [showSettings, setShowSettings] = useState(false);
+  // App-wide rainforest ambience + persistent mute/volume (remembered across visits).
   const [muted, setMuted] = useState(false);
+  const [volume, setVolume] = useState(0.6);
 
   useEffect(() => {
     let active = true;
-    AsyncStorage.getItem('circadia.muted')
-      .then((v) => {
-        if (!active) return;
-        if (v === 'true') setMuted(true); // honor a saved mute — stay silent
-        else enableAutoStart(); // default: ambience on
-      })
-      .catch(() => enableAutoStart());
+    (async () => {
+      const [m, vol] = await Promise.all([
+        AsyncStorage.getItem('circadia.muted').catch(() => null),
+        AsyncStorage.getItem('circadia.volume').catch(() => null),
+      ]);
+      if (!active) return;
+      if (vol != null) {
+        const n = parseFloat(vol);
+        if (!Number.isNaN(n)) {
+          setVolume(n);
+          setSoundVolume(n);
+        }
+      }
+      if (m === 'true') setMuted(true); // honor a saved mute — stay silent
+      else enableAutoStart(); // default: ambience on
+    })();
     return () => {
       active = false;
       cancelAutoStart();
@@ -66,6 +79,17 @@ function Flow() {
       stopSound();
       setMuted(true);
       AsyncStorage.setItem('circadia.muted', 'true').catch(() => {});
+    }
+  };
+
+  const applyVolume = (v: number) => {
+    setVolume(v);
+    setSoundVolume(v);
+    AsyncStorage.setItem('circadia.volume', String(v)).catch(() => {});
+    if (muted) {
+      startSound();
+      setMuted(false);
+      AsyncStorage.setItem('circadia.muted', 'false').catch(() => {});
     }
   };
 
@@ -93,6 +117,7 @@ function Flow() {
           onStart={() => setStage('quiz')}
           onLegal={() => setShowLegal(true)}
           onSignIn={() => setShowSignIn(true)}
+          onSettings={() => setShowSettings(true)}
         />
       )}
       {stage === 'quiz' && <QuizScreen onComplete={handleComplete} />}
@@ -108,6 +133,7 @@ function Flow() {
           onLegal={() => setShowLegal(true)}
           onSignIn={() => setShowSignIn(true)}
           onScience={() => setShowScience(true)}
+          onSettings={() => setShowSettings(true)}
         />
       )}
       {stage === 'pulse' && result && (
@@ -128,6 +154,20 @@ function Flow() {
         <ScienceScreen
           accent={result ? ARCHETYPES[result.animal].accent : undefined}
           onClose={() => setShowScience(false)}
+        />
+      )}
+      {showSettings && (
+        <SettingsScreen
+          result={result}
+          muted={muted}
+          volume={volume}
+          onToggleMute={toggleMute}
+          onSetVolume={applyVolume}
+          onSignIn={() => {
+            setShowSettings(false);
+            setShowSignIn(true);
+          }}
+          onClose={() => setShowSettings(false)}
         />
       )}
 
