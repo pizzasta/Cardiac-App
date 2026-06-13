@@ -1,0 +1,53 @@
+# Supabase CLI config for Circadia. Used by `supabase start` (local stack),
+# `supabase db push`/`reset` (migrations), and `supabase gen types`.
+# Docs: https://supabase.com/docs/guides/cli/config
+
+project_id = "circadia"
+
+[api]
+enabled = true
+port = 54321
+schemas = ["public", "graphql_public"]
+extra_search_path = ["public", "extensions"]
+max_rows = 1000
+
+[db]
+port = 54322
+shadow_port = 54320
+major_version = 15
+
+[studio]
+enabled = true
+port = 54323
+
+[realtime]
+enabled = true
+
+[storage]
+enabled = true
+
+[auth]
+enabled = true
+# For native deep links, allow the app scheme. Override site_url for web in the
+# dashboard (e.g. your GitHub Pages URL).
+site_url = "http://localhost:8081"
+additional_redirect_urls = [
+  "circadia://",
+  "http://localhost:8081",
+  "https://pizzasta.github.io/Cardiac-App/",
+]
+jwt_expiry = 3600
+enable_refresh_token_rotation = true
+enable_signup = true
+
+[auth.email]
+enable_signup = true
+enable_confirmations = false # set true in production
+
+# Google OAuth. Secrets come from env (never commit them):
+#   export SUPABASE_AUTH_EXTERNAL_GOOGLE_CLIENT_ID=...
+#   export SUPABASE_AUTH_EXTERNAL_GOOGLE_SECRET=...
+[auth.external.google]
+enabled = true
+client_id = "env(SUPABASE_AUTH_EXTERNAL_GOOGLE_CLIENT_ID)"
+secret = "env(SUPABASE_AUTH_EXTERNAL_GOOGLE_SECRET)"
