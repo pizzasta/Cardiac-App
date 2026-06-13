@@ -31,6 +31,7 @@ export default function PlanScreen({
   onPulse,
   onLegal,
   onSignIn,
+  onScience,
 }: {
   result: RhythmResult;
   onBack: () => void;
@@ -39,6 +40,7 @@ export default function PlanScreen({
   onPulse: (seed?: string) => void;
   onLegal: () => void;
   onSignIn: () => void;
+  onScience: () => void;
 }) {
   const a = ARCHETYPES[result.animal];
   const plan = PLANS[result.animal];
@@ -220,6 +222,13 @@ export default function PlanScreen({
           <Text style={styles.ctaText}>Talk to Pulse  →</Text>
         </Pressable>
 
+        <Pressable
+          style={[styles.scienceBtn, { borderColor: `${a.accent}66` }]}
+          onPress={onScience}
+        >
+          <Text style={[styles.scienceText, { color: a.accent }]}>Why this works — the science</Text>
+        </Pressable>
+
         <Text style={styles.disclaimer}>{DISCLAIMER_FULL}</Text>
         <Pressable onPress={onLegal} hitSlop={10}>
           <Text style={styles.legalLink}>Terms & Privacy</Text>
@@ -368,6 +377,14 @@ const styles = StyleSheet.create({
   },
 
   ctaText: { color: '#0E1424', fontSize: 18, fontWeight: '700' },
+  scienceBtn: {
+    borderWidth: 1,
+    borderRadius: 28,
+    paddingVertical: 15,
+    alignItems: 'center',
+    marginTop: 12,
+  },
+  scienceText: { fontSize: 15, fontWeight: '700' },
   disclaimer: {
     color: 'rgba(255,255,255,0.45)',
     fontSize: 12,
