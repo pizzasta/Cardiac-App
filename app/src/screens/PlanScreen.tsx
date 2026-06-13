@@ -13,7 +13,9 @@ export default function PlanScreen({
 }: {
   result: RhythmResult;
   onBack: () => void;
-  onPulse: () => void;
+  // Optional `seed` opens Pulse with a question already asked (e.g. "go deeper
+  // on this tip"), so the tips are powered by the AI, not just static text.
+  onPulse: (seed?: string) => void;
 }) {
   const a = ARCHETYPES[result.animal];
   const plan = PLANS[result.animal];
@@ -79,14 +81,26 @@ export default function PlanScreen({
         </View>
 
         <Text style={styles.section}>TIPS FOR A {a.name.toUpperCase()}</Text>
+        <Text style={styles.tipsHint}>Tap a tip to go deeper with Pulse.</Text>
         {plan.tips.map((t, i) => (
-          <View key={i} style={styles.tipCard}>
-            <Text style={[styles.tipLabel, { color: a.accent }]}>{t.label}</Text>
+          <Pressable
+            key={i}
+            style={styles.tipCard}
+            onPress={() =>
+              onPulse(
+                `As a ${a.name}, give me a deeper, personal tip on ${t.label.toLowerCase()} — building on this: "${t.text}". One concrete thing I can do today.`
+              )
+            }
+          >
+            <View style={styles.tipHead}>
+              <Text style={[styles.tipLabel, { color: a.accent }]}>{t.label}</Text>
+              <Text style={[styles.tipGo, { color: a.accent }]}>Ask Pulse ›</Text>
+            </View>
             <Text style={styles.tipText}>{t.text}</Text>
-          </View>
+          </Pressable>
         ))}
 
-        <Pressable style={[styles.cta, { backgroundColor: a.accent }]} onPress={onPulse}>
+        <Pressable style={[styles.cta, { backgroundColor: a.accent }]} onPress={() => onPulse()}>
           <Text style={styles.ctaText}>Talk to Pulse  →</Text>
         </Pressable>
       </ScrollView>
@@ -174,7 +188,10 @@ const styles = StyleSheet.create({
     padding: 16,
     marginBottom: 10,
   },
-  tipLabel: { fontSize: 12, fontWeight: '800', letterSpacing: 0.5, marginBottom: 6 },
+  tipsHint: { color: 'rgba(255,255,255,0.5)', fontSize: 13, marginTop: -6, marginBottom: 14 },
+  tipHead: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 },
+  tipLabel: { fontSize: 12, fontWeight: '800', letterSpacing: 0.5 },
+  tipGo: { fontSize: 12, fontWeight: '700' },
   tipText: { color: '#fff', fontSize: 15, lineHeight: 22 },
   cta: {
     borderRadius: 30,
