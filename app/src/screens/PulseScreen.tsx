@@ -18,7 +18,7 @@ import { RhythmResult } from '../logic/score';
 import { askPulse, ChatTurn, generateReading, hasAI } from '../logic/ai';
 import { listen, voiceSupported } from '../logic/voice';
 import { DISCLAIMER_SHORT } from '../data/disclaimer';
-import Rainforest from '../three/Rainforest';
+import Atmosphere from '../components/Atmosphere';
 
 export default function PulseScreen({
   result,
@@ -105,9 +105,9 @@ export default function PulseScreen({
 
   return (
     <View style={styles.fill}>
-      <Rainforest style={StyleSheet.absoluteFill} accent={a.accent} />
+      <Atmosphere style={StyleSheet.absoluteFill} accent={a.accent} />
       <LinearGradient
-        colors={[`${a.gradient[0]}cc`, 'rgba(8,21,17,0.8)', 'rgba(8,21,17,0.94)']}
+        colors={[`${a.gradient[0]}cc`, 'rgba(8,8,10,0.8)', 'rgba(8,8,10,0.94)']}
         style={StyleSheet.absoluteFill}
       />
 
@@ -176,7 +176,7 @@ export default function PulseScreen({
               ]}
               onPress={toggleMic}
             >
-              <Text style={[styles.micIcon, listening && { color: '#0E1424' }]}>🎙</Text>
+              <Text style={[styles.micIcon, listening && { color: '#08080A' }]}>🎙</Text>
             </Pressable>
           )}
           <TextInput
@@ -209,7 +209,7 @@ export default function PulseScreen({
 }
 
 const styles = StyleSheet.create({
-  fill: { flex: 1, backgroundColor: '#081511' },
+  fill: { flex: 1, backgroundColor: '#08080A' },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -224,7 +224,7 @@ const styles = StyleSheet.create({
   speakerIcon: { fontSize: 18, color: 'rgba(255,255,255,0.6)' },
   body: { paddingHorizontal: 18, paddingBottom: 18 },
   readingCard: {
-    backgroundColor: 'rgba(14,20,36,0.55)',
+    backgroundColor: 'rgba(18,18,20,0.55)',
     borderColor: 'rgba(255,255,255,0.16)',
     borderWidth: 1,
     borderRadius: 22,
@@ -238,7 +238,7 @@ const styles = StyleSheet.create({
   bubble: { maxWidth: '85%', borderRadius: 18, paddingVertical: 12, paddingHorizontal: 16, marginBottom: 10 },
   userBubble: { alignSelf: 'flex-end', backgroundColor: 'rgba(255,255,255,0.92)' },
   pulseBubble: { alignSelf: 'flex-start', backgroundColor: 'rgba(255,255,255,0.10)', borderColor: 'rgba(255,255,255,0.14)', borderWidth: 1 },
-  userText: { color: '#0E1424', fontSize: 15, fontWeight: '600', lineHeight: 21 },
+  userText: { color: '#08080A', fontSize: 15, fontWeight: '600', lineHeight: 21 },
   pulseText: { color: '#fff', fontSize: 15, lineHeight: 22 },
   hint: { color: 'rgba(255,255,255,0.55)', fontSize: 13, textAlign: 'center', marginTop: 8, lineHeight: 19 },
   inputRow: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 16, paddingBottom: 8, paddingTop: 6 },
@@ -271,5 +271,5 @@ const styles = StyleSheet.create({
   },
   sendBtn: { width: 48, height: 48, borderRadius: 24, alignItems: 'center', justifyContent: 'center' },
   sendDisabled: { opacity: 0.4 },
-  sendText: { color: '#0E1424', fontSize: 22, fontWeight: '800' },
+  sendText: { color: '#08080A', fontSize: 22, fontWeight: '800' },
 });

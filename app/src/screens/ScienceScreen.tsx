@@ -7,7 +7,7 @@ import { SCIENCE } from '../data/science';
 // links to its source so claims are checkable, not vibes.
 
 export default function ScienceScreen({
-  accent = '#2BD9C8',
+  accent = '#FF2E7E',
   onClose,
 }: {
   accent?: string;
@@ -15,7 +15,7 @@ export default function ScienceScreen({
 }) {
   return (
     <View style={styles.fill}>
-      <LinearGradient colors={['#0E1424', '#10231d', '#081511']} style={StyleSheet.absoluteFill} />
+      <LinearGradient colors={['#08080A', '#10231d', '#08080A']} style={StyleSheet.absoluteFill} />
 
       <View style={styles.header}>
         <Pressable onPress={onClose} hitSlop={12}>
@@ -49,7 +49,7 @@ export default function ScienceScreen({
 }
 
 const styles = StyleSheet.create({
-  fill: { ...StyleSheet.absoluteFillObject, backgroundColor: '#081511' },
+  fill: { ...StyleSheet.absoluteFillObject, backgroundColor: '#08080A' },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -63,7 +63,7 @@ const styles = StyleSheet.create({
   body: { paddingHorizontal: 22, paddingBottom: 44 },
   intro: { color: 'rgba(255,255,255,0.78)', fontSize: 15, lineHeight: 22, marginTop: 8, marginBottom: 18 },
   card: {
-    backgroundColor: 'rgba(14,20,36,0.5)',
+    backgroundColor: 'rgba(18,18,20,0.5)',
     borderColor: 'rgba(255,255,255,0.12)',
     borderWidth: 1,
     borderRadius: 16,

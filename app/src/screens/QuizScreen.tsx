@@ -49,7 +49,7 @@ export default function QuizScreen({
   };
 
   return (
-    <LinearGradient colors={['#0E1424', '#161B33', '#0E1424']} style={styles.fill}>
+    <LinearGradient colors={['#08080A', '#121016', '#08080A']} style={styles.fill}>
       <View style={styles.progressTrack}>
         <View style={[styles.progressFill, { width: `${progress * 100}%` }]} />
       </View>
@@ -84,7 +84,7 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(255,255,255,0.12)',
     overflow: 'hidden',
   },
-  progressFill: { height: 5, borderRadius: 3, backgroundColor: '#2BD9C8' },
+  progressFill: { height: 5, borderRadius: 3, backgroundColor: '#FF2E7E' },
   count: {
     color: 'rgba(255,255,255,0.55)',
     marginTop: 12,
@@ -110,8 +110,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 22,
   },
   optionPressed: {
-    backgroundColor: 'rgba(43,217,200,0.18)',
-    borderColor: '#2BD9C8',
+    backgroundColor: 'rgba(255,46,126,0.18)',
+    borderColor: '#FF2E7E',
   },
   optionText: { color: '#fff', fontSize: 17, fontWeight: '600' },
 });

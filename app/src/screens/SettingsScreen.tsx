@@ -43,7 +43,7 @@ export default function SettingsScreen({
   onClose: () => void;
 }) {
   const { user, signOut } = useAuth();
-  const accent = result ? ARCHETYPES[result.animal].accent : '#2BD9C8';
+  const accent = result ? ARCHETYPES[result.animal].accent : '#FF2E7E';
 
   const [notifsOn, setNotifsOn] = useState(false);
   const [notifBusy, setNotifBusy] = useState(false);
@@ -76,7 +76,7 @@ export default function SettingsScreen({
 
   return (
     <View style={styles.fill}>
-      <LinearGradient colors={['#0E1424', '#10231d', '#081511']} style={StyleSheet.absoluteFill} />
+      <LinearGradient colors={['#08080A', '#10231d', '#08080A']} style={StyleSheet.absoluteFill} />
 
       <View style={styles.header}>
         <Pressable onPress={onClose} hitSlop={12}>
@@ -135,7 +135,7 @@ export default function SettingsScreen({
                   style={[styles.segment, active && { backgroundColor: accent, borderColor: accent }]}
                   onPress={() => onSetVolume(v.value)}
                 >
-                  <Text style={[styles.segmentText, active && { color: '#0E1424' }]}>{v.label}</Text>
+                  <Text style={[styles.segmentText, active && { color: '#08080A' }]}>{v.label}</Text>
                 </Pressable>
               );
             })}
@@ -165,7 +165,7 @@ export default function SettingsScreen({
               disabled={!result || notifBusy}
             >
               {notifBusy ? (
-                <ActivityIndicator color={notifsOn ? '#0E1424' : '#fff'} size="small" />
+                <ActivityIndicator color={notifsOn ? '#08080A' : '#fff'} size="small" />
               ) : (
                 <View style={[styles.knob, notifsOn ? styles.knobOn : styles.knobOff]} />
               )}
@@ -181,7 +181,7 @@ export default function SettingsScreen({
 }
 
 const styles = StyleSheet.create({
-  fill: { ...StyleSheet.absoluteFillObject, backgroundColor: '#081511' },
+  fill: { ...StyleSheet.absoluteFillObject, backgroundColor: '#08080A' },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -202,7 +202,7 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   card: {
-    backgroundColor: 'rgba(14,20,36,0.5)',
+    backgroundColor: 'rgba(18,18,20,0.5)',
     borderColor: 'rgba(255,255,255,0.12)',
     borderWidth: 1,
     borderRadius: 16,
@@ -212,7 +212,7 @@ const styles = StyleSheet.create({
   rowTitle: { color: '#fff', fontSize: 16, fontWeight: '700' },
   rowSub: { color: 'rgba(255,255,255,0.7)', fontSize: 13, lineHeight: 19, marginTop: 3 },
   btn: { borderRadius: 24, paddingVertical: 13, alignItems: 'center', marginTop: 16 },
-  btnText: { color: '#0E1424', fontSize: 15, fontWeight: '700' },
+  btnText: { color: '#08080A', fontSize: 15, fontWeight: '700' },
   btnGhost: { borderWidth: 1, borderColor: 'rgba(255,255,255,0.25)' },
   btnGhostText: { color: '#fff', fontSize: 15, fontWeight: '700' },
   toggle: { width: 56, height: 32, borderRadius: 16, padding: 3, justifyContent: 'center', alignItems: 'center' },

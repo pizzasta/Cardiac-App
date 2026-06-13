@@ -44,7 +44,7 @@ export default function ReadingScreen({ onDone }: { onDone: () => void }) {
   const scale = pulse.interpolate({ inputRange: [0, 1], outputRange: [0.9, 1.25] });
 
   return (
-    <LinearGradient colors={['#0E1424', '#10394A', '#0E1424']} style={styles.fill}>
+    <LinearGradient colors={['#08080A', '#141016', '#08080A']} style={styles.fill}>
       <Animated.View style={[styles.orb, { transform: [{ scale }] }]} />
       <Text style={styles.text}>{LINES[line]}</Text>
     </LinearGradient>
@@ -57,7 +57,7 @@ const styles = StyleSheet.create({
     width: 120,
     height: 120,
     borderRadius: 60,
-    backgroundColor: '#2BD9C8',
+    backgroundColor: '#FF2E7E',
     opacity: 0.55,
     marginBottom: 40,
   },

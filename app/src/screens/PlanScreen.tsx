@@ -17,7 +17,7 @@ import { DISCLAIMER_FULL } from '../data/disclaimer';
 import { RhythmResult } from '../logic/score';
 import { canSchedule, disable as disableNotifs, enable as enableNotifs, isEnabled } from '../logic/notifications';
 import { useAuth } from '../logic/auth';
-import Rainforest from '../three/Rainforest';
+import Atmosphere from '../components/Atmosphere';
 
 function fmtTime(hour: number, minute: number): string {
   const ampm = hour < 12 ? 'AM' : 'PM';
@@ -79,9 +79,9 @@ export default function PlanScreen({
 
   return (
     <View style={styles.fill}>
-      <Rainforest style={StyleSheet.absoluteFill} accent={a.accent} />
+      <Atmosphere style={StyleSheet.absoluteFill} accent={a.accent} />
       <LinearGradient
-        colors={[`${a.gradient[0]}cc`, 'rgba(8,21,17,0.78)', 'rgba(8,21,17,0.92)']}
+        colors={[`${a.gradient[0]}cc`, 'rgba(8,8,10,0.78)', 'rgba(8,8,10,0.92)']}
         style={StyleSheet.absoluteFill}
       />
 
@@ -140,7 +140,7 @@ export default function PlanScreen({
               disabled={notifBusy}
             >
               {notifBusy ? (
-                <ActivityIndicator color={notifsOn ? '#0E1424' : '#fff'} size="small" />
+                <ActivityIndicator color={notifsOn ? '#08080A' : '#fff'} size="small" />
               ) : (
                 <View style={[styles.knob, notifsOn ? styles.knobOn : styles.knobOff]} />
               )}
@@ -252,7 +252,7 @@ function Chip({ label, value, accent }: { label: string; value: string; accent: 
 }
 
 const styles = StyleSheet.create({
-  fill: { flex: 1, backgroundColor: '#081511' },
+  fill: { flex: 1, backgroundColor: '#08080A' },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -288,7 +288,7 @@ const styles = StyleSheet.create({
     marginBottom: 14,
   },
   sleepCard: {
-    backgroundColor: 'rgba(14,20,36,0.5)',
+    backgroundColor: 'rgba(18,18,20,0.5)',
     borderColor: 'rgba(255,255,255,0.14)',
     borderWidth: 1,
     borderRadius: 18,
@@ -301,7 +301,7 @@ const styles = StyleSheet.create({
   sleepArrow: { color: 'rgba(255,255,255,0.4)', fontSize: 22, fontWeight: '700' },
   sleepNote: { color: 'rgba(255,255,255,0.8)', fontSize: 14, lineHeight: 20, marginTop: 14, textAlign: 'center' },
   notifCard: {
-    backgroundColor: 'rgba(14,20,36,0.5)',
+    backgroundColor: 'rgba(18,18,20,0.5)',
     borderColor: 'rgba(255,255,255,0.14)',
     borderWidth: 1,
     borderRadius: 18,
@@ -332,7 +332,7 @@ const styles = StyleSheet.create({
   connector: { flex: 1, width: 2, backgroundColor: 'rgba(255,255,255,0.15)', marginTop: 4 },
   flowCard: {
     flex: 1,
-    backgroundColor: 'rgba(14,20,36,0.45)',
+    backgroundColor: 'rgba(18,18,20,0.45)',
     borderColor: 'rgba(255,255,255,0.12)',
     borderWidth: 1,
     borderRadius: 16,
@@ -355,7 +355,7 @@ const styles = StyleSheet.create({
   tipGo: { fontSize: 12, fontWeight: '700' },
   tipText: { color: '#fff', fontSize: 15, lineHeight: 22 },
   deepCard: {
-    backgroundColor: 'rgba(14,20,36,0.5)',
+    backgroundColor: 'rgba(18,18,20,0.5)',
     borderColor: 'rgba(255,255,255,0.12)',
     borderWidth: 1,
     borderRadius: 16,
@@ -366,7 +366,7 @@ const styles = StyleSheet.create({
   deepBullet: { fontSize: 12, marginTop: 4 },
   deepText: { flex: 1, color: '#fff', fontSize: 15, lineHeight: 22 },
   lockCard: {
-    backgroundColor: 'rgba(14,20,36,0.5)',
+    backgroundColor: 'rgba(18,18,20,0.5)',
     borderWidth: 1,
     borderRadius: 16,
     padding: 18,
@@ -374,7 +374,7 @@ const styles = StyleSheet.create({
   lockTitle: { color: '#fff', fontSize: 16, fontWeight: '800' },
   lockText: { color: 'rgba(255,255,255,0.78)', fontSize: 14, lineHeight: 21, marginTop: 8 },
   lockBtn: { borderRadius: 24, paddingVertical: 13, alignItems: 'center', marginTop: 16 },
-  lockBtnText: { color: '#0E1424', fontSize: 15, fontWeight: '700' },
+  lockBtnText: { color: '#08080A', fontSize: 15, fontWeight: '700' },
   cta: {
     borderRadius: 30,
     paddingVertical: 18,
@@ -382,7 +382,7 @@ const styles = StyleSheet.create({
     marginTop: 26,
   },
 
-  ctaText: { color: '#0E1424', fontSize: 18, fontWeight: '700' },
+  ctaText: { color: '#08080A', fontSize: 18, fontWeight: '700' },
   scienceBtn: {
     borderWidth: 1,
     borderRadius: 28,
