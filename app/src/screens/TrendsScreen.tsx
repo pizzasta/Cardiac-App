@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
+import { useTopInset } from '../hooks';
 import Svg, { Circle, Polyline } from 'react-native-svg';
 import { ARCHETYPES, TINTS } from '../data/archetypes';
 import { RhythmResult } from '../logic/score';
@@ -66,11 +67,12 @@ export default function TrendsScreen({
     return 'rgba(255,255,255,0.06)';
   };
 
+  const topInset = useTopInset();
   return (
     <View style={styles.fill}>
       <LinearGradient colors={T.bgGradient} style={StyleSheet.absoluteFill} />
 
-      <View style={styles.header}>
+      <View style={[styles.header, { paddingTop: topInset }]}>
         <Pressable onPress={onClose} hitSlop={12}>
           <Text style={styles.back}>‹ Close</Text>
         </Pressable>

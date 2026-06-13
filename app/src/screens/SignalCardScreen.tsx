@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
+import { useTopInset } from '../hooks';
 import { ARCHETYPES, TINTS } from '../data/archetypes';
 import { RhythmResult } from '../logic/score';
 import { pickStatement, STATEMENTS } from '../data/statements';
@@ -32,11 +33,12 @@ export default function SignalCardScreen({
     else if (r === 'shared') setStatus('shared');
   };
 
+  const topInset = useTopInset();
   return (
     <View style={styles.fill}>
       <LinearGradient colors={T.bgGradient} style={StyleSheet.absoluteFill} />
 
-      <View style={styles.header}>
+      <View style={[styles.header, { paddingTop: topInset }]}>
         <Pressable onPress={onClose} hitSlop={12}>
           <Text style={styles.back}>‹ Close</Text>
         </Pressable>

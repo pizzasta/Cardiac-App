@@ -1,6 +1,7 @@
 import React from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
+import { useTopInset } from '../hooks';
 import { DISCLAIMER_FULL } from '../data/disclaimer';
 
 // Starter Terms & Privacy. This is a plain-language template to ship the
@@ -19,11 +20,12 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 }
 
 export default function LegalScreen({ onClose }: { onClose: () => void }) {
+  const topInset = useTopInset();
   return (
     <View style={styles.fill}>
       <LinearGradient colors={['#08080A', '#141016', '#08080A']} style={StyleSheet.absoluteFill} />
 
-      <View style={styles.header}>
+      <View style={[styles.header, { paddingTop: topInset }]}>
         <Pressable onPress={onClose} hitSlop={12}>
           <Text style={styles.back}>‹ Back</Text>
         </Pressable>

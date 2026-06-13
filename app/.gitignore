@@ -5,3 +5,7 @@ web-build/
 *.log
 .DS_Store
 _scoreout/
+
+# Local env (never commit real keys)
+.env
+.env.local
