@@ -25,6 +25,9 @@ import { Option } from './src/data/quiz';
 import { ARCHETYPES } from './src/data/archetypes';
 import { RhythmResult, scoreQuiz } from './src/logic/score';
 import { AuthProvider } from './src/logic/auth';
+import { useFonts, SpaceGrotesk_700Bold } from '@expo-google-fonts/space-grotesk';
+import { JetBrainsMono_500Medium } from '@expo-google-fonts/jetbrains-mono';
+import { T } from './src/theme';
 
 type Stage = 'landing' | 'quiz' | 'reading' | 'reveal' | 'plan' | 'pulse';
 
@@ -213,12 +216,22 @@ class ErrorBoundary extends React.Component<
 }
 
 export default function App() {
+  const [fontsLoaded, fontError] = useFonts({ SpaceGrotesk_700Bold, JetBrainsMono_500Medium });
+  // Never let font loading block the app: show it once fonts load, error, or
+  // after a short timeout (fonts then fall back to system until they arrive).
+  const [timedOut, setTimedOut] = useState(false);
+  useEffect(() => {
+    const t = setTimeout(() => setTimedOut(true), 2500);
+    return () => clearTimeout(t);
+  }, []);
+  const ready = fontsLoaded || !!fontError || timedOut;
+
   return (
     <ErrorBoundary>
       <AuthProvider>
         <SafeAreaProvider>
           <StatusBar style="light" />
-          <Flow />
+          {ready ? <Flow /> : <View style={{ flex: 1, backgroundColor: T.bg }} />}
         </SafeAreaProvider>
       </AuthProvider>
     </ErrorBoundary>

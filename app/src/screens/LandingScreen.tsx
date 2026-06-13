@@ -11,7 +11,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import Atmosphere from '../components/Atmosphere';
 import { ARCHETYPES } from '../data/archetypes';
 import { DISCLAIMER_SHORT } from '../data/disclaimer';
-import { T } from '../theme';
+import { T, F } from '../theme';
 
 const ACCENT = T.accent;
 
@@ -222,16 +222,16 @@ const styles = StyleSheet.create({
   topLink: { color: 'rgba(255,255,255,0.85)', fontSize: 13, fontWeight: '600' },
   topDot: { color: 'rgba(255,255,255,0.4)' },
   heroBody: {},
-  kicker: { color: 'rgba(255,255,255,0.8)', letterSpacing: 6, fontSize: 13, fontWeight: '700', marginBottom: 16 },
-  h1: { color: '#fff', fontSize: 40, fontWeight: '900', lineHeight: 46 },
-  h1b: { color: '#fff', fontSize: 34, fontWeight: '900', textAlign: 'center' },
+  kicker: { color: 'rgba(255,255,255,0.8)', letterSpacing: 6, fontSize: 12, fontFamily: F.mono, marginBottom: 16 },
+  h1: { color: '#fff', fontSize: 40, fontFamily: F.display, lineHeight: 46 },
+  h1b: { color: '#fff', fontSize: 34, fontFamily: F.display, textAlign: 'center' },
   sub: { color: 'rgba(255,255,255,0.82)', fontSize: 16, lineHeight: 24, marginTop: 16, textAlign: 'center' },
   fine: { color: 'rgba(255,255,255,0.6)', fontSize: 13, textAlign: 'center', marginTop: 12 },
 
   section: { paddingHorizontal: 28, paddingVertical: 30, borderTopWidth: 1, borderTopColor: 'rgba(255,255,255,0.06)' },
-  sectionLabel: { color: ACCENT, fontSize: 12, fontWeight: '800', letterSpacing: 1.5, marginBottom: 14 },
+  sectionLabel: { color: ACCENT, fontSize: 12, fontFamily: F.mono, letterSpacing: 1.5, marginBottom: 14 },
 
-  bigLine: { color: '#fff', fontSize: 28, fontWeight: '800', lineHeight: 34 },
+  bigLine: { color: '#fff', fontSize: 28, fontFamily: F.display, lineHeight: 34 },
   bigLineSub: { color: 'rgba(255,255,255,0.7)', fontSize: 18, marginTop: 6, marginBottom: 18 },
 
   step: { flexDirection: 'row', gap: 14, marginBottom: 18, alignItems: 'center' },
@@ -240,7 +240,7 @@ const styles = StyleSheet.create({
   stepTitle: { color: '#fff', fontSize: 17, fontWeight: '700' },
   stepSub: { color: 'rgba(255,255,255,0.7)', fontSize: 14, marginTop: 2 },
 
-  h2: { color: '#fff', fontSize: 24, fontWeight: '800', marginBottom: 16 },
+  h2: { color: '#fff', fontSize: 24, fontFamily: F.display, marginBottom: 16 },
   animals: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginBottom: 20 },
   animalChip: { width: '31%', backgroundColor: 'rgba(255,255,255,0.06)', borderColor: 'rgba(255,255,255,0.12)', borderWidth: 1, borderRadius: 14, paddingVertical: 14, alignItems: 'center' },
   animalEmoji: { fontSize: 28 },

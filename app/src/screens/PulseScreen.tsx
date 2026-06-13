@@ -19,6 +19,7 @@ import { askPulse, ChatTurn, generateReading, hasAI } from '../logic/ai';
 import { listen, voiceSupported } from '../logic/voice';
 import { DISCLAIMER_SHORT } from '../data/disclaimer';
 import Atmosphere from '../components/Atmosphere';
+import { F } from '../theme';
 
 export default function PulseScreen({
   result,
@@ -219,7 +220,7 @@ const styles = StyleSheet.create({
     paddingBottom: 10,
   },
   back: { color: 'rgba(255,255,255,0.85)', fontSize: 16, fontWeight: '600', width: 48 },
-  headerTitle: { color: '#fff', fontSize: 18, fontWeight: '800' },
+  headerTitle: { color: '#fff', fontSize: 18, fontFamily: F.display },
   speaker: { width: 48, alignItems: 'flex-end' },
   speakerIcon: { fontSize: 18, color: 'rgba(255,255,255,0.6)' },
   body: { paddingHorizontal: 18, paddingBottom: 18 },

@@ -10,6 +10,7 @@ import {
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useAuth } from '../logic/auth';
+import { F } from '../theme';
 import { RhythmResult } from '../logic/score';
 import { ARCHETYPES } from '../data/archetypes';
 import {
@@ -191,12 +192,12 @@ const styles = StyleSheet.create({
     paddingBottom: 8,
   },
   back: { color: 'rgba(255,255,255,0.85)', fontSize: 16, fontWeight: '600', width: 48 },
-  headerTitle: { color: '#fff', fontSize: 18, fontWeight: '800' },
+  headerTitle: { color: '#fff', fontSize: 18, fontFamily: F.display },
   body: { paddingHorizontal: 22, paddingBottom: 44 },
   section: {
     color: 'rgba(255,255,255,0.55)',
     fontSize: 12,
-    fontWeight: '700',
+    fontFamily: F.mono,
     letterSpacing: 1.5,
     marginTop: 26,
     marginBottom: 12,
