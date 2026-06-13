@@ -15,6 +15,8 @@ import {
   trendInsight,
   yFor,
 } from '../logic/pulselog';
+import { useAuth } from '../logic/auth';
+import { fetchStreak, fetchWeeksTracked, pullCheckIns } from '../logic/sync';
 import { F, T } from '../theme';
 
 const DAYS = 14;
@@ -34,11 +36,32 @@ export default function TrendsScreen({
 }) {
   const a = ARCHETYPES[result.animal];
   const tint = TINTS[result.animal];
+  const { user } = useAuth();
   const [log, setLog] = useState<PulseEntry[]>([]);
+  const [server, setServer] = useState<{ current: number; longest: number } | null>(null);
+  const [weeks, setWeeks] = useState<number | null>(null);
 
   useEffect(() => {
     load().then(setLog);
   }, []);
+
+  // When signed in, pull the cloud copy and read the authoritative streak +
+  // weeks-tracked from Supabase (streaks table + emotional_trends view).
+  useEffect(() => {
+    if (!user) return;
+    let active = true;
+    (async () => {
+      await pullCheckIns();
+      if (!active) return;
+      const fresh = await load();
+      if (active) setLog(fresh);
+      fetchStreak().then((s) => active && setServer(s));
+      fetchWeeksTracked().then((w) => active && setWeeks(w));
+    })();
+    return () => {
+      active = false;
+    };
+  }, [user]);
 
   const data = series(log, DAYS);
   const rhythm = checkInsInWindow(log, DAYS);
@@ -81,7 +104,14 @@ export default function TrendsScreen({
       </View>
 
       <ScrollView contentContainerStyle={styles.body} showsVerticalScrollIndicator={false}>
-        <Text style={styles.kicker}>LAST {DAYS} DAYS</Text>
+        <View style={styles.kickerRow}>
+          <Text style={styles.kicker}>LAST {DAYS} DAYS</Text>
+          {user && (
+            <Text style={[styles.synced, { color: a.accent }]}>
+              ☁ SYNCED{weeks != null ? ` · ${weeks}w TRACKED` : ''}
+            </Text>
+          )}
+        </View>
 
         {/* Rhythm — forgiving, not a brittle streak */}
         <View style={styles.rhythmRow}>
@@ -90,9 +120,15 @@ export default function TrendsScreen({
             <Text style={styles.statLabel}>check-ins / {DAYS}d</Text>
           </View>
           <View style={styles.statCard}>
-            <Text style={[styles.statNum, { color: a.accent }]}>{streak}</Text>
+            <Text style={[styles.statNum, { color: a.accent }]}>{server?.current ?? streak}</Text>
             <Text style={styles.statLabel}>day rhythm</Text>
           </View>
+          {server && (
+            <View style={styles.statCard}>
+              <Text style={[styles.statNum, { color: a.accent }]}>{server.longest}</Text>
+              <Text style={styles.statLabel}>best ever</Text>
+            </View>
+          )}
         </View>
         <Text style={styles.forgive}>
           Rest days count too. Miss one and the line dims — it doesn’t reset.
@@ -165,7 +201,9 @@ const styles = StyleSheet.create({
   back: { color: 'rgba(255,255,255,0.85)', fontSize: 16, fontWeight: '600', width: 64 },
   headerTitle: { color: '#fff', fontSize: 18, fontFamily: F.display },
   body: { paddingHorizontal: 22, paddingBottom: 48 },
-  kicker: { color: 'rgba(255,255,255,0.6)', fontSize: 12, fontFamily: F.mono, letterSpacing: 1.5, marginTop: 14 },
+  kickerRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 14 },
+  kicker: { color: 'rgba(255,255,255,0.6)', fontSize: 12, fontFamily: F.mono, letterSpacing: 1.5 },
+  synced: { fontSize: 11, fontFamily: F.mono, letterSpacing: 1 },
   rhythmRow: { flexDirection: 'row', gap: 12, marginTop: 14 },
   statCard: {
     flex: 1,

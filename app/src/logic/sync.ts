@@ -35,27 +35,71 @@ export async function pushCheckIn(entry: { date: string; level: Level; reason?: 
   }
 }
 
-// Save a quiz result and mark it as the user's current archetype.
-export async function pushResult(r: {
-  animal: string;
-  peak: string;
-  crash: string;
-  recharge: string;
-}) {
+// Save a quiz result (+ onboarding answers) and set the current archetype.
+export async function pushResult(
+  r: { animal: string; peak: string; crash: string; recharge: string },
+  answers?: { questionId: string; answer: string }[]
+) {
   try {
     if (!supabase) return;
     const uid = await currentUserId();
     if (!uid) return;
-    await supabase.from('results').insert({
-      user_id: uid,
-      archetype_id: r.animal,
-      peak: r.peak,
-      crash: r.crash,
-      recharge: r.recharge,
-    });
+    const { data, error } = await supabase
+      .from('results')
+      .insert({
+        user_id: uid,
+        archetype_id: r.animal,
+        peak: r.peak,
+        crash: r.crash,
+        recharge: r.recharge,
+      })
+      .select('id')
+      .single();
+    if (error || !data) return;
     await supabase.from('profiles').update({ current_archetype_id: r.animal }).eq('id', uid);
+    if (answers && answers.length) {
+      await supabase.from('onboarding_answers').insert(
+        answers.map((an) => ({
+          user_id: uid,
+          result_id: data.id,
+          question_id: an.questionId,
+          answer: an.answer,
+        }))
+      );
+    }
   } catch {
     /* best-effort */
+  }
+}
+
+// Authoritative streak from the trigger-maintained table.
+export async function fetchStreak(): Promise<{ current: number; longest: number } | null> {
+  try {
+    if (!supabase) return null;
+    const uid = await currentUserId();
+    if (!uid) return null;
+    const { data } = await supabase
+      .from('streaks')
+      .select('current_streak, longest_streak')
+      .eq('user_id', uid)
+      .maybeSingle();
+    if (!data) return null;
+    return { current: data.current_streak, longest: data.longest_streak };
+  } catch {
+    return null;
+  }
+}
+
+// Number of distinct weeks with check-ins, from the emotional_trends view.
+export async function fetchWeeksTracked(): Promise<number | null> {
+  try {
+    if (!supabase) return null;
+    const uid = await currentUserId();
+    if (!uid) return null;
+    const { data } = await supabase.from('emotional_trends').select('week').eq('user_id', uid);
+    return data ? data.length : null;
+  } catch {
+    return null;
   }
 }
 
