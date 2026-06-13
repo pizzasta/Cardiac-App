@@ -3,6 +3,7 @@ import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { ARCHETYPES } from '../data/archetypes';
 import { PLANS } from '../data/plans';
+import { DISCLAIMER_FULL } from '../data/disclaimer';
 import { RhythmResult } from '../logic/score';
 import Rainforest from '../three/Rainforest';
 
@@ -103,6 +104,8 @@ export default function PlanScreen({
         <Pressable style={[styles.cta, { backgroundColor: a.accent }]} onPress={() => onPulse()}>
           <Text style={styles.ctaText}>Talk to Pulse  →</Text>
         </Pressable>
+
+        <Text style={styles.disclaimer}>{DISCLAIMER_FULL}</Text>
       </ScrollView>
     </View>
   );
@@ -200,4 +203,11 @@ const styles = StyleSheet.create({
     marginTop: 26,
   },
   ctaText: { color: '#0E1424', fontSize: 18, fontWeight: '700' },
+  disclaimer: {
+    color: 'rgba(255,255,255,0.45)',
+    fontSize: 12,
+    lineHeight: 17,
+    textAlign: 'center',
+    marginTop: 20,
+  },
 });

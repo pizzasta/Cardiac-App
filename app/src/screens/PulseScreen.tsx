@@ -17,6 +17,7 @@ import { Option } from '../data/quiz';
 import { RhythmResult } from '../logic/score';
 import { askPulse, ChatTurn, generateReading, hasAI } from '../logic/ai';
 import { listen, voiceSupported } from '../logic/voice';
+import { DISCLAIMER_SHORT } from '../data/disclaimer';
 import Rainforest from '../three/Rainforest';
 
 export default function PulseScreen({
@@ -201,6 +202,7 @@ export default function PulseScreen({
             <Text style={styles.sendText}>↑</Text>
           </Pressable>
         </View>
+        <Text style={styles.disclaimer}>{DISCLAIMER_SHORT}</Text>
       </KeyboardAvoidingView>
     </View>
   );
@@ -239,7 +241,14 @@ const styles = StyleSheet.create({
   userText: { color: '#0E1424', fontSize: 15, fontWeight: '600', lineHeight: 21 },
   pulseText: { color: '#fff', fontSize: 15, lineHeight: 22 },
   hint: { color: 'rgba(255,255,255,0.55)', fontSize: 13, textAlign: 'center', marginTop: 8, lineHeight: 19 },
-  inputRow: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 16, paddingBottom: 28, paddingTop: 6 },
+  inputRow: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 16, paddingBottom: 8, paddingTop: 6 },
+  disclaimer: {
+    color: 'rgba(255,255,255,0.4)',
+    fontSize: 11,
+    textAlign: 'center',
+    paddingBottom: 24,
+    paddingHorizontal: 24,
+  },
   micBtn: {
     width: 48,
     height: 48,
