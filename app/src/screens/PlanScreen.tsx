@@ -46,6 +46,22 @@ export default function PlanScreen({
           <Chip label="Recharge" value={result.recharge} accent={a.accent} />
         </View>
 
+        <Text style={styles.section}>SLEEP WINDOW</Text>
+        <View style={styles.sleepCard}>
+          <View style={styles.sleepTimes}>
+            <View style={styles.sleepCol}>
+              <Text style={styles.sleepColLabel}>WIND DOWN</Text>
+              <Text style={[styles.sleepTime, { color: a.accent }]}>{plan.sleep.bedtime}</Text>
+            </View>
+            <Text style={styles.sleepArrow}>→</Text>
+            <View style={styles.sleepCol}>
+              <Text style={styles.sleepColLabel}>WAKE</Text>
+              <Text style={[styles.sleepTime, { color: a.accent }]}>{plan.sleep.wake}</Text>
+            </View>
+          </View>
+          <Text style={styles.sleepNote}>{plan.sleep.note}</Text>
+        </View>
+
         <Text style={styles.section}>TODAY’S FLOW</Text>
         <View style={styles.timeline}>
           {plan.flow.map((f, i) => (
@@ -121,6 +137,19 @@ const styles = StyleSheet.create({
     marginTop: 30,
     marginBottom: 14,
   },
+  sleepCard: {
+    backgroundColor: 'rgba(14,20,36,0.5)',
+    borderColor: 'rgba(255,255,255,0.14)',
+    borderWidth: 1,
+    borderRadius: 18,
+    padding: 18,
+  },
+  sleepTimes: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 18 },
+  sleepCol: { alignItems: 'center', minWidth: 92 },
+  sleepColLabel: { color: 'rgba(255,255,255,0.55)', fontSize: 11, fontWeight: '700', letterSpacing: 1 },
+  sleepTime: { fontSize: 26, fontWeight: '900', marginTop: 4 },
+  sleepArrow: { color: 'rgba(255,255,255,0.4)', fontSize: 22, fontWeight: '700' },
+  sleepNote: { color: 'rgba(255,255,255,0.8)', fontSize: 14, lineHeight: 20, marginTop: 14, textAlign: 'center' },
   timeline: {},
   flowRow: { flexDirection: 'row', gap: 14 },
   timeCol: { alignItems: 'center', width: 52 },

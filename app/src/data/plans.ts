@@ -15,8 +15,15 @@ export interface Tip {
   text: string;
 }
 
+export interface SleepWindow {
+  bedtime: string; // recommended wind-down / lights-out
+  wake: string; // recommended wake time
+  note: string;
+}
+
 export interface RhythmPlan {
   intro: string;
+  sleep: SleepWindow;
   flow: FlowItem[];
   tips: Tip[];
 }
@@ -24,6 +31,11 @@ export interface RhythmPlan {
 export const PLANS: Record<AnimalId, RhythmPlan> = {
   dolphin: {
     intro: 'Sharp and easily overstimulated. Front-load focus, defend the 2pm dip, end the day quiet.',
+    sleep: {
+      bedtime: '10:30 PM',
+      wake: '6:30 AM',
+      note: 'Light sleepers need a long runway — start winding down ~90 min early and keep the wake time identical, even on weekends.',
+    },
     flow: [
       { time: '9:30', title: 'Hardest task here', note: "You're sharpest late morning — spend it on the thing that needs real thinking." },
       { time: '1:45', title: 'Crash incoming', note: 'Water + 5 min off the screen now. Not coffee — it deepens the spiral.' },
@@ -38,6 +50,11 @@ export const PLANS: Record<AnimalId, RhythmPlan> = {
   },
   wolf: {
     intro: 'Your good hours start when others wind down. Protect the night burst, set a real stop time.',
+    sleep: {
+      bedtime: '12:45 AM',
+      wake: '8:45 AM',
+      note: 'Fighting your late chronotype backfires. Aim consistent-late rather than impossibly-early, and protect a dark, slow morning.',
+    },
     flow: [
       { time: '11:00', title: 'Slow start, no hard wins yet', note: 'You’re not online till late morning. Don’t make 9am the day’s first hard thing.' },
       { time: '3:00', title: 'Ramp into focus', note: 'Energy lifts through the afternoon — start the work that matters now.' },
@@ -52,6 +69,11 @@ export const PLANS: Record<AnimalId, RhythmPlan> = {
   },
   bear: {
     intro: 'Steady and reliable — which is exactly why you crash slowly. Protected rest is the whole plan.',
+    sleep: {
+      bedtime: '10:15 PM',
+      wake: '6:15 AM',
+      note: 'You need a full, boring 8 hours — rest is maintenance, not a reward. Same time nightly is what keeps the slow-burn crash away.',
+    },
     flow: [
       { time: '10:00', title: 'Steady build', note: 'You don’t spike — you sustain. Start the main work and keep an even pace.' },
       { time: '1:00', title: 'Peak window', note: 'Midday is your best stretch. Put the important meeting or task here.' },
@@ -66,6 +88,11 @@ export const PLANS: Record<AnimalId, RhythmPlan> = {
   },
   hummingbird: {
     intro: 'Fast and scattered. The plan isn’t to slow down everywhere — it’s to land on one thing at a time.',
+    sleep: {
+      bedtime: '10:45 PM',
+      wake: '6:45 AM',
+      note: 'A racing mind keeps you up. Do a brain-dump of tomorrow’s list ~30 min before bed so the loop has somewhere to land.',
+    },
     flow: [
       { time: '9:00', title: 'Pick ONE thing', note: 'Before the day pulls you twelve directions, name the single priority.' },
       { time: '11:00', title: 'One focused block', note: '25 minutes, one task, everything else closed. Then a real break.' },
@@ -80,6 +107,11 @@ export const PLANS: Record<AnimalId, RhythmPlan> = {
   },
   fox: {
     intro: 'Hyper-alert and always scanning. Your peak is early — and your hardest skill is permission to stop.',
+    sleep: {
+      bedtime: '10:00 PM',
+      wake: '6:00 AM',
+      note: 'You wake sharp, so protect an early bedtime to match. A fixed shutdown ritual tells the scanning brain it’s safe to drop.',
+    },
     flow: [
       { time: '8:00', title: 'Deep work, first thing', note: 'You’re sharpest early. Use it before the scanning takes over.' },
       { time: '12:00', title: 'Plan, then release', note: 'Set the day’s plan, then stop re-checking it. Trust the version you made.' },
@@ -94,6 +126,11 @@ export const PLANS: Record<AnimalId, RhythmPlan> = {
   },
   octopus: {
     intro: 'You read every room so well you forget your own state. The plan is decompression before empty.',
+    sleep: {
+      bedtime: '10:45 PM',
+      wake: '6:45 AM',
+      note: 'You carry the day’s emotional load to bed. Decompress first — quiet, a note, or a short walk — then a steady 8 hours.',
+    },
     flow: [
       { time: '10:00', title: 'Check your own gauge', note: 'Before absorbing everyone else, name your own energy: 1–5. Plan from that.' },
       { time: '2:00', title: 'Low-demand stretch', note: 'Schedule solo or low-social work midday so the mask comes off.' },
