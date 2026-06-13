@@ -25,7 +25,7 @@ export default function SignInScreen({ onClose }: { onClose: () => void }) {
 
   return (
     <View style={styles.fill}>
-      <LinearGradient colors={['#08080A', '#10231d', '#08080A']} style={StyleSheet.absoluteFill} />
+      <LinearGradient colors={['#08080A', '#141016', '#08080A']} style={StyleSheet.absoluteFill} />
       <KeyboardAvoidingView
         style={styles.fill}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}

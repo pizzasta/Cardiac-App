@@ -1,6 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
 import {
-  ActivityIndicator,
   KeyboardAvoidingView,
   Platform,
   Pressable,
@@ -19,6 +18,7 @@ import { askPulse, ChatTurn, generateReading, hasAI } from '../logic/ai';
 import { listen, voiceSupported } from '../logic/voice';
 import { DISCLAIMER_SHORT } from '../data/disclaimer';
 import Atmosphere from '../components/Atmosphere';
+import PulseLoader from '../components/PulseLoader';
 import { F } from '../theme';
 
 export default function PulseScreen({
@@ -139,7 +139,7 @@ export default function PulseScreen({
             {reading ? (
               <Text style={styles.readingText}>{reading}</Text>
             ) : (
-              <Text style={styles.readingPending}>Reading your patterns…</Text>
+              <PulseLoader color={a.accent} label="READING YOUR PATTERNS" />
             )}
           </Pressable>
 
@@ -154,7 +154,7 @@ export default function PulseScreen({
 
           {thinking && (
             <View style={[styles.bubble, styles.pulseBubble]}>
-              <ActivityIndicator color={a.accent} />
+              <PulseLoader color={a.accent} width={90} height={24} />
             </View>
           )}
 
