@@ -12,6 +12,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
 import { ARCHETYPES } from '../data/archetypes';
 import { RhythmResult } from '../logic/score';
+import { DISCLAIMER_SHORT } from '../data/disclaimer';
 import Rainforest from '../three/Rainforest';
 
 export default function RevealScreen({
@@ -106,6 +107,7 @@ export default function RevealScreen({
       <Pressable onPress={onRetake} hitSlop={12}>
         <Text style={styles.retake}>Retake the quiz</Text>
       </Pressable>
+      <Text style={styles.disclaimer}>{DISCLAIMER_SHORT}</Text>
     </View>
   );
 }
@@ -201,5 +203,11 @@ const styles = StyleSheet.create({
     marginTop: 16,
     fontSize: 14,
     fontWeight: '600',
+  },
+  disclaimer: {
+    color: 'rgba(255,255,255,0.45)',
+    textAlign: 'center',
+    marginTop: 12,
+    fontSize: 12,
   },
 });
