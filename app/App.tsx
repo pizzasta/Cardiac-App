@@ -26,6 +26,7 @@ import TrendsScreen from './src/screens/TrendsScreen';
 import SignalCardScreen from './src/screens/SignalCardScreen';
 import FadeIn from './src/components/FadeIn';
 import { Option } from './src/data/quiz';
+import { QUIZ } from './src/data/quiz';
 import { ARCHETYPES } from './src/data/archetypes';
 import { RhythmResult, scoreQuiz } from './src/logic/score';
 import { AuthProvider, useAuth } from './src/logic/auth';
@@ -118,10 +119,16 @@ function Flow() {
     // The quiz is the onboarding — mark it done so returning users can be routed
     // straight to their plan/dashboard.
     completeOnboarding().catch(() => {});
-    // Save the result to the cloud when signed in (no-op otherwise).
-    pushResult({ animal: r.animal, peak: r.peak, crash: r.crash, recharge: r.recharge }).catch(
-      () => {}
-    );
+    // Save the result + onboarding answers to the cloud when signed in (no-op
+    // otherwise).
+    const onboarding = picked.map((opt, i) => ({
+      questionId: QUIZ[i]?.id ?? `q${i}`,
+      answer: opt.label,
+    }));
+    pushResult(
+      { animal: r.animal, peak: r.peak, crash: r.crash, recharge: r.recharge },
+      onboarding
+    ).catch(() => {});
   };
 
   const reset = () => {
