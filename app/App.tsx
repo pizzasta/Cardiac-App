@@ -21,6 +21,9 @@ import LegalScreen from './src/screens/LegalScreen';
 import SignInScreen from './src/screens/SignInScreen';
 import ScienceScreen from './src/screens/ScienceScreen';
 import SettingsScreen from './src/screens/SettingsScreen';
+import CheckInScreen from './src/screens/CheckInScreen';
+import TrendsScreen from './src/screens/TrendsScreen';
+import SignalCardScreen from './src/screens/SignalCardScreen';
 import { Option } from './src/data/quiz';
 import { ARCHETYPES } from './src/data/archetypes';
 import { RhythmResult, scoreQuiz } from './src/logic/score';
@@ -43,6 +46,9 @@ function Flow() {
   const [showSignIn, setShowSignIn] = useState(false);
   const [showScience, setShowScience] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
+  const [showCheckIn, setShowCheckIn] = useState(false);
+  const [showTrends, setShowTrends] = useState(false);
+  const [showCard, setShowCard] = useState(false);
   // App-wide rainforest ambience + persistent mute/volume (remembered across visits).
   const [muted, setMuted] = useState(false);
   const [volume, setVolume] = useState(0.6);
@@ -127,7 +133,12 @@ function Flow() {
       {stage === 'quiz' && <QuizScreen onComplete={handleComplete} />}
       {stage === 'reading' && <ReadingScreen onDone={() => setStage('reveal')} />}
       {stage === 'reveal' && result && (
-        <RevealScreen result={result} onRetake={reset} onContinue={() => setStage('plan')} />
+        <RevealScreen
+          result={result}
+          onRetake={reset}
+          onContinue={() => setStage('plan')}
+          onShare={() => setShowCard(true)}
+        />
       )}
       {stage === 'plan' && result && (
         <PlanScreen
@@ -138,6 +149,9 @@ function Flow() {
           onSignIn={() => setShowSignIn(true)}
           onScience={() => setShowScience(true)}
           onSettings={() => setShowSettings(true)}
+          onCheckIn={() => setShowCheckIn(true)}
+          onTrends={() => setShowTrends(true)}
+          onShareCard={() => setShowCard(true)}
         />
       )}
       {stage === 'pulse' && result && (
@@ -173,6 +187,34 @@ function Flow() {
           }}
           onClose={() => setShowSettings(false)}
         />
+      )}
+
+      {showCheckIn && result && (
+        <CheckInScreen
+          result={result}
+          onClose={() => setShowCheckIn(false)}
+          onTrends={() => {
+            setShowCheckIn(false);
+            setShowTrends(true);
+          }}
+        />
+      )}
+      {showTrends && result && (
+        <TrendsScreen
+          result={result}
+          onClose={() => setShowTrends(false)}
+          onCheckIn={() => {
+            setShowTrends(false);
+            setShowCheckIn(true);
+          }}
+          onShare={() => {
+            setShowTrends(false);
+            setShowCard(true);
+          }}
+        />
+      )}
+      {showCard && result && (
+        <SignalCardScreen result={result} onClose={() => setShowCard(false)} />
       )}
 
       {/* Persistent ambience mute — always reachable, all screens. */}
@@ -241,7 +283,7 @@ export default function App() {
 const styles = StyleSheet.create({
   errFill: {
     flex: 1,
-    backgroundColor: '#0E1424',
+    backgroundColor: T.bg,
     alignItems: 'center',
     justifyContent: 'center',
     padding: 32,
@@ -249,13 +291,13 @@ const styles = StyleSheet.create({
   errTitle: { color: '#fff', fontSize: 24, fontWeight: '800', marginBottom: 12 },
   errBody: { color: 'rgba(255,255,255,0.75)', fontSize: 15, lineHeight: 22, textAlign: 'center' },
   errBtn: {
-    backgroundColor: '#2BD9C8',
+    backgroundColor: T.accent,
     borderRadius: 24,
     paddingVertical: 14,
     paddingHorizontal: 32,
     marginTop: 24,
   },
-  errBtnText: { color: '#0E1424', fontSize: 16, fontWeight: '700' },
+  errBtnText: { color: '#08080A', fontSize: 16, fontWeight: '700' },
   soundFab: {
     position: 'absolute',
     bottom: 104,
@@ -263,7 +305,7 @@ const styles = StyleSheet.create({
     width: 44,
     height: 44,
     borderRadius: 22,
-    backgroundColor: 'rgba(8,21,17,0.55)',
+    backgroundColor: 'rgba(18,18,20,0.6)',
     borderColor: 'rgba(255,255,255,0.22)',
     borderWidth: 1,
     alignItems: 'center',

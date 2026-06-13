@@ -113,3 +113,15 @@ export const ARCHETYPES: Record<AnimalId, Archetype> = {
 };
 
 export const APP_BACKGROUND = '#08080A';
+
+// A subtle per-animal hue, layered over the global hot-pink for identity on the
+// new surfaces (Signal Card waveform, Trends, the Reveal emblem glow). The UI
+// chrome stays hot-pink; this is just a quiet signature.
+export const TINTS: Record<AnimalId, string> = {
+  dolphin: '#4FC3F7',
+  wolf: '#9B6BFF',
+  bear: '#FF9F45',
+  hummingbird: '#3DDC97',
+  fox: '#FF6B3D',
+  octopus: '#FF5DA2',
+};
