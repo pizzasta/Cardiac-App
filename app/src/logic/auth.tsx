@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useState } from 'react';
+import React, { createContext, useContext, useEffect, useRef, useState } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Google from 'expo-auth-session/providers/google';
 import * as WebBrowser from 'expo-web-browser';
@@ -67,17 +67,49 @@ function decodeJwt(token: string): { name?: string; email?: string } {
   }
 }
 
-export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [user, setUser] = useState<User | null>(null);
-  const [ready, setReady] = useState(false);
+const googleAvailable = !!(WEB_ID || IOS_ID || ANDROID_ID);
 
-  const googleAvailable = !!(WEB_ID || IOS_ID || ANDROID_ID);
-
+// The Google OAuth hook is isolated in its own child so it is ONLY mounted when
+// client IDs are configured. Calling it unconfigured can throw during render —
+// which, at the app root, would blank the whole screen. This keeps it contained.
+function GoogleBridge({
+  promptRef,
+  onUser,
+}: {
+  promptRef: React.MutableRefObject<null | (() => Promise<unknown>)>;
+  onUser: (u: User) => void;
+}) {
   const [, response, promptAsync] = Google.useIdTokenAuthRequest({
     clientId: WEB_ID,
     iosClientId: IOS_ID,
     androidClientId: ANDROID_ID,
   });
+
+  useEffect(() => {
+    promptRef.current = promptAsync;
+  }, [promptAsync, promptRef]);
+
+  useEffect(() => {
+    if (response?.type === 'success') {
+      const idToken = response.params?.id_token;
+      if (idToken) {
+        const claims = decodeJwt(idToken);
+        onUser({
+          name: claims.name || (claims.email ? claims.email.split('@')[0] : 'You'),
+          email: claims.email || '',
+          provider: 'google',
+        });
+      }
+    }
+  }, [response, onUser]);
+
+  return null;
+}
+
+export function AuthProvider({ children }: { children: React.ReactNode }) {
+  const [user, setUser] = useState<User | null>(null);
+  const [ready, setReady] = useState(false);
+  const promptRef = useRef<null | (() => Promise<unknown>)>(null);
 
   // Restore a saved session.
   useEffect(() => {
@@ -85,47 +117,41 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       .then((raw) => {
         if (raw) setUser(JSON.parse(raw));
       })
+      .catch(() => {})
       .finally(() => setReady(true));
   }, []);
 
   const persist = async (u: User) => {
     setUser(u);
-    await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(u));
-  };
-
-  // Handle the Google OAuth response.
-  useEffect(() => {
-    if (response?.type === 'success') {
-      const idToken = response.params?.id_token;
-      if (idToken) {
-        const claims = decodeJwt(idToken);
-        persist({
-          name: claims.name || (claims.email ? claims.email.split('@')[0] : 'You'),
-          email: claims.email || '',
-          provider: 'google',
-        });
-      }
+    try {
+      await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(u));
+    } catch {
+      /* storage unavailable — session stays in memory */
     }
-  }, [response]);
+  };
 
   const value: AuthValue = {
     user,
     ready,
     googleAvailable,
     signInWithGoogle: async () => {
-      if (!googleAvailable) return;
-      await promptAsync();
+      if (promptRef.current) await promptRef.current();
     },
     signInWithEmail: async (name, email) => {
       await persist({ name: name.trim() || email.split('@')[0], email: email.trim(), provider: 'email' });
     },
     signOut: async () => {
       setUser(null);
-      await AsyncStorage.removeItem(STORAGE_KEY);
+      await AsyncStorage.removeItem(STORAGE_KEY).catch(() => {});
     },
   };
 
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+  return (
+    <AuthContext.Provider value={value}>
+      {googleAvailable && <GoogleBridge promptRef={promptRef} onUser={persist} />}
+      {children}
+    </AuthContext.Provider>
+  );
 }
 
 export function useAuth(): AuthValue {

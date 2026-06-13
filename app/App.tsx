@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import HookScreen from './src/screens/HookScreen';
@@ -94,13 +95,65 @@ function Flow() {
   );
 }
 
+// Catches render errors so a crash shows a readable fallback instead of a blank
+// white screen, and lets the user recover without a hard reload.
+class ErrorBoundary extends React.Component<
+  { children: React.ReactNode },
+  { error: Error | null }
+> {
+  state = { error: null as Error | null };
+
+  static getDerivedStateFromError(error: Error) {
+    return { error };
+  }
+
+  render() {
+    if (this.state.error) {
+      return (
+        <View style={styles.errFill}>
+          <Text style={styles.errTitle}>Something hiccuped</Text>
+          <Text style={styles.errBody}>
+            Circadia hit an unexpected error. Try again — your rhythm data is safe.
+          </Text>
+          <Pressable style={styles.errBtn} onPress={() => this.setState({ error: null })}>
+            <Text style={styles.errBtnText}>Reload</Text>
+          </Pressable>
+        </View>
+      );
+    }
+    return this.props.children;
+  }
+}
+
 export default function App() {
   return (
-    <AuthProvider>
-      <SafeAreaProvider>
-        <StatusBar style="light" />
-        <Flow />
-      </SafeAreaProvider>
-    </AuthProvider>
+    <ErrorBoundary>
+      <AuthProvider>
+        <SafeAreaProvider>
+          <StatusBar style="light" />
+          <Flow />
+        </SafeAreaProvider>
+      </AuthProvider>
+    </ErrorBoundary>
   );
 }
+
+const styles = StyleSheet.create({
+  errFill: {
+    flex: 1,
+    backgroundColor: '#0E1424',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 32,
+  },
+  errTitle: { color: '#fff', fontSize: 24, fontWeight: '800', marginBottom: 12 },
+  errBody: { color: 'rgba(255,255,255,0.75)', fontSize: 15, lineHeight: 22, textAlign: 'center' },
+  errBtn: {
+    backgroundColor: '#2BD9C8',
+    borderRadius: 24,
+    paddingVertical: 14,
+    paddingHorizontal: 32,
+    marginTop: 24,
+  },
+  errBtnText: { color: '#0E1424', fontSize: 16, fontWeight: '700' },
+});
