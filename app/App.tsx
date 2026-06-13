@@ -29,6 +29,7 @@ import { Option } from './src/data/quiz';
 import { ARCHETYPES } from './src/data/archetypes';
 import { RhythmResult, scoreQuiz } from './src/logic/score';
 import { AuthProvider, useAuth } from './src/logic/auth';
+import { pushResult } from './src/logic/sync';
 import { useFonts, SpaceGrotesk_700Bold } from '@expo-google-fonts/space-grotesk';
 import { JetBrainsMono_500Medium } from '@expo-google-fonts/jetbrains-mono';
 import { T } from './src/theme';
@@ -110,12 +111,17 @@ function Flow() {
   };
 
   const handleComplete = (picked: Option[]) => {
+    const r = scoreQuiz(picked);
     setAnswers(picked);
-    setResult(scoreQuiz(picked));
+    setResult(r);
     setStage('reading');
     // The quiz is the onboarding — mark it done so returning users can be routed
     // straight to their plan/dashboard.
     completeOnboarding().catch(() => {});
+    // Save the result to the cloud when signed in (no-op otherwise).
+    pushResult({ animal: r.animal, peak: r.peak, crash: r.crash, recharge: r.recharge }).catch(
+      () => {}
+    );
   };
 
   const reset = () => {

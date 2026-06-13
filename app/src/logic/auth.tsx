@@ -5,6 +5,7 @@ import * as Google from 'expo-auth-session/providers/google';
 import { makeRedirectUri } from 'expo-auth-session';
 import * as WebBrowser from 'expo-web-browser';
 import { supabase, supabaseEnabled } from './supabase';
+import { pullCheckIns, setOnboarding } from './sync';
 
 // Auth for Circadia. Backend is chosen automatically:
 //   • Supabase — when EXPO_PUBLIC_SUPABASE_URL + EXPO_PUBLIC_SUPABASE_ANON_KEY
@@ -132,13 +133,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       supabase.auth
         .getSession()
         .then(({ data }) => {
-          setUser(data.session?.user ? mapUser(data.session.user) : null);
+          const u = data.session?.user;
+          setUser(u ? mapUser(u) : null);
+          if (u) pullCheckIns().catch(() => {});
         })
         .catch(() => {})
         .finally(() => setReady(true));
 
-      const { data } = supabase.auth.onAuthStateChange((_event, session) => {
+      const { data } = supabase.auth.onAuthStateChange((event, session) => {
         setUser(session?.user ? mapUser(session.user) : null);
+        // Hydrate the local log from the cloud right after sign-in.
+        if (event === 'SIGNED_IN') pullCheckIns().catch(() => {});
       });
       return () => data.subscription.unsubscribe();
     }
@@ -255,6 +260,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     completeOnboarding: async () => {
       setOnboardingComplete(true);
       await AsyncStorage.setItem(ONBOARD_KEY, 'true').catch(() => {});
+      setOnboarding(true).catch(() => {}); // mirror to profile when signed in
     },
   };
 
