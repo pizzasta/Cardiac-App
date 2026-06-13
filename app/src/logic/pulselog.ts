@@ -1,5 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { AnimalId } from '../data/archetypes';
+import { pushCheckIn } from './sync';
 
 // A tiny, forgiving daily check-in log. One entry per local day; logging again
 // the same day updates it. Stored locally so it works offline and signed-out.
@@ -57,6 +58,8 @@ export async function logToday(level: Level, reason?: string): Promise<PulseEntr
   } catch {
     // best-effort; the in-memory result is still returned
   }
+  // Mirror to the cloud when signed in (no-op otherwise).
+  pushCheckIn({ date: k, level, reason }).catch(() => {});
   return next;
 }
 

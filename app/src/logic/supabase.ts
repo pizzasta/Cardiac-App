@@ -2,6 +2,7 @@ import 'react-native-url-polyfill/auto';
 import { Platform } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
+import { Database } from '../types/db';
 
 // Supabase is OPTIONAL. It activates only when both public env vars are set:
 //   EXPO_PUBLIC_SUPABASE_URL
@@ -14,8 +15,8 @@ const anonKey = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY;
 
 export const supabaseEnabled = !!(url && anonKey);
 
-export const supabase: SupabaseClient | null = supabaseEnabled
-  ? createClient(url as string, anonKey as string, {
+export const supabase: SupabaseClient<Database> | null = supabaseEnabled
+  ? createClient<Database>(url as string, anonKey as string, {
       auth: {
         storage: AsyncStorage,
         autoRefreshToken: true,
