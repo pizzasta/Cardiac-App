@@ -7,9 +7,11 @@ import { DISCLAIMER_SHORT } from '../data/disclaimer';
 export default function HookScreen({
   onStart,
   onLegal,
+  onSignIn,
 }: {
   onStart: () => void;
   onLegal: () => void;
+  onSignIn: () => void;
 }) {
   return (
     <View style={styles.fill}>
@@ -37,9 +39,15 @@ export default function HookScreen({
         <Text style={styles.fineprint}>
           No signup. Just curiosity. {DISCLAIMER_SHORT}
         </Text>
-        <Pressable onPress={onLegal} hitSlop={10}>
-          <Text style={styles.legalLink}>Terms & Privacy</Text>
-        </Pressable>
+        <View style={styles.linkRow}>
+          <Pressable onPress={onSignIn} hitSlop={10}>
+            <Text style={styles.legalLink}>Sign in</Text>
+          </Pressable>
+          <Text style={styles.linkDot}>·</Text>
+          <Pressable onPress={onLegal} hitSlop={10}>
+            <Text style={styles.legalLink}>Terms & Privacy</Text>
+          </Pressable>
+        </View>
       </View>
     </View>
   );
@@ -87,10 +95,11 @@ const styles = StyleSheet.create({
     fontSize: 13,
     lineHeight: 18,
   },
+  linkRow: { flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 10, marginTop: 8 },
+  linkDot: { color: 'rgba(255,255,255,0.4)', fontSize: 13 },
   legalLink: {
-    color: 'rgba(255,255,255,0.6)',
+    color: 'rgba(255,255,255,0.7)',
     textAlign: 'center',
-    marginTop: 8,
     fontSize: 13,
     fontWeight: '600',
     textDecorationLine: 'underline',

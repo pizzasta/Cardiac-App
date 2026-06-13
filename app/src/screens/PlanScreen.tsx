@@ -12,9 +12,11 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { ARCHETYPES } from '../data/archetypes';
 import { PLANS } from '../data/plans';
 import { REMINDERS } from '../data/reminders';
+import { DEEP_DIVE } from '../data/deepdive';
 import { DISCLAIMER_FULL } from '../data/disclaimer';
 import { RhythmResult } from '../logic/score';
 import { canSchedule, disable as disableNotifs, enable as enableNotifs, isEnabled } from '../logic/notifications';
+import { useAuth } from '../logic/auth';
 import Rainforest from '../three/Rainforest';
 
 function fmtTime(hour: number, minute: number): string {
@@ -28,6 +30,7 @@ export default function PlanScreen({
   onBack,
   onPulse,
   onLegal,
+  onSignIn,
 }: {
   result: RhythmResult;
   onBack: () => void;
@@ -35,9 +38,11 @@ export default function PlanScreen({
   // on this tip"), so the tips are powered by the AI, not just static text.
   onPulse: (seed?: string) => void;
   onLegal: () => void;
+  onSignIn: () => void;
 }) {
   const a = ARCHETYPES[result.animal];
   const plan = PLANS[result.animal];
+  const { user } = useAuth();
 
   const [notifsOn, setNotifsOn] = useState(false);
   const [notifBusy, setNotifBusy] = useState(false);
@@ -188,6 +193,29 @@ export default function PlanScreen({
           </Pressable>
         ))}
 
+        <Text style={styles.section}>DETAILED PLAN</Text>
+        {user ? (
+          <View style={styles.deepCard}>
+            {DEEP_DIVE[result.animal].map((d, i) => (
+              <View key={i} style={styles.deepRow}>
+                <Text style={[styles.deepBullet, { color: a.accent }]}>◆</Text>
+                <Text style={styles.deepText}>{d}</Text>
+              </View>
+            ))}
+          </View>
+        ) : (
+          <Pressable style={[styles.lockCard, { borderColor: `${a.accent}55` }]} onPress={onSignIn}>
+            <Text style={styles.lockTitle}>🔒 Unlock your detailed plan</Text>
+            <Text style={styles.lockText}>
+              Sign in to get your weekly-grain plan — deeper scheduling, caffeine and recovery
+              timing, and the patterns to track for your rhythm.
+            </Text>
+            <View style={[styles.lockBtn, { backgroundColor: a.accent }]}>
+              <Text style={styles.lockBtnText}>Sign in to unlock</Text>
+            </View>
+          </Pressable>
+        )}
+
         <Pressable style={[styles.cta, { backgroundColor: a.accent }]} onPress={() => onPulse()}>
           <Text style={styles.ctaText}>Talk to Pulse  →</Text>
         </Pressable>
@@ -311,12 +339,34 @@ const styles = StyleSheet.create({
   tipLabel: { fontSize: 12, fontWeight: '800', letterSpacing: 0.5 },
   tipGo: { fontSize: 12, fontWeight: '700' },
   tipText: { color: '#fff', fontSize: 15, lineHeight: 22 },
+  deepCard: {
+    backgroundColor: 'rgba(14,20,36,0.5)',
+    borderColor: 'rgba(255,255,255,0.12)',
+    borderWidth: 1,
+    borderRadius: 16,
+    padding: 16,
+    gap: 12,
+  },
+  deepRow: { flexDirection: 'row', gap: 10 },
+  deepBullet: { fontSize: 12, marginTop: 4 },
+  deepText: { flex: 1, color: '#fff', fontSize: 15, lineHeight: 22 },
+  lockCard: {
+    backgroundColor: 'rgba(14,20,36,0.5)',
+    borderWidth: 1,
+    borderRadius: 16,
+    padding: 18,
+  },
+  lockTitle: { color: '#fff', fontSize: 16, fontWeight: '800' },
+  lockText: { color: 'rgba(255,255,255,0.78)', fontSize: 14, lineHeight: 21, marginTop: 8 },
+  lockBtn: { borderRadius: 24, paddingVertical: 13, alignItems: 'center', marginTop: 16 },
+  lockBtnText: { color: '#0E1424', fontSize: 15, fontWeight: '700' },
   cta: {
     borderRadius: 30,
     paddingVertical: 18,
     alignItems: 'center',
     marginTop: 26,
   },
+
   ctaText: { color: '#0E1424', fontSize: 18, fontWeight: '700' },
   disclaimer: {
     color: 'rgba(255,255,255,0.45)',

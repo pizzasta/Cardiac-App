@@ -8,20 +8,23 @@ import RevealScreen from './src/screens/RevealScreen';
 import PlanScreen from './src/screens/PlanScreen';
 import PulseScreen from './src/screens/PulseScreen';
 import LegalScreen from './src/screens/LegalScreen';
+import SignInScreen from './src/screens/SignInScreen';
 import { Option } from './src/data/quiz';
 import { RhythmResult, scoreQuiz } from './src/logic/score';
+import { AuthProvider } from './src/logic/auth';
 
 type Stage = 'hook' | 'quiz' | 'reading' | 'reveal' | 'plan' | 'pulse';
 
-export default function App() {
+function Flow() {
   const [stage, setStage] = useState<Stage>('hook');
   const [result, setResult] = useState<RhythmResult | null>(null);
   // Kept around so the plan + Pulse can ground content in the user's answers.
   const [answers, setAnswers] = useState<Option[]>([]);
   // A question to open Pulse with (set when a tip is tapped on the plan).
   const [pulseSeed, setPulseSeed] = useState<string | undefined>(undefined);
-  // Terms & Privacy overlay, openable from any screen.
+  // Overlays, openable from any screen.
   const [showLegal, setShowLegal] = useState(false);
+  const [showSignIn, setShowSignIn] = useState(false);
 
   const openPulse = (seed?: string) => {
     setPulseSeed(seed);
@@ -41,19 +44,18 @@ export default function App() {
   };
 
   return (
-    <SafeAreaProvider>
-      <StatusBar style="light" />
+    <>
       {stage === 'hook' && (
-        <HookScreen onStart={() => setStage('quiz')} onLegal={() => setShowLegal(true)} />
+        <HookScreen
+          onStart={() => setStage('quiz')}
+          onLegal={() => setShowLegal(true)}
+          onSignIn={() => setShowSignIn(true)}
+        />
       )}
       {stage === 'quiz' && <QuizScreen onComplete={handleComplete} />}
       {stage === 'reading' && <ReadingScreen onDone={() => setStage('reveal')} />}
       {stage === 'reveal' && result && (
-        <RevealScreen
-          result={result}
-          onRetake={reset}
-          onContinue={() => setStage('plan')}
-        />
+        <RevealScreen result={result} onRetake={reset} onContinue={() => setStage('plan')} />
       )}
       {stage === 'plan' && result && (
         <PlanScreen
@@ -61,6 +63,7 @@ export default function App() {
           onBack={() => setStage('reveal')}
           onPulse={openPulse}
           onLegal={() => setShowLegal(true)}
+          onSignIn={() => setShowSignIn(true)}
         />
       )}
       {stage === 'pulse' && result && (
@@ -76,6 +79,18 @@ export default function App() {
       )}
 
       {showLegal && <LegalScreen onClose={() => setShowLegal(false)} />}
-    </SafeAreaProvider>
+      {showSignIn && <SignInScreen onClose={() => setShowSignIn(false)} />}
+    </>
+  );
+}
+
+export default function App() {
+  return (
+    <AuthProvider>
+      <SafeAreaProvider>
+        <StatusBar style="light" />
+        <Flow />
+      </SafeAreaProvider>
+    </AuthProvider>
   );
 }
