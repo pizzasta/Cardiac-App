@@ -1,0 +1,5 @@
+supabase/
+.github/
+*.md
+.env.local
+.env.example
