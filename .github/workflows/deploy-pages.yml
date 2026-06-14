@@ -1,8 +1,5 @@
 name: Deploy Pages
 
-# Builds the Circadia Expo app for web and publishes it to GitHub Pages.
-# Runs automatically on pushes to main, and can be triggered manually
-# from the Actions tab (workflow_dispatch) once this file is on main.
 on:
   push:
     branches: [main]
@@ -11,13 +8,11 @@ on:
       - '.github/workflows/deploy-pages.yml'
   workflow_dispatch:
 
-# Permissions required by the official Pages deploy action.
 permissions:
   contents: read
   pages: write
   id-token: write
 
-# Allow one concurrent deploy; let in-progress runs finish.
 concurrency:
   group: pages
   cancel-in-progress: false
@@ -32,8 +27,6 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Configure Pages
-        # enablement: true turns on GitHub Pages (source = GitHub Actions) via
-        # the API, so the deploy step doesn't 404 when Pages was never enabled.
         uses: actions/configure-pages@v5
         with:
           enablement: true
@@ -47,9 +40,18 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Create .env from secrets
+        run: |
+          [ -n "$SUPABASE_URL" ] && echo "EXPO_PUBLIC_SUPABASE_URL=$SUPABASE_URL" >> .env || true
+          [ -n "$SUPABASE_ANON_KEY" ] && echo "EXPO_PUBLIC_SUPABASE_ANON_KEY=$SUPABASE_ANON_KEY" >> .env || true
+          [ -n "$PULSE_FN" ] && echo "EXPO_PUBLIC_PULSE_FN=$PULSE_FN" >> .env || true
+        shell: bash
+        env:
+          SUPABASE_URL: ${{ secrets.EXPO_PUBLIC_SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.EXPO_PUBLIC_SUPABASE_ANON_KEY }}
+          PULSE_FN: ${{ secrets.EXPO_PUBLIC_PULSE_FN }}
+
       - name: Export web build
-        # baseUrl is set in app.json experiments so assets resolve under the
-        # project-pages subpath (/<repo>/).
         run: npx expo export --platform web --output-dir dist
 
       - name: Upload Pages artifact
