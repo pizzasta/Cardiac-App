@@ -40,13 +40,27 @@ export function scoreQuiz(answers: (Option | null)[]): RhythmResult {
   const chips = { ...FALLBACK };
 
   answers.forEach((opt) => {
-    if (!opt) return;
-    (Object.entries(opt.scores) as [AnimalId, number][]).forEach(
-      ([animal, pts]) => {
-        totals[animal] += pts;
-      }
-    );
-    if (opt.tag) chips[opt.tag.kind] = opt.tag.value;
+    if (!opt || typeof opt !== 'object') return;
+
+    const scores = (opt as any).scores;
+    if (scores && typeof scores === 'object') {
+      (Object.entries(scores) as [AnimalId, number][]).forEach(
+        ([animal, pts]) => {
+          totals[animal] += pts;
+        }
+      );
+    }
+
+    const tag = (opt as any).tag;
+    if (
+      tag &&
+      typeof tag === 'object' &&
+      typeof (tag as any).kind === 'string' &&
+      typeof (tag as any).value === 'string' &&
+      Object.prototype.hasOwnProperty.call(chips, (tag as any).kind)
+    ) {
+      chips[(tag as any).kind as keyof typeof chips] = (tag as any).value;
+    }
   });
 
   let winner: AnimalId = PRIORITY[0];
