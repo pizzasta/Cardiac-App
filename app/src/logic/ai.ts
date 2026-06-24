@@ -28,7 +28,11 @@ const MODEL = 'claude-opus-4-8';
 const SUPA_FN = process.env.EXPO_PUBLIC_PULSE_FN;
 const SUPA_ANON = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY;
 const ENDPOINT = process.env.EXPO_PUBLIC_PULSE_ENDPOINT;
-const API_KEY = process.env.EXPO_PUBLIC_ANTHROPIC_API_KEY;
+// Direct-from-client key is DEV ONLY: EXPO_PUBLIC_* values are bundled into
+// the app, so this must never be used in production. Release builds rely on
+// the Edge Function (SUPA_FN) or the proxy ENDPOINT instead; __DEV__ is false
+// in production bundles, which drops the key from hasAI() and the client below.
+const API_KEY = __DEV__ ? process.env.EXPO_PUBLIC_ANTHROPIC_API_KEY : undefined;
 
 export const hasAI = () => !!SUPA_FN || !!ENDPOINT || !!API_KEY;
 
