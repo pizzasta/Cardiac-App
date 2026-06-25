@@ -23,6 +23,16 @@ jobs:
       - name: Install
         run: npm ci
 
+      - name: Verify Supabase token present
+        id: sb
+        run: |
+          if [ -n "${SUPABASE_ACCESS_TOKEN:-}" ]; then
+            echo "ok=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "Supabase access token not configured; skipping drift check." >&2
+            echo "ok=false" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Type-check
         run: npm run type-check
 
@@ -58,13 +68,26 @@ jobs:
       - name: Install
         run: npm ci
 
+      - name: Verify Supabase token present
+        id: sb
+        run: |
+          if [ -n "${SUPABASE_ACCESS_TOKEN:-}" ]; then
+            echo "ok=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "Supabase access token not configured; skipping drift check." >&2
+            echo "ok=false" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Link Supabase project
+        if: steps.sb.outputs.ok == 'true'
         run: npx supabase link --project-ref "${{ vars.SUPABASE_PROJECT_ID }}"
 
       - name: Regenerate types
+        if: steps.sb.outputs.ok == 'true'
         run: npm run gen:types
 
       - name: Fail if src/types/db.ts is out of date
+        if: steps.sb.outputs.ok == 'true'
         run: |
           if ! git diff --quiet -- src/types/db.ts; then
             echo '::error::src/types/db.ts is out of date. Run: npm run gen:types'
