@@ -16,6 +16,7 @@ import QuizScreen from './src/screens/QuizScreen';
 import ReadingScreen from './src/screens/ReadingScreen';
 import RevealScreen from './src/screens/RevealScreen';
 import PlanScreen from './src/screens/PlanScreen';
+import TodayScreen from './src/screens/TodayScreen';
 import PulseScreen from './src/screens/PulseScreen';
 import LegalScreen from './src/screens/LegalScreen';
 import SignInScreen from './src/screens/SignInScreen';
@@ -50,6 +51,7 @@ function Flow() {
   const [showScience, setShowScience] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [showCheckIn, setShowCheckIn] = useState(false);
+  const [showToday, setShowToday] = useState(false);
   const [showTrends, setShowTrends] = useState(false);
   const [showCard, setShowCard] = useState(false);
   // App-wide rainforest ambience + persistent mute/volume (remembered across visits).
@@ -180,7 +182,7 @@ function Flow() {
             onSignIn={() => setShowSignIn(true)}
             onScience={() => setShowScience(true)}
             onSettings={() => setShowSettings(true)}
-            onCheckIn={() => setShowCheckIn(true)}
+            onCheckIn={() => setShowToday(true)}
             onTrends={() => setShowTrends(true)}
             onShareCard={() => setShowCard(true)}
           />
@@ -223,6 +225,20 @@ function Flow() {
         />
       )}
 
+      {showToday && result && (
+        <TodayScreen
+          result={result}
+          onClose={() => setShowToday(false)}
+          onCheckIn={() => {
+            setShowToday(false);
+            setShowCheckIn(true);
+          }}
+          onTrends={() => {
+            setShowToday(false);
+            setShowTrends(true);
+          }}
+        />
+      )}
       {showCheckIn && result && (
         <CheckInScreen
           result={result}
