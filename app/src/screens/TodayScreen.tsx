@@ -18,11 +18,40 @@ import { PulseEntry, load, getToday, currentStreak } from '../logic/pulselog';
 import { weeklyReport, WeeklyReport } from '../logic/weekly';
 import { F, T } from '../theme';
 
-// Minutes since midnight for a 'HH:MM' label; -1 if unparseable.
-function toMinutes(hhmm: string): number {
-  const m = /^(\d{1,2}):(\d{2})/.exec(hhmm.trim());
-  if (!m) return -1;
-  return parseInt(m[1], 10) * 60 + parseInt(m[2], 10);
+// Minutes since midnight for a time label. Handles an explicit 'AM'/'PM'
+// suffix; bare 'H:MM' labels are 12-hour and disambiguated by flow order in
+// flowMinutes below. Returns mins = -1 if unparseable.
+function parseLabel(label: string): { mins: number; hasMeridiem: boolean } {
+  const m = /^(\d{1,2}):(\d{2})\s*(AM|PM)?$/i.exec(label.trim());
+  if (!m) return { mins: -1, hasMeridiem: false };
+  let h = parseInt(m[1], 10) % 12;
+  const ap = m[3]?.toUpperCase();
+  if (ap === 'PM') h += 12;
+  return { mins: h * 60 + parseInt(m[2], 10), hasMeridiem: !!ap };
+}
+
+// Effective minutes-since-midnight for each flow item, made monotonically
+// increasing across the day. The flow is authored in chronological order, so a
+// bare 12-hour time that would land before the previous item is bumped by 12h
+// (e.g. Dolphin's 1:45 -> 13:45, the later 9:30 -> 21:30). Items with an
+// explicit AM/PM are trusted as written.
+function flowMinutes(flow: FlowItem[]): number[] {
+  const out: number[] = [];
+  let prev = -1;
+  for (const item of flow) {
+    const { mins, hasMeridiem } = parseLabel(item.time);
+    if (mins < 0) {
+      out.push(prev);
+      continue;
+    }
+    let v = mins;
+    if (!hasMeridiem) {
+      while (v <= prev) v += 12 * 60;
+    }
+    out.push(v);
+    prev = v;
+  }
+  return out;
 }
 
 // The flow item whose time has most recently passed = where you are 'now'.
@@ -30,9 +59,10 @@ function toMinutes(hhmm: string): number {
 function currentFlowIndex(flow: FlowItem[], now = new Date()): number {
   if (flow.length === 0) return -1;
   const mins = now.getHours() * 60 + now.getMinutes();
+  const eff = flowMinutes(flow);
   let idx = 0;
   for (let i = 0; i < flow.length; i++) {
-    if (toMinutes(flow[i].time) <= mins) idx = i;
+    if (eff[i] >= 0 && eff[i] <= mins) idx = i;
   }
   return idx;
 }
