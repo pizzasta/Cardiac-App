@@ -114,8 +114,14 @@ export async function clearLocalData() {
 export async function deleteCloudData(): Promise<boolean> {
     try {
           if (!supabase) return true;
-          const uid = await currentUserId();
-          if (!uid) return true;
+          // A failed lookup isn't the same as being signed out: only a missing
+          // session means there is nothing in the cloud to delete.
+          const { data, error } = await supabase.auth.getUser();
+          if (error || !data.user) {
+            const { data: s } = await supabase.auth.getSession();
+            return !s.session;
+          }
+          const uid = data.user.id;
           const steps = [
             await supabase.from('onboarding_answers').delete().eq('user_id', uid),
             await supabase.from('check_ins').delete().eq('user_id', uid),

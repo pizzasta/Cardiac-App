@@ -134,9 +134,10 @@ export default function SettingsScreen({
     }
     setDelBusy(false);
     if (!ok) {
-      // Nothing was removed locally, so the user can simply try again.
+      // Nothing was removed locally, and the cloud deletes are safe to repeat,
+      // so the user can simply try again.
       setDelError(
-        `We couldn’t reach the server, so nothing was deleted. Check your connection and try again, or email ${LEGAL.contactEmail}.`
+        `We couldn’t finish deleting your data from the server, so it may be only partly removed. Your data on this device is untouched. Check your connection and try again, or email ${LEGAL.contactEmail}.`
       );
       return;
     }
