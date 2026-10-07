@@ -165,6 +165,30 @@ export function suggestCheckInTime(
   return { hour, minute, why };
 }
 
+export function buildSignalQuestion(
+  log: PulseEntry[],
+  level: Level,
+  reason?: string
+): string {
+  const recent = log.slice(-7);
+  const counts: Record<Level, number> = { wired: 0, steady: 0, flat: 0 };
+  recent.forEach((e) => (counts[e.level] += 1));
+  const pattern = (Object.entries(counts) as [Level, number][])
+    .filter(([, n]) => n > 0)
+    .map(([name, n]) => `${name}: ${n}`)
+    .join(', ');
+
+  return [
+    'Explain my signal using only my Circadia check-ins and rhythm profile.',
+    `Today I checked in as ${level}${reason ? ` and chose "${reason}" as the reason` : ''}.`,
+    pattern ? `Across my recent check-ins, the mix is ${pattern}.` : '',
+    'Give me a short, non-diagnostic explanation of what I may be noticing, then one gentle thing I could try right now.',
+    'Do not claim a medical cause or certainty.',
+  ]
+    .filter(Boolean)
+    .join(' ');
+}
+
 export function readFor(animalName: string, level: Level): { read: string; move: string } {
   if (level === 'wired')
     return {
