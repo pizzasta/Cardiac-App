@@ -7,6 +7,7 @@ import {
   ScrollView,
   StyleSheet,
   Text,
+  useWindowDimensions,
   View,
 } from 'react-native';
 import * as Haptics from 'expo-haptics';
@@ -33,6 +34,9 @@ export default function RevealScreen({
 }) {
   const a = ARCHETYPES[result.animal];
   const blend = blendFor(result);
+  // The animal is the hero: as large as the screen comfortably allows.
+  const { width } = useWindowDimensions();
+  const size = Math.round(Math.min(320, Math.max(220, width - 72)));
 
   // Entrance: the content lifts and fades in, then the animal arrives on a
   // single heartbeat — one thump with a pink glow bloom.
@@ -75,14 +79,29 @@ export default function RevealScreen({
           <Animated.View style={[styles.emblemWrap, { transform: [{ scale: beatScale }] }]}>
             <Animated.View
               pointerEvents="none"
-              style={[styles.emblemGlow, { backgroundColor: a.accent, opacity: glowOpacity }]}
+              style={[
+                styles.emblemGlow,
+                {
+                  width: size + 24,
+                  height: size + 24,
+                  borderRadius: (size + 24) / 2,
+                  backgroundColor: a.accent,
+                  opacity: glowOpacity,
+                },
+              ]}
             />
-            <View style={[styles.emblem, { borderColor: `${a.accent}55` }]}>
+            <View
+              style={[
+                styles.emblem,
+                { width: size, height: size, borderRadius: size / 2, borderColor: `${a.accent}55` },
+              ]}
+            >
               <AnimalEmblem
                 animal={a.id}
                 accent={TINTS[a.id]}
                 emoji={a.emoji}
                 bg={a.gradient[1]}
+                distance={3.3}
                 style={StyleSheet.absoluteFill}
               />
             </View>
@@ -171,16 +190,8 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   emblemWrap: { alignItems: 'center', justifyContent: 'center', marginVertical: 18 },
-  emblemGlow: {
-    position: 'absolute',
-    width: 240,
-    height: 240,
-    borderRadius: 120,
-  },
+  emblemGlow: { position: 'absolute' },
   emblem: {
-    width: 220,
-    height: 220,
-    borderRadius: 110,
     borderWidth: 1,
     overflow: 'hidden',
     alignSelf: 'center',
