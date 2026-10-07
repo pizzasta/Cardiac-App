@@ -11,12 +11,14 @@
       "resizeMode": "contain"
     },
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "app.circadia.mobile"
     },
     "android": {
       "adaptiveIcon": {
         "backgroundColor": "#0E1424"
-      }
+      },
+      "package": "app.circadia.mobile"
     },
     "web": {
       "bundler": "metro"
