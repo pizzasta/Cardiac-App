@@ -189,6 +189,24 @@ export default function TrendsScreen({
           </View>
         )}
 
+        <View style={styles.goodDaysCard}>
+          <Text style={[styles.insightKicker, { color: a.accent }]}>COMPARE MY GOOD DAYS</Text>
+          <Text style={styles.discoveryTitle}>{goodDays.ready ? 'What looks different on your Steady days' : 'Keep checking in to unlock this'}</Text>
+          <Text style={styles.insightText}>{goodDays.summary}</Text>
+          {goodDays.ready && goodDays.factors.map((factor) => (
+            <View key={factor.reason} style={styles.factorRow}>
+              <Text style={styles.factorName}>{factor.reason}</Text>
+              <Text style={styles.factorValue}>{factor.steadyPct}% Steady · {factor.otherPct}% other</Text>
+            </View>
+          ))}
+          <Text style={styles.discoveryFine}>Based only on your Circadia check-ins. These are associations, not proof of cause.</Text>
+          {goodDays.ready && (
+            <Pressable style={[styles.goodDaysBtn, { borderColor: a.accent }]} onPress={() => onAskPulse(goodDays.pulseQuestion)}>
+              <Text style={[styles.goodDaysBtnText, { color: a.accent }]}>Ask Pulse about this pattern</Text>
+            </Pressable>
+          )}
+        </View>
+
         {/* Insight */}
         <View style={[styles.insightCard, { borderColor: `${a.accent}44` }]}>
           <Text style={[styles.insightKicker, { color: a.accent }]}>THE PATTERN</Text>
