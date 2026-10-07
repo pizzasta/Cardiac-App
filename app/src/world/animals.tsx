@@ -23,9 +23,11 @@ interface Palette {
 function usePalette(color: string): Palette {
   const pal = useMemo<Palette>(
     () => ({
-      body: new THREE.MeshStandardMaterial({ roughness: 0.5, metalness: 0.1, flatShading: true }),
-      light: new THREE.MeshStandardMaterial({ roughness: 0.6, flatShading: true }),
-      dark: new THREE.MeshStandardMaterial({ roughness: 0.6, flatShading: true }),
+      // Smooth shading with a soft satin finish, to sit naturally in the
+      // realistic landscape.
+      body: new THREE.MeshStandardMaterial({ roughness: 0.42, metalness: 0.05 }),
+      light: new THREE.MeshStandardMaterial({ roughness: 0.5 }),
+      dark: new THREE.MeshStandardMaterial({ roughness: 0.48 }),
       eye: new THREE.MeshStandardMaterial({ color: '#0b0b10', roughness: 0.2 }),
       shine: new THREE.MeshBasicMaterial({ color: '#ffffff' }),
     }),
@@ -46,25 +48,43 @@ function usePalette(color: string): Palette {
 }
 
 // Primitive helpers.
+// Shared geometries, built once and reused by every mesh. Detail is tiered
+// by the `d` hint so smooth shading reads as rounded on the large parts
+// without paying for it on small, repeated ones (eyes, tentacle beads).
+const SPHERES = {
+  low: new THREE.SphereGeometry(1, 12, 9), // d <= 6: eyes, highlights
+  mid: new THREE.SphereGeometry(1, 16, 12), // d <= 10: beads, wings, small parts
+  high: new THREE.SphereGeometry(1, 32, 24), // larger bodies and heads
+};
+const CONES = new Map<number, THREE.ConeGeometry>();
+function coneGeometry(seg: number): THREE.ConeGeometry {
+  const radial = Math.max(16, seg * 3);
+  let g = CONES.get(radial);
+  if (!g) {
+    g = new THREE.ConeGeometry(1, 1, radial, 3);
+    CONES.set(radial, g);
+  }
+  return g;
+}
+
 function Ball({ m, p = [0, 0, 0], s = [1, 1, 1], r = [0, 0, 0], d = 14 }: { m: THREE.Material; p?: V3; s?: V3; r?: V3; d?: number }) {
-  return (
-    <mesh material={m} position={p} scale={s} rotation={r}>
-      <sphereGeometry args={[1, d, Math.max(6, Math.round(d * 0.7))]} />
-    </mesh>
-  );
+  const geometry = d <= 6 ? SPHERES.low : d <= 10 ? SPHERES.mid : SPHERES.high;
+  return <mesh geometry={geometry} material={m} position={p} scale={s} rotation={r} />;
 }
 function Cone({ m, p = [0, 0, 0], s = [1, 1, 1], r = [0, 0, 0], seg = 8 }: { m: THREE.Material; p?: V3; s?: V3; r?: V3; seg?: number }) {
   return (
-    <mesh material={m} position={p} scale={s} rotation={r}>
-      <coneGeometry args={[1, 1, seg]} />
-    </mesh>
+    <mesh geometry={coneGeometry(seg)} material={m} position={p} scale={s} rotation={r} />
   );
 }
 function Leg({ m, p, len = 0.5, w = 0.11 }: { m: THREE.Material; p: V3; len?: number; w?: number }) {
   return (
-    <mesh material={m} position={[p[0], p[1] - len / 2, p[2]]}>
-      <cylinderGeometry args={[w, w * 0.85, len, 7]} />
-    </mesh>
+    <group>
+      <mesh material={m} position={[p[0], p[1] - len / 2, p[2]]}>
+        <cylinderGeometry args={[w, w * 0.85, len, 16]} />
+      </mesh>
+      {/* Rounded foot */}
+      <mesh geometry={SPHERES.mid} material={m} position={[p[0], p[1] - len, p[2]]} scale={[w * 0.95, w * 0.7, w * 0.95]} />
+    </group>
   );
 }
 function Eye({ pal, p, size = 0.07 }: { pal: Palette; p: V3; size?: number }) {
@@ -250,9 +270,14 @@ const Fox: Rig = (pal, register) => {
         <Ball m={pal.body} s={[0.28, 0.25, 0.26]} d={10} />
         <Cone m={pal.light} p={[0.34, -0.06, 0]} s={[0.12, 0.38, 0.12]} r={[0, 0, -PI / 2]} seg={6} />
         <Ball m={pal.eye} p={[0.54, -0.05, 0]} s={[0.04, 0.04, 0.04]} d={6} />
-        <mesh ref={earL} material={pal.dark} position={[-0.02, 0.33, 0.13]} scale={[0.1, 0.32, 0.06]} rotation={[0.2, 0, 0]}>
-          <coneGeometry args={[1, 1, 4]} />
-        </mesh>
+        <mesh
+          ref={earL}
+          geometry={coneGeometry(4)}
+          material={pal.dark}
+          position={[-0.02, 0.33, 0.13]}
+          scale={[0.1, 0.32, 0.06]}
+          rotation={[0.2, 0, 0]}
+        />
         <Cone m={pal.dark} p={[-0.02, 0.33, -0.13]} s={[0.1, 0.32, 0.06]} r={[-0.2, 0, 0]} seg={4} />
         <Eye pal={pal} p={[0.2, 0.08, 0.16]} size={0.045} />
         <Eye pal={pal} p={[0.2, 0.08, -0.16]} size={0.045} />
@@ -291,7 +316,7 @@ const Octopus: Rig = (pal, register) => {
       const w = 0.12 * (1 - s / (SEGMENTS + 1));
       node = (
         <group ref={(g) => (segs.current[k] = g)} position={[0, s === 0 ? 0 : -0.22, 0]}>
-          <Ball m={s % 2 ? pal.light : pal.body} p={[0, -0.11, 0]} s={[w, 0.14, w]} d={8} />
+          <Ball m={s % 2 ? pal.light : pal.body} p={[0, -0.11, 0]} s={[w, 0.14, w]} d={6} />
           {node}
         </group>
       );
