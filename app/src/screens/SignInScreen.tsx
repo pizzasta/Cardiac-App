@@ -12,10 +12,10 @@ import {
 import { LinearGradient } from 'expo-linear-gradient';
 import { useTopInset } from '../hooks';
 import { useAuth } from '../logic/auth';
-import { CONSENT_SHORT } from '../data/disclaimer';
+import { DISCLAIMER_SHORT } from '../data/disclaimer';
 import { F, T } from '../theme';
 
-export default function SignInScreen({ onClose }: { onClose: () => void }) {
+export default function SignInScreen({ onClose, onLegal }: { onClose: () => void; onLegal: () => void }) {
   const {
     user,
     supabaseEnabled,
@@ -33,6 +33,8 @@ export default function SignInScreen({ onClose }: { onClose: () => void }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [busy, setBusy] = useState(false);
+  // Explicit consent: accounts store check-ins, which are health-related data.
+  const [agreed, setAgreed] = useState(false);
 
   // Close once a session exists (covers the async OAuth round-trip).
   useEffect(() => {
@@ -41,7 +43,7 @@ export default function SignInScreen({ onClose }: { onClose: () => void }) {
 
   const emailValid = /\S+@\S+\.\S+/.test(email);
   const passwordValid = password.length >= 6;
-  const canSubmit = supabaseEnabled ? emailValid && passwordValid : emailValid;
+  const canSubmit = agreed && (supabaseEnabled ? emailValid && passwordValid : emailValid);
 
   const submit = async () => {
     if (!canSubmit || busy) return;
@@ -81,7 +83,7 @@ export default function SignInScreen({ onClose }: { onClose: () => void }) {
           <Pressable onPress={onClose} hitSlop={12}>
             <Text style={styles.back}>‹ Back</Text>
           </Pressable>
-          <View style={{ width: 48 }} />
+          <View style={{ width: 64 }} />
         </View>
 
         <View style={styles.body}>
@@ -93,9 +95,29 @@ export default function SignInScreen({ onClose }: { onClose: () => void }) {
           </Text>
 
           <Pressable
-            style={[styles.google, (!googleAvailable || busy) && styles.disabled]}
+            style={styles.agreeRow}
+            onPress={() => setAgreed(!agreed)}
+            accessibilityRole="checkbox"
+            accessibilityState={{ checked: agreed }}
+            hitSlop={6}
+          >
+            <View style={[styles.box, agreed && styles.boxOn]}>
+              {agreed && <Text style={styles.tick}>✓</Text>}
+            </View>
+            <Text style={styles.agreeText}>
+              I’m 18 or over and agree to the{' '}
+              <Text style={styles.agreeLink} onPress={onLegal}>
+                Terms and Privacy Policy
+              </Text>
+              , including Circadia storing my check-ins and quiz answers (health-related data) in my
+              account.
+            </Text>
+          </Pressable>
+
+          <Pressable
+            style={[styles.google, (!googleAvailable || busy || !agreed) && styles.disabled]}
             onPress={onGoogle}
-            disabled={!googleAvailable || busy}
+            disabled={!googleAvailable || busy || !agreed}
           >
             <Text style={styles.googleG}>G</Text>
             <Text style={styles.googleText}>Continue with Google</Text>
@@ -173,7 +195,7 @@ export default function SignInScreen({ onClose }: { onClose: () => void }) {
             </Text>
           )}
 
-          <Text style={styles.consent}>{CONSENT_SHORT}</Text>
+          <Text style={styles.consent}>{DISCLAIMER_SHORT}</Text>
         </View>
       </KeyboardAvoidingView>
     </View>
@@ -183,7 +205,7 @@ export default function SignInScreen({ onClose }: { onClose: () => void }) {
 const styles = StyleSheet.create({
   fill: { ...StyleSheet.absoluteFillObject, backgroundColor: '#08080A' },
   header: { flexDirection: 'row', justifyContent: 'space-between', paddingHorizontal: 18 },
-  back: { color: 'rgba(255,255,255,0.85)', fontSize: 16, fontWeight: '600', width: 48 },
+  back: { color: 'rgba(255,255,255,0.85)', fontSize: 16, fontWeight: '600', width: 64 },
   body: { flex: 1, paddingHorizontal: 28, justifyContent: 'center' },
   title: { color: '#fff', fontSize: 34, fontFamily: F.display },
   sub: { color: 'rgba(255,255,255,0.78)', fontSize: 16, lineHeight: 23, marginTop: 10, marginBottom: 28 },
@@ -225,6 +247,21 @@ const styles = StyleSheet.create({
   disabled: { opacity: 0.45 },
   toggle: { color: 'rgba(255,255,255,0.75)', fontSize: 14, textAlign: 'center', marginTop: 18, fontWeight: '600' },
   fine: { color: 'rgba(255,255,255,0.45)', fontSize: 12, textAlign: 'center', marginTop: 18, lineHeight: 17 },
+  agreeRow: { flexDirection: 'row', gap: 10, alignItems: 'flex-start', marginBottom: 14 },
+  box: {
+    width: 20,
+    height: 20,
+    borderRadius: 5,
+    borderWidth: 1.5,
+    borderColor: 'rgba(255,255,255,0.5)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 1,
+  },
+  boxOn: { backgroundColor: T.accent, borderColor: T.accent },
+  tick: { color: '#08080A', fontSize: 13, fontWeight: '800', lineHeight: 15 },
+  agreeText: { flex: 1, color: 'rgba(255,255,255,0.75)', fontSize: 13, lineHeight: 19 },
+  agreeLink: { color: '#fff', fontWeight: '700', textDecorationLine: 'underline' },
   consent: { color: 'rgba(255,255,255,0.4)', fontSize: 11, textAlign: 'center', marginTop: 16, lineHeight: 16 },
 });
 

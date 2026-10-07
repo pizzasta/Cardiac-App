@@ -5,6 +5,7 @@ import {
   Pressable,
   ScrollView,
   StyleSheet,
+  Platform,
   Text,
   View,
 } from 'react-native';
@@ -16,6 +17,8 @@ import { RhythmResult } from '../logic/score';
 import { ARCHETYPES } from '../data/archetypes';
 import { load as loadLog } from '../logic/pulselog';
 import { exportCsv } from '../logic/export';
+import { hasAiConsent, setAiConsent } from '../logic/consent';
+import { playSfx, setSfxEnabled, sfxEnabled } from '../logic/sfx';
 import {
   canSchedule,
   disable as disableNotifs,
@@ -37,6 +40,7 @@ export default function SettingsScreen({
   onSetVolume,
   onSignIn,
   onDeleted,
+  onLegal,
   onClose,
 }: {
   result: RhythmResult | null;
@@ -46,6 +50,7 @@ export default function SettingsScreen({
   onSetVolume: (v: number) => void;
   onSignIn: () => void;
   onDeleted: () => void;
+  onLegal: () => void;
   onClose: () => void;
 }) {
   const { user, signOut, supabaseEnabled, deleteData } = useAuth();
@@ -56,6 +61,26 @@ export default function SettingsScreen({
   const [confirm, setConfirm] = useState<null | 'data' | 'account'>(null);
   const [delBusy, setDelBusy] = useState(false);
   const [exportNote, setExportNote] = useState<string | null>(null);
+  const [uiSounds, setUiSounds] = useState(sfxEnabled());
+  const [aiAllowed, setAiAllowed] = useState(false);
+
+  useEffect(() => {
+    hasAiConsent().then(setAiAllowed);
+  }, []);
+
+  const toggleUiSounds = () => {
+    const next = !uiSounds;
+    setSfxEnabled(next);
+    setUiSounds(next);
+    if (next) playSfx('toggle');
+  };
+
+  const toggleAi = () => {
+    const next = !aiAllowed;
+    setAiConsent(next).catch(() => {});
+    setAiAllowed(next);
+    playSfx('toggle');
+  };
 
   const runExport = async () => {
     const log = await loadLog();
@@ -153,11 +178,11 @@ export default function SettingsScreen({
         </View>
 
         {/* SOUND */}
-        <Text style={styles.section}>RAINFOREST SOUND</Text>
+        <Text style={styles.section}>SOUND</Text>
         <View style={styles.card}>
           <View style={styles.rowBetween}>
             <View style={{ flex: 1, paddingRight: 12 }}>
-              <Text style={styles.rowTitle}>Ambience</Text>
+              <Text style={styles.rowTitle}>Rainforest ambience</Text>
               <Text style={styles.rowSub}>{muted ? 'Muted' : 'Playing across the app'}</Text>
             </View>
             <Pressable
@@ -183,9 +208,25 @@ export default function SettingsScreen({
               );
             })}
           </View>
-          {!canSchedule && (
-            <Text style={styles.note}>Sound plays on web and may need a tap to begin (browser rule).</Text>
-          )}
+          <View style={[styles.rowBetween, { marginTop: 20 }]}>
+            <View style={{ flex: 1, paddingRight: 12 }}>
+              <Text style={styles.rowTitle}>Interface sounds</Text>
+              <Text style={styles.rowSub}>Soft taps, a heartbeat when you check in, and breathing cues.</Text>
+            </View>
+            <Pressable
+              style={[styles.toggle, uiSounds ? { backgroundColor: accent } : styles.toggleOff]}
+              onPress={toggleUiSounds}
+              accessibilityRole="switch"
+              accessibilityState={{ checked: uiSounds }}
+            >
+              <View style={[styles.knob, uiSounds ? styles.knobOn : styles.knobOff]} />
+            </Pressable>
+          </View>
+          <Text style={styles.note}>
+            {Platform.OS === 'web'
+              ? 'Your browser may need a tap before sound can start.'
+              : 'Sounds follow your phone’s silent switch.'}
+          </Text>
         </View>
 
         {/* NOTIFICATIONS */}
@@ -217,6 +258,29 @@ export default function SettingsScreen({
           {!canSchedule && result && (
             <Text style={styles.note}>On the web we can only ask permission — the phone app delivers daily reminders.</Text>
           )}
+        </View>
+
+        {/* ASK CIRCADIA */}
+        <Text style={styles.section}>ASK CIRCADIA</Text>
+        <View style={styles.card}>
+          <View style={styles.rowBetween}>
+            <View style={{ flex: 1, paddingRight: 12 }}>
+              <Text style={styles.rowTitle}>AI answers</Text>
+              <Text style={styles.rowSub}>
+                {aiAllowed
+                  ? 'Allowed. Your question, rhythm profile and check-in summaries are sent to our AI provider (Anthropic) when you ask.'
+                  : 'Off. Nothing is sent to the AI service. You’ll be asked before your first question.'}
+              </Text>
+            </View>
+            <Pressable
+              style={[styles.toggle, aiAllowed ? { backgroundColor: accent } : styles.toggleOff]}
+              onPress={toggleAi}
+              accessibilityRole="switch"
+              accessibilityState={{ checked: aiAllowed }}
+            >
+              <View style={[styles.knob, aiAllowed ? styles.knobOn : styles.knobOff]} />
+            </Pressable>
+          </View>
         </View>
 
         {/* DATA & PRIVACY */}
@@ -294,6 +358,12 @@ export default function SettingsScreen({
               </Pressable>
             ))}
         </View>
+        {/* LEGAL */}
+        <Text style={styles.section}>LEGAL & SUPPORT</Text>
+        <Pressable style={styles.card} onPress={onLegal}>
+          <Text style={styles.rowTitle}>Privacy Policy, Terms & Support  ›</Text>
+          <Text style={styles.rowSub}>How your data is used, your rights, and how to reach us.</Text>
+        </Pressable>
       </ScrollView>
     </View>
   );

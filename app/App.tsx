@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -26,6 +26,7 @@ import CheckInScreen from './src/screens/CheckInScreen';
 import TrendsScreen from './src/screens/TrendsScreen';
 import SignalCardScreen from './src/screens/SignalCardScreen';
 import ResetScreen from './src/screens/ResetScreen';
+import AiConsentScreen from './src/screens/AiConsentScreen';
 import FadeIn from './src/components/FadeIn';
 import { Option } from './src/data/quiz';
 import { QUIZ } from './src/data/quiz';
@@ -34,6 +35,8 @@ import { RhythmResult, scoreQuiz } from './src/logic/score';
 import { AuthProvider, useAuth } from './src/logic/auth';
 import { pushResult } from './src/logic/sync';
 import { loadProfile, saveProfile } from './src/logic/profile';
+import { hasAiConsent, setAiConsent } from './src/logic/consent';
+import { loadSfxPref } from './src/logic/sfx';
 import type { Level } from './src/logic/pulselog';
 import { useFonts, SpaceGrotesk_700Bold } from '@expo-google-fonts/space-grotesk';
 import { JetBrainsMono_500Medium } from '@expo-google-fonts/jetbrains-mono';
@@ -100,8 +103,11 @@ function Flow() {
           setSoundVolume(n);
         }
       }
-      if (m === 'true') setMuted(true); // honor a saved mute — stay silent
-      else enableAutoStart(); // default: ambience on
+      loadSfxPref().catch(() => {});
+      // Honor a saved choice. With none saved, ambience starts on web but stays
+      // off on phones, where unexpected audio at launch is unwelcome.
+      if (m === 'true' || (m == null && Platform.OS !== 'web')) setMuted(true);
+      else enableAutoStart();
     })();
     return () => {
       active = false;
@@ -134,9 +140,15 @@ function Flow() {
     }
   };
 
-  const openPulse = (seed?: string) => {
+  // Ask Circadia sends data to a third-party AI service, so the first visit
+  // asks permission; `consentFor` holds the pending question meanwhile.
+  const [consentFor, setConsentFor] = useState<{ seed?: string } | null>(null);
+  const goPulse = (seed?: string) => {
     setPulseSeed(seed);
     setStage('pulse');
+  };
+  const openPulse = (seed?: string) => {
+    hasAiConsent().then((ok) => (ok ? goPulse(seed) : setConsentFor({ seed })));
   };
 
   const handleComplete = (picked: Option[]) => {
@@ -174,6 +186,7 @@ function Flow() {
     setShowTrends(false);
     setShowCard(false);
     setResetLevel(undefined);
+    setConsentFor(null);
   };
 
   return (
@@ -239,8 +252,22 @@ function Flow() {
         </FadeIn>
       )}
 
-      {showLegal && <LegalScreen onClose={() => setShowLegal(false)} />}
-      {showSignIn && <SignInScreen onClose={() => setShowSignIn(false)} />}
+      {consentFor && result && (
+        <AiConsentScreen
+          accent={ARCHETYPES[result.animal].accent}
+          onAllow={() => {
+            const { seed } = consentFor;
+            setConsentFor(null);
+            setAiConsent(true).catch(() => {});
+            goPulse(seed);
+          }}
+          onDecline={() => setConsentFor(null)}
+          onPrivacy={() => setShowLegal(true)}
+        />
+      )}
+      {showSignIn && (
+        <SignInScreen onClose={() => setShowSignIn(false)} onLegal={() => setShowLegal(true)} />
+      )}
       {showScience && (
         <ScienceScreen
           accent={result ? ARCHETYPES[result.animal].accent : undefined}
@@ -259,6 +286,7 @@ function Flow() {
             setShowSignIn(true);
           }}
           onDeleted={wipe}
+          onLegal={() => setShowLegal(true)}
           onClose={() => setShowSettings(false)}
         />
       )}
@@ -328,6 +356,9 @@ function Flow() {
           }}
         />
       )}
+
+      {/* Legal renders above every other overlay so any screen can link to it. */}
+      {showLegal && <LegalScreen onClose={() => setShowLegal(false)} />}
 
       {/* Persistent ambience mute — always reachable, all screens. */}
       {soundSupported && (

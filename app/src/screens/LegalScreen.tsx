@@ -1,26 +1,30 @@
-import React from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import React, { useRef, useState } from 'react';
+import { Linking, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useTopInset } from '../hooks';
-import { DISCLAIMER_FULL } from '../data/disclaimer';
+import { LEGAL, LEGAL_DOCS, LegalDocId, legalUrl, sectionBlocks } from '../data/legal';
+import { F, T } from '../theme';
 
-// Starter Terms & Privacy. This is a plain-language template to ship the
-// not-medical-advice footprint — have it reviewed by counsel before a real
-// launch and fill in the real entity, contact, and data specifics.
+// Privacy Policy, Terms, account deletion and support — rendered from
+// data/legal.ts, the same source as the public web pages.
 
-const UPDATED = 'October 2026';
-
-function Section({ title, children }: { title: string; children: React.ReactNode }) {
-  return (
-    <View style={styles.section}>
-      <Text style={styles.h2}>{title}</Text>
-      {children}
-    </View>
-  );
-}
-
-export default function LegalScreen({ onClose }: { onClose: () => void }) {
+export default function LegalScreen({
+  onClose,
+  initial = 'privacy',
+}: {
+  onClose: () => void;
+  initial?: LegalDocId;
+}) {
   const topInset = useTopInset();
+  const [tab, setTab] = useState<LegalDocId>(initial);
+  const scroll = useRef<ScrollView>(null);
+  const doc = LEGAL_DOCS.find((d) => d.id === tab) ?? LEGAL_DOCS[0];
+
+  const pick = (id: LegalDocId) => {
+    setTab(id);
+    scroll.current?.scrollTo({ y: 0, animated: false });
+  };
+
   return (
     <View style={styles.fill}>
       <LinearGradient colors={['#08080A', '#141016', '#08080A']} style={StyleSheet.absoluteFill} />
@@ -29,80 +33,59 @@ export default function LegalScreen({ onClose }: { onClose: () => void }) {
         <Pressable onPress={onClose} hitSlop={12}>
           <Text style={styles.back}>‹ Back</Text>
         </Pressable>
-        <Text style={styles.headerTitle}>Terms & Privacy</Text>
-        <View style={{ width: 48 }} />
+        <Text style={styles.headerTitle}>Legal & support</Text>
+        <View style={{ width: 64 }} />
       </View>
 
-      <ScrollView contentContainerStyle={styles.body}>
-        <Text style={styles.updated}>Last updated {UPDATED}</Text>
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.tabs} style={styles.tabsWrap}>
+        {LEGAL_DOCS.map((d) => {
+          const active = d.id === tab;
+          return (
+            <Pressable key={d.id} onPress={() => pick(d.id)} style={[styles.tab, active && styles.tabActive]}>
+              <Text style={[styles.tabText, active && styles.tabTextActive]}>{d.shortTitle}</Text>
+            </Pressable>
+          );
+        })}
+      </ScrollView>
 
-        <Section title="Not medical advice">
-          <Text style={styles.p}>{DISCLAIMER_FULL}</Text>
-          <Text style={styles.p}>
-            If you may be experiencing a medical or mental-health emergency, contact your local
-            emergency services. Circadia is not a substitute for professional care.
-          </Text>
-        </Section>
+      <ScrollView ref={scroll} contentContainerStyle={styles.body}>
+        <Text style={styles.title}>{doc.title}</Text>
+        <Text style={styles.updated}>Last updated {LEGAL.updated}</Text>
+        <Text style={styles.intro}>{doc.intro}</Text>
 
-        <Section title="Using Circadia">
-          <Text style={styles.p}>
-            Circadia gives you a rhythm archetype, a daily plan, and an AI companion based on a short
-            quiz. It’s for personal self-awareness. Archetypes, plans, and tips are general guidance,
-            not instructions tailored to your health.
-          </Text>
-        </Section>
+        {doc.sections.map((s) => (
+          <View key={s.heading} style={styles.section}>
+            <Text style={styles.h2}>{s.heading}</Text>
+            {sectionBlocks(s).map((b, i) =>
+              b.kind === 'p' ? (
+                <Text key={i} style={styles.p}>
+                  {b.text}
+                </Text>
+              ) : (
+                <View key={i} style={styles.list}>
+                  {b.items.map((item) => (
+                    <View key={item} style={styles.bulletRow}>
+                      <Text style={styles.bulletDot}>•</Text>
+                      <Text style={[styles.p, styles.bulletText]}>{item}</Text>
+                    </View>
+                  ))}
+                </View>
+              )
+            )}
+          </View>
+        ))}
 
-        <Section title="What we collect">
-          <Text style={styles.p}>
-            Your quiz answers, archetype/result, and daily check-ins. These always work on your
-            device. If you create an account, they also sync to our backend (Supabase) so you can
-            pick up across devices. If you sign in with Google, we receive your name and email.
-          </Text>
-          <Text style={styles.p}>
-            We use this only to give you your results and trends. We don’t sell your data or use it
-            for advertising.
-          </Text>
-        </Section>
-
-        <Section title="Deleting your data">
-          <Text style={styles.p}>
-            Settings → Data &amp; Privacy lets you delete your data at any time. “Delete my data”
-            clears your check-ins, results, and answers (on device, and in the cloud if you’re signed
-            in). “Delete my account” removes your account and everything tied to it for good.
-          </Text>
-        </Section>
-
-        <Section title="Your privacy rights">
-          <Text style={styles.p}>
-            Depending on where you live (for example California, Colorado, or the EU/UK), you may
-            have the right to access, correct, or delete your data, and to opt out of any sale —
-            which we don’t do. You can exercise the core of these rights yourself in the app, or
-            email us and we’ll help.
-          </Text>
-        </Section>
-
-        <Section title="Ask Circadia (AI-generated answers)">
-          <Text style={styles.p}>
-            Answers in Ask Circadia are AI-generated. They can be wrong or incomplete and are not
-            professional, medical, or mental-health advice. Use your own judgment, and check anything
-            important with a qualified professional.
-          </Text>
-        </Section>
-
-        <Section title="Who can use Circadia">
-          <Text style={styles.p}>
-            Circadia is for adults (18+). It isn’t designed for or directed at children, and we don’t
-            knowingly collect their data.
-          </Text>
-        </Section>
-
-        <Section title="Contact">
-          <Text style={styles.p}>Questions or a privacy request? Reach us at support@circadia.app.</Text>
-        </Section>
-
-        <Text style={styles.footer}>
-          Please review this policy before using Circadia. Material privacy changes will be reflected here.
-        </Text>
+        <View style={styles.actions}>
+          <Pressable
+            style={styles.action}
+            onPress={() => Linking.openURL(`mailto:${LEGAL.contactEmail}`).catch(() => {})}
+          >
+            <Text style={styles.actionText}>Email {LEGAL.contactEmail}</Text>
+          </Pressable>
+          <Pressable style={styles.action} onPress={() => Linking.openURL(legalUrl(doc.id)).catch(() => {})}>
+            <Text style={styles.actionText}>Open web version</Text>
+          </Pressable>
+        </View>
       </ScrollView>
     </View>
   );
@@ -114,16 +97,41 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingTop: 60,
     paddingHorizontal: 18,
     paddingBottom: 8,
   },
-  back: { color: 'rgba(255,255,255,0.85)', fontSize: 16, fontWeight: '600', width: 48 },
-  headerTitle: { color: '#fff', fontSize: 18, fontWeight: '800' },
-  body: { paddingHorizontal: 24, paddingBottom: 48 },
-  updated: { color: 'rgba(255,255,255,0.45)', fontSize: 13, marginTop: 8, marginBottom: 8 },
+  back: { color: 'rgba(255,255,255,0.85)', fontSize: 16, fontWeight: '600', width: 64 },
+  headerTitle: { color: '#fff', fontSize: 18, fontFamily: F.display },
+  tabsWrap: { flexGrow: 0 },
+  tabs: { paddingHorizontal: 18, gap: 8, paddingVertical: 8 },
+  tab: {
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.16)',
+    borderRadius: 18,
+    paddingVertical: 7,
+    paddingHorizontal: 14,
+  },
+  tabActive: { borderColor: T.accent, backgroundColor: `${T.accent}26` },
+  tabText: { color: 'rgba(255,255,255,0.7)', fontSize: 13, fontWeight: '600' },
+  tabTextActive: { color: '#fff' },
+  body: { paddingHorizontal: 22, paddingBottom: 56 },
+  title: { color: '#fff', fontSize: 26, fontFamily: F.display, marginTop: 12 },
+  updated: { color: 'rgba(255,255,255,0.45)', fontSize: 12, fontFamily: F.mono, marginTop: 6 },
+  intro: { color: 'rgba(255,255,255,0.85)', fontSize: 15, lineHeight: 22, marginTop: 12 },
   section: { marginTop: 22 },
-  h2: { color: '#fff', fontSize: 18, fontWeight: '800', marginBottom: 8 },
-  p: { color: 'rgba(255,255,255,0.8)', fontSize: 15, lineHeight: 23, marginBottom: 10 },
-  footer: { color: 'rgba(255,255,255,0.4)', fontSize: 12, marginTop: 28, textAlign: 'center' },
+  h2: { color: '#fff', fontSize: 16, fontWeight: '700', marginBottom: 6 },
+  p: { color: 'rgba(255,255,255,0.75)', fontSize: 14, lineHeight: 21, marginBottom: 8 },
+  list: { marginBottom: 4 },
+  bulletRow: { flexDirection: 'row', gap: 8 },
+  bulletDot: { color: T.accent, fontSize: 14, lineHeight: 21 },
+  bulletText: { flex: 1 },
+  actions: { gap: 10, marginTop: 28 },
+  action: {
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.25)',
+    borderRadius: 22,
+    paddingVertical: 12,
+    alignItems: 'center',
+  },
+  actionText: { color: '#fff', fontSize: 14, fontWeight: '700' },
 });

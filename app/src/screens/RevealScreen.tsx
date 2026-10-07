@@ -16,6 +16,7 @@ import { RhythmResult } from '../logic/score';
 import { DISCLAIMER_SHORT } from '../data/disclaimer';
 import { F } from '../theme';
 import AnimalEmblem from '../three/AnimalEmblem';
+import { playSfx } from '../logic/sfx';
 
 export default function RevealScreen({
   result,
@@ -49,6 +50,7 @@ export default function RevealScreen({
       Animated.timing(beat, { toValue: 0, duration: 260, easing: Easing.inOut(Easing.ease), useNativeDriver: true }),
     ]).start();
 
+    playSfx('reveal');
     if (Platform.OS !== 'web') {
       setTimeout(() => Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success), 160);
     }

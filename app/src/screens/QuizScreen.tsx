@@ -10,6 +10,7 @@ import {
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
 import { Option, QUIZ } from '../data/quiz';
+import { playSfx } from '../logic/sfx';
 
 export default function QuizScreen({
   onComplete,
@@ -24,6 +25,7 @@ export default function QuizScreen({
   const progress = (index + 1) / QUIZ.length;
 
   const select = (opt: Option) => {
+    playSfx('select');
     if (Platform.OS !== 'web') {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     }

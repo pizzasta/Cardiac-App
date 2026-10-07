@@ -12,6 +12,7 @@ import Atmosphere from '../components/Atmosphere';
 import { ARCHETYPES } from '../data/archetypes';
 import { DISCLAIMER_SHORT } from '../data/disclaimer';
 import { T, F } from '../theme';
+import { playSfx } from '../logic/sfx';
 
 const ACCENT = T.accent;
 
@@ -55,7 +56,13 @@ export default function LandingScreen({
   const animals = Object.values(ARCHETYPES);
 
   const Cta = ({ label = 'Find your rhythm' }: { label?: string }) => (
-    <Pressable style={styles.cta} onPress={onStart}>
+    <Pressable
+      style={styles.cta}
+      onPress={() => {
+        playSfx('tap');
+        onStart();
+      }}
+    >
       <Text style={styles.ctaText}>{label}  →</Text>
     </Pressable>
   );

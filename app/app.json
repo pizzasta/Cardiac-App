@@ -18,13 +18,24 @@
       "adaptiveIcon": {
         "backgroundColor": "#0E1424"
       },
-      "package": "app.circadia.mobile"
+      "package": "app.circadia.mobile",
+      "blockedPermissions": [
+        "android.permission.RECORD_AUDIO"
+      ]
     },
     "web": {
       "bundler": "metro"
     },
     "experiments": {
       "baseUrl": "/Cardiac-App"
-    }
+    },
+    "plugins": [
+      [
+        "expo-av",
+        {
+          "microphonePermission": false
+        }
+      ]
+    ]
   }
 }

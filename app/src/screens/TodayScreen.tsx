@@ -31,6 +31,7 @@ import {
   stopExperiment,
 } from '../logic/experiments';
 import { currentFlowIndex, formatCountdown, nextShift } from '../logic/forecast';
+import { playSfx } from '../logic/sfx';
 
 function greeting(now = new Date()): string {
   const h = now.getHours();
@@ -267,7 +268,10 @@ export default function TodayScreen({
         ) : (
           <View style={styles.experimentChoices}>
             {EXPERIMENTS.slice(0, 3).map((item) => (
-              <Pressable key={item.id} style={styles.experimentChoice} onPress={async () => setExperiment(await startExperiment(item))}>
+              <Pressable key={item.id} style={styles.experimentChoice} onPress={async () => {
+                playSfx('select');
+                setExperiment(await startExperiment(item));
+              }}>
                 <Text style={styles.experimentTitle}>{item.title}</Text>
                 <Text style={styles.experimentText}>{item.days}-day observation →</Text>
               </Pressable>

@@ -32,6 +32,15 @@ jobs:
       - name: Test
         run: npm test
 
+      - name: Legal pages match src/data/legal.ts
+        run: |
+          npm run gen:legal
+          if ! git diff --quiet -- public; then
+            echo '::error::public/ legal pages are out of date. Run: npm run gen:legal'
+            git diff --stat -- public
+            exit 1
+          fi
+
       - name: Build web bundle
         run: npx expo export --platform web --output-dir dist-web
 

@@ -13,6 +13,7 @@ import { RhythmResult } from '../logic/score';
 import { getToday, Level, LEVELS, load } from '../logic/pulselog';
 import { PHASE_LABEL, phaseAt, resetFor, totalSecs } from '../logic/reset';
 import { F, T } from '../theme';
+import { playSfx } from '../logic/sfx';
 
 const MIN = 0.55;
 const MAX = 1;
@@ -80,10 +81,13 @@ export default function ResetScreen({
         useNativeDriver: true,
       }).start();
     }
+    if (state.phase.kind === 'in') playSfx('breatheIn');
+    else if (state.phase.kind === 'out') playSfx('breatheOut');
     if (Platform.OS !== 'web') Haptics.selectionAsync().catch(() => {});
   }, [stage, state, pattern, scale]);
 
   useEffect(() => {
+    if (stage === 'done') playSfx('complete');
     if (stage === 'done' && Platform.OS !== 'web') {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
     }

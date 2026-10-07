@@ -11,7 +11,9 @@
     "gen:types": "npx supabase gen types typescript --linked --schema public > src/types/db.ts",
     "type-check": "tsc --noEmit",
     "lint": "eslint . --ext .ts,.tsx",
-    "format": "prettier --check ."
+    "format": "prettier --check .",
+    "gen:legal": "node scripts/gen-legal.mjs",
+    "gen:sounds": "node scripts/gen-sounds.mjs"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.104.1",
@@ -23,6 +25,7 @@
     "@supabase/supabase-js": "^2.108.1",
     "expo": "~51.0.0",
     "expo-auth-session": "~5.5.2",
+    "expo-av": "~14.0.7",
     "expo-crypto": "~13.0.2",
     "expo-font": "~12.0.10",
     "expo-gl": "^14.0.2",

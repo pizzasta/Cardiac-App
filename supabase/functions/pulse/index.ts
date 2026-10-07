@@ -85,6 +85,16 @@ function json(obj: unknown, status = 200): Response {
   });
 }
 
+// One-way hash of an IP for rate-limit keys, salted with a server secret when
+// one is configured (RATE_LIMIT_SALT) so hashes can't be reversed by lookup.
+async function hashIp(ip: string): Promise<string> {
+  // @ts-ignore Deno.env in the edge runtime
+  const salt = Deno.env.get('RATE_LIMIT_SALT') ?? 'circadia-rate-limit';
+  const bytes = new TextEncoder().encode(`${salt}:${ip}`);
+  const digest = await crypto.subtle.digest('SHA-256', bytes);
+  return Array.from(new Uint8Array(digest).slice(0, 16), (b) => b.toString(16).padStart(2, '0')).join('');
+}
+
 // Extract the Supabase user id from a JWT (null for the anon key / no token).
 function jwtSub(auth: string | null): string | null {
   if (!auth) return null;
@@ -113,7 +123,8 @@ async function withinRateLimit(req: Request, kind: string): Promise<boolean> {
     const max = kind === 'reading' ? RATE_MAX_READING : RATE_MAX_CHAT;
     const sub = jwtSub(req.headers.get('Authorization'));
     const ip = (req.headers.get('x-forwarded-for') ?? '').split(',')[0].trim() || 'unknown';
-    const id = sub ? `pulse:u:${sub}:${bucket}` : `pulse:ip:${ip}:${bucket}`;
+    // Never store raw IPs: anonymous counters are keyed by a one-way hash.
+    const id = sub ? `pulse:u:${sub}:${bucket}` : `pulse:ip:${await hashIp(ip)}:${bucket}`;
 
     const admin = createClient(url, serviceKey);
     const { data, error } = await admin.rpc('check_rate_limit', {
