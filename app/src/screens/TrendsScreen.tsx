@@ -175,6 +175,16 @@ export default function TrendsScreen({
           ))}
         </View>
 
+        {/* Discoveries: earned from the user's own check-ins, not medical inference. */}
+        {rhythm >= 5 && (
+          <View style={styles.discoveryCard}>
+            <Text style={[styles.insightKicker, { color: a.accent }]}>DISCOVERY UNLOCKED</Text>
+            <Text style={styles.discoveryTitle}>Your recent signal has a pattern.</Text>
+            <Text style={styles.insightText}>{trendInsight(log)}</Text>
+            <Text style={styles.discoveryFine}>Based only on your Circadia check-ins. This is an observation, not a diagnosis or proof of cause.</Text>
+          </View>
+        )}
+
         {/* Insight */}
         <View style={[styles.insightCard, { borderColor: `${a.accent}44` }]}>
           <Text style={[styles.insightKicker, { color: a.accent }]}>THE PATTERN</Text>
@@ -235,6 +245,9 @@ const styles = StyleSheet.create({
   section: { color: 'rgba(255,255,255,0.6)', fontSize: 12, fontFamily: F.mono, letterSpacing: 1.5, marginTop: 28, marginBottom: 12 },
   ribbon: { flexDirection: 'row', gap: 4 },
   cell: { flex: 1, height: 28, borderRadius: 4 },
+  discoveryCard: { backgroundColor: 'rgba(18,18,20,0.72)', borderColor: 'rgba(255,255,255,0.14)', borderWidth: 1, borderRadius: 18, padding: 18, marginTop: 24 },
+  discoveryTitle: { color: T.text, fontFamily: F.display, fontSize: 17, marginTop: 7, marginBottom: 6 },
+  discoveryFine: { color: T.muted, fontSize: 11, lineHeight: 16, marginTop: 10 },
   insightCard: {
     backgroundColor: 'rgba(18,18,20,0.55)',
     borderWidth: 1,
