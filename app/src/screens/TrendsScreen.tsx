@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
 import { useTopInset } from '../hooks';
 import Svg, { Circle, Polyline } from 'react-native-svg';
 import { ARCHETYPES, TINTS } from '../data/archetypes';
@@ -19,8 +18,8 @@ import {
 import { useAuth } from '../logic/auth';
 import { fetchStreak, fetchWeeksTracked, pullCheckIns, subscribeCheckIns } from '../logic/sync';
 import { F, T } from '../theme';
-import { readResonance } from '../logic/resonance';
-import RhythmConstellation from '../components/RhythmConstellation';
+import SimilarDaysCard from '../components/SimilarDaysCard';
+import Scrim from '../components/Scrim';
 
 const DAYS = 14;
 const VW = 320;
@@ -77,7 +76,6 @@ export default function TrendsScreen({
   const streak = currentStreak(log);
   const hasData = log.length > 0;
   const goodDays = compareGoodDays(log);
-  const resonance = readResonance(log);
 
   // Build contiguous line segments so gaps read as gaps, not as a flat lie.
   const segments: string[] = [];
@@ -104,13 +102,13 @@ export default function TrendsScreen({
   const topInset = useTopInset();
   return (
     <View style={styles.fill}>
-      <LinearGradient colors={T.bgGradient} style={StyleSheet.absoluteFill} />
+      <Scrim shade="strong" />
 
       <View style={[styles.header, { paddingTop: topInset }]}>
         <Pressable onPress={onClose} hitSlop={12}>
           <Text style={styles.back}>‹ Close</Text>
         </Pressable>
-        <Text style={styles.headerTitle}>Your Signal</Text>
+        <Text style={styles.headerTitle}>Your trends</Text>
         <View style={{ width: 64 }} />
       </View>
 
@@ -132,7 +130,7 @@ export default function TrendsScreen({
           </View>
           <View style={styles.statCard}>
             <Text style={[styles.statNum, { color: a.accent }]}>{server?.current ?? streak}</Text>
-            <Text style={styles.statLabel}>day rhythm</Text>
+            <Text style={styles.statLabel}>days in a row</Text>
           </View>
           {server && (
             <View style={styles.statCard}>
@@ -142,7 +140,7 @@ export default function TrendsScreen({
           )}
         </View>
         <Text style={styles.forgive}>
-          Rest days count too. Miss one and the line dims — it doesn’t reset.
+          Rest days count too. Miss one and the line dims. It doesn’t reset.
         </Text>
 
         {/* The waveform */}
@@ -165,12 +163,10 @@ export default function TrendsScreen({
               )}
             </Svg>
           ) : (
-            <Text style={styles.empty}>Log your first signal to start the waveform.</Text>
+            <Text style={styles.empty}>Check in to start your chart.</Text>
           )}
           <View style={styles.waveAxis}>
-            <Text style={styles.axisText}>wired</Text>
-            <Text style={styles.axisText}>steady</Text>
-            <Text style={styles.axisText}>flat</Text>
+            <Text style={styles.axisText}>Higher = wired · middle = steady · lower = flat</Text>
           </View>
         </View>
 
@@ -182,11 +178,13 @@ export default function TrendsScreen({
           ))}
         </View>
 
+        <SimilarDaysCard log={log} accent={a.accent} tint={tint} showMap onAsk={onAskPulse} />
+
         {/* Discoveries: earned from the user's own check-ins, not medical inference. */}
         {rhythm >= 5 && (
           <View style={styles.discoveryCard}>
-            <Text style={[styles.insightKicker, { color: a.accent }]}>DISCOVERY UNLOCKED</Text>
-            <Text style={styles.discoveryTitle}>Your recent signal has a pattern.</Text>
+            <Text style={[styles.insightKicker, { color: a.accent }]}>A PATTERN IS SHOWING</Text>
+            <Text style={styles.discoveryTitle}>Here’s what your recent check-ins lean toward.</Text>
             <Text style={styles.insightText}>{trendInsight(log)}</Text>
             <Text style={styles.discoveryFine}>Based only on your Circadia check-ins. This is an observation, not a diagnosis or proof of cause.</Text>
           </View>
@@ -205,52 +203,16 @@ export default function TrendsScreen({
           <Text style={styles.discoveryFine}>Based only on your Circadia check-ins. These are associations, not proof of cause.</Text>
           {goodDays.ready && (
             <Pressable style={[styles.goodDaysBtn, { borderColor: a.accent }]} onPress={() => onAskPulse(goodDays.pulseQuestion)}>
-              <Text style={[styles.goodDaysBtnText, { color: a.accent }]}>Ask Pulse about this pattern</Text>
+              <Text style={[styles.goodDaysBtnText, { color: a.accent }]}>Ask about this pattern</Text>
             </Pressable>
           )}
-        </View>
-
-        <View style={styles.resonanceCard}>
-          <Text style={[styles.insightKicker, { color: a.accent }]}>RESONANCE</Text>
-          <Text style={styles.discoveryTitle}>{resonance.ready ? 'This day has a familiar shape' : 'The picture is still forming'}</Text>
-          <Text style={styles.insightText}>{resonance.thread}</Text>
-          {resonance.ready && <View style={styles.constellation}><RhythmConstellation log={log} matches={resonance.matches} tint={tint} /></View>}
-          {resonance.matches.length > 0 && (
-            <View style={styles.resonanceDates}>
-              {resonance.matches.map((entry) => (
-                <View key={entry.date} style={styles.resonanceDay}>
-                  <Text style={styles.resonanceDate}>{entry.date}</Text>
-                  <Text style={styles.resonanceSignal}>{entry.level}{entry.reason ? ` · ${entry.reason}` : ''}</Text>
-                </View>
-              ))}
-            </View>
-          )}
-          <Text style={styles.discoveryFine}>{resonance.trace}</Text>
-          {resonance.matches.length > 0 && (
-            <View style={styles.nextThreadBox}>
-              <Text style={styles.nextThreadLabel}>SEE WHAT SHIFTED</Text>
-              <Text style={styles.nextThreadText}>{resonance.nextThread}</Text>
-            </View>
-          )}
-          <Text style={styles.discoveryFine}>Historical observation only — not a forecast of what happens next.</Text>
-          {resonance.pulseQuestion ? (
-            <Pressable style={[styles.goodDaysBtn, { borderColor: a.accent }]} onPress={() => onAskPulse(resonance.pulseQuestion)}>
-              <Text style={[styles.goodDaysBtnText, { color: a.accent }]}>Follow the Thread →</Text>
-            </Pressable>
-          ) : null}
-        </View>
-
-        {/* Insight */}
-        <View style={[styles.insightCard, { borderColor: `${a.accent}44` }]}>
-          <Text style={[styles.insightKicker, { color: a.accent }]}>THE PATTERN</Text>
-          <Text style={styles.insightText}>{trendInsight(log)}</Text>
         </View>
 
         <Pressable style={[styles.cta, { backgroundColor: a.accent }]} onPress={onCheckIn}>
           <Text style={styles.ctaText}>Check in now  →</Text>
         </Pressable>
         <Pressable style={[styles.shareBtn, { borderColor: `${a.accent}66` }]} onPress={onShare}>
-          <Text style={[styles.shareText, { color: a.accent }]}>Share your Signal Card</Text>
+          <Text style={[styles.shareText, { color: a.accent }]}>Share your rhythm card</Text>
         </Pressable>
       </ScrollView>
     </View>
@@ -258,7 +220,7 @@ export default function TrendsScreen({
 }
 
 const styles = StyleSheet.create({
-  fill: { ...StyleSheet.absoluteFillObject, backgroundColor: T.bg },
+  fill: { ...StyleSheet.absoluteFillObject, backgroundColor: 'transparent' },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -309,22 +271,6 @@ const styles = StyleSheet.create({
   factorValue: { color: T.muted, fontFamily: F.mono, fontSize: 11, textAlign: 'right' },
   goodDaysBtn: { borderWidth: 1, borderRadius: 18, paddingVertical: 12, alignItems: 'center', marginTop: 14 },
   goodDaysBtnText: { fontSize: 13, fontWeight: '700' },
-  resonanceCard: { backgroundColor: 'rgba(18,18,20,0.72)', borderColor: 'rgba(255,255,255,0.14)', borderWidth: 1, borderRadius: 18, padding: 18, marginTop: 24 },
-  constellation: { marginTop: 12, backgroundColor: 'rgba(255,255,255,0.025)', borderRadius: 14, overflow: 'hidden' },
-  nextThreadBox: { marginTop: 12, padding: 12, borderRadius: 12, backgroundColor: 'rgba(255,255,255,0.04)' },
-  nextThreadLabel: { color: T.muted, fontFamily: F.mono, fontSize: 10, letterSpacing: 1 },
-  nextThreadText: { color: T.text, fontSize: 13, lineHeight: 19, marginTop: 5 },
-  resonanceDates: { gap: 7, marginTop: 12 },
-  resonanceDay: { flexDirection: 'row', justifyContent: 'space-between', gap: 12, borderTopWidth: 1, borderTopColor: T.hairline, paddingTop: 8 },
-  resonanceDate: { color: T.muted, fontFamily: F.mono, fontSize: 11 },
-  resonanceSignal: { color: T.text, fontSize: 12, textTransform: 'capitalize' },
-  insightCard: {
-    backgroundColor: 'rgba(18,18,20,0.55)',
-    borderWidth: 1,
-    borderRadius: 18,
-    padding: 18,
-    marginTop: 24,
-  },
   insightKicker: { fontSize: 11, fontFamily: F.mono, letterSpacing: 1 },
   insightText: { color: '#fff', fontSize: 16, lineHeight: 23, marginTop: 8, fontWeight: '600' },
   cta: { borderRadius: 26, paddingVertical: 16, alignItems: 'center', marginTop: 26 },

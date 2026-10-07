@@ -5,7 +5,6 @@
 // pause, never as treatment.
 import React, { useEffect, useRef, useState } from 'react';
 import { Animated, Easing, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
 import { useTopInset } from '../hooks';
 import { ARCHETYPES } from '../data/archetypes';
@@ -13,6 +12,8 @@ import { RhythmResult } from '../logic/score';
 import { getToday, Level, LEVELS, load } from '../logic/pulselog';
 import { PHASE_LABEL, phaseAt, resetFor, totalSecs } from '../logic/reset';
 import { F, T } from '../theme';
+import { playSfx } from '../logic/sfx';
+import Scrim from '../components/Scrim';
 
 const MIN = 0.55;
 const MAX = 1;
@@ -80,10 +81,13 @@ export default function ResetScreen({
         useNativeDriver: true,
       }).start();
     }
+    if (state.phase.kind === 'in') playSfx('breatheIn');
+    else if (state.phase.kind === 'out') playSfx('breatheOut');
     if (Platform.OS !== 'web') Haptics.selectionAsync().catch(() => {});
   }, [stage, state, pattern, scale]);
 
   useEffect(() => {
+    if (stage === 'done') playSfx('complete');
     if (stage === 'done' && Platform.OS !== 'web') {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
     }
@@ -101,13 +105,13 @@ export default function ResetScreen({
 
   return (
     <View style={styles.fill}>
-      <LinearGradient colors={T.bgGradient} style={StyleSheet.absoluteFill} />
+      <Scrim shade="light" />
 
       <View style={[styles.header, { paddingTop: topInset }]}>
         <Pressable onPress={onClose} hitSlop={12}>
           <Text style={styles.back}>‹ Close</Text>
         </Pressable>
-        <Text style={styles.headerTitle}>60-sec Reset</Text>
+        <Text style={styles.headerTitle}>1-minute reset</Text>
         <View style={{ width: 64 }} />
       </View>
 
@@ -138,7 +142,7 @@ export default function ResetScreen({
         {stage === 'ready' && (
           <>
             <Text style={styles.why}>{pattern.why}</Text>
-            <Text style={styles.matchLabel}>MATCHED TO YOUR SIGNAL</Text>
+            <Text style={styles.matchLabel}>MATCHED TO HOW YOU FEEL</Text>
             <View style={styles.levels}>
               {LEVELS.map((l) => {
                 const active = l.id === level;
@@ -173,7 +177,7 @@ export default function ResetScreen({
         {stage === 'done' && (
           <>
             <Text style={styles.why}>
-              That’s a minute you gave back to yourself. Notice how your signal reads now — no need to
+              That’s a minute you gave back to yourself. Notice how you feel now. No need to
               force a change.
             </Text>
             <Pressable style={[styles.cta, { backgroundColor: a.accent }]} onPress={onCheckIn}>
@@ -196,7 +200,7 @@ export default function ResetScreen({
 const ORB = 220;
 
 const styles = StyleSheet.create({
-  fill: { ...StyleSheet.absoluteFillObject, backgroundColor: T.bg },
+  fill: { ...StyleSheet.absoluteFillObject, backgroundColor: 'transparent' },
   header: {
     flexDirection: 'row',
     alignItems: 'center',

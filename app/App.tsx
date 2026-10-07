@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -26,14 +26,21 @@ import CheckInScreen from './src/screens/CheckInScreen';
 import TrendsScreen from './src/screens/TrendsScreen';
 import SignalCardScreen from './src/screens/SignalCardScreen';
 import ResetScreen from './src/screens/ResetScreen';
+import AiConsentScreen from './src/screens/AiConsentScreen';
 import FadeIn from './src/components/FadeIn';
 import { Option } from './src/data/quiz';
 import { QUIZ } from './src/data/quiz';
-import { ARCHETYPES } from './src/data/archetypes';
+import { ARCHETYPES, TINTS } from './src/data/archetypes';
+import World from './src/world/World';
+import type { Mood, WorldMode } from './src/world/rig';
+import { getToday, load as loadLog } from './src/logic/pulselog';
+import { useReducedMotion } from './src/hooks';
 import { RhythmResult, scoreQuiz } from './src/logic/score';
 import { AuthProvider, useAuth } from './src/logic/auth';
 import { pushResult } from './src/logic/sync';
 import { loadProfile, saveProfile } from './src/logic/profile';
+import { hasAiConsent, setAiConsent } from './src/logic/consent';
+import { loadSfxPref } from './src/logic/sfx';
 import type { Level } from './src/logic/pulselog';
 import { useFonts, SpaceGrotesk_700Bold } from '@expo-google-fonts/space-grotesk';
 import { JetBrainsMono_500Medium } from '@expo-google-fonts/jetbrains-mono';
@@ -59,6 +66,14 @@ function Flow() {
   const [showToday, setShowToday] = useState(false);
   const [showTrends, setShowTrends] = useState(false);
   const [showCard, setShowCard] = useState(false);
+  // Today's check-in mood drives how the animal moves; `hop` makes it jump.
+  const [mood, setMood] = useState<Mood | null>(null);
+  const [hop, setHop] = useState(0);
+  useEffect(() => {
+    loadLog()
+      .then((log) => setMood(getToday(log)?.level ?? null))
+      .catch(() => {});
+  }, []);
   // undefined = closed; null = open, default to today's check-in level.
   const [resetLevel, setResetLevel] = useState<Level | null | undefined>(undefined);
   // App-wide rainforest ambience + persistent mute/volume (remembered across visits).
@@ -100,8 +115,11 @@ function Flow() {
           setSoundVolume(n);
         }
       }
-      if (m === 'true') setMuted(true); // honor a saved mute — stay silent
-      else enableAutoStart(); // default: ambience on
+      loadSfxPref().catch(() => {});
+      // Honor a saved choice. With none saved, ambience starts on web but stays
+      // off on phones, where unexpected audio at launch is unwelcome.
+      if (m === 'true' || (m == null && Platform.OS !== 'web')) setMuted(true);
+      else enableAutoStart();
     })();
     return () => {
       active = false;
@@ -134,9 +152,15 @@ function Flow() {
     }
   };
 
-  const openPulse = (seed?: string) => {
+  // Ask Circadia sends data to a third-party AI service, so the first visit
+  // asks permission; `consentFor` holds the pending question meanwhile.
+  const [consentFor, setConsentFor] = useState<{ seed?: string } | null>(null);
+  const goPulse = (seed?: string) => {
     setPulseSeed(seed);
     setStage('pulse');
+  };
+  const openPulse = (seed?: string) => {
+    hasAiConsent().then((ok) => (ok ? goPulse(seed) : setConsentFor({ seed })));
   };
 
   const handleComplete = (picked: Option[]) => {
@@ -174,10 +198,52 @@ function Flow() {
     setShowTrends(false);
     setShowCard(false);
     setResetLevel(undefined);
+    setConsentFor(null);
+    setMood(null);
   };
+
+  // The 3D world behind everything: which camera station, and whose colour.
+  const reducedMotion = useReducedMotion();
+  const resetOpen = resetLevel !== undefined && !!result;
+  const worldOverlay = !!result && (showToday || showCheckIn || showTrends || showCard || resetOpen);
+  // Overlays are see-through, so only the top-most one is shown; the ones
+  // beneath stay mounted (keeping their state) but hidden.
+  const topOverlay = resetOpen
+    ? 'reset'
+    : showCard
+      ? 'card'
+      : showTrends
+        ? 'trends'
+        : showCheckIn
+          ? 'checkin'
+          : showToday
+            ? 'today'
+            : null;
+  const layer = (id: string) => (topOverlay === id ? styles.overlay : styles.hidden);
+  const worldMode: WorldMode = resetOpen
+    ? 'reset'
+    : worldOverlay || stage === 'pulse'
+      ? 'focus'
+      : stage === 'plan'
+        ? 'home'
+        : stage === 'boot'
+          ? 'landing'
+          : stage;
+  const showAnimal = !!result && stage !== 'quiz' && stage !== 'reading' && stage !== 'landing';
 
   return (
     <>
+      <World
+        mode={worldMode}
+        animal={showAnimal ? result!.animal : null}
+        tint={showAnimal ? TINTS[result!.animal] : T.accent}
+        mood={mood}
+        hop={hop}
+        still={reducedMotion}
+      />
+      {/* While a world-backed overlay is open, hide the stage screen underneath
+          (kept mounted) so the overlay floats over the world, not the plan. */}
+      <View style={worldOverlay ? styles.hidden : styles.stage}>
       {stage === 'landing' && (
         <FadeIn key="landing">
           <LandingScreen
@@ -239,8 +305,24 @@ function Flow() {
         </FadeIn>
       )}
 
-      {showLegal && <LegalScreen onClose={() => setShowLegal(false)} />}
-      {showSignIn && <SignInScreen onClose={() => setShowSignIn(false)} />}
+      </View>
+
+      {consentFor && result && (
+        <AiConsentScreen
+          accent={ARCHETYPES[result.animal].accent}
+          onAllow={() => {
+            const { seed } = consentFor;
+            setConsentFor(null);
+            setAiConsent(true).catch(() => {});
+            goPulse(seed);
+          }}
+          onDecline={() => setConsentFor(null)}
+          onPrivacy={() => setShowLegal(true)}
+        />
+      )}
+      {showSignIn && (
+        <SignInScreen onClose={() => setShowSignIn(false)} onLegal={() => setShowLegal(true)} />
+      )}
       {showScience && (
         <ScienceScreen
           accent={result ? ARCHETYPES[result.animal].accent : undefined}
@@ -259,75 +341,93 @@ function Flow() {
             setShowSignIn(true);
           }}
           onDeleted={wipe}
+          onLegal={() => setShowLegal(true)}
           onClose={() => setShowSettings(false)}
         />
       )}
 
       {showToday && result && (
-        <TodayScreen
-          result={result}
-          onClose={() => setShowToday(false)}
-          onCheckIn={() => {
-            setShowToday(false);
-            setShowCheckIn(true);
-          }}
-          onTrends={() => {
-            setShowToday(false);
-            setShowTrends(true);
-          }}
-          onReset={() => setResetLevel(null)}
-        />
+        <View style={layer('today')}>
+          <TodayScreen
+            result={result}
+            onClose={() => setShowToday(false)}
+            onCheckIn={() => {
+              setShowToday(false);
+              setShowCheckIn(true);
+            }}
+            onTrends={() => {
+              setShowToday(false);
+              setShowTrends(true);
+            }}
+            onReset={() => setResetLevel(null)}
+          />
+        </View>
       )}
       {showCheckIn && result && (
-        <CheckInScreen
-          result={result}
-          onClose={() => setShowCheckIn(false)}
-          onTrends={() => {
-            setShowCheckIn(false);
-            setShowTrends(true);
-          }}
-          onExplain={(seed) => {
-            setShowCheckIn(false);
-            openPulse(seed);
-          }}
-          onReset={(level) => {
-            setShowCheckIn(false);
-            setResetLevel(level);
-          }}
-        />
+        <View style={layer('checkin')}>
+          <CheckInScreen
+            result={result}
+            onClose={() => setShowCheckIn(false)}
+            onTrends={() => {
+              setShowCheckIn(false);
+              setShowTrends(true);
+            }}
+            onExplain={(seed) => {
+              setShowCheckIn(false);
+              openPulse(seed);
+            }}
+            onReset={(level) => {
+              setShowCheckIn(false);
+              setResetLevel(level);
+            }}
+            onSaved={(level) => {
+              setMood(level);
+              setHop((h) => h + 1);
+            }}
+          />
+        </View>
       )}
       {showTrends && result && (
-        <TrendsScreen
-          result={result}
-          onClose={() => setShowTrends(false)}
-          onCheckIn={() => {
-            setShowTrends(false);
-            setShowCheckIn(true);
-          }}
-          onShare={() => {
-            setShowTrends(false);
-            setShowCard(true);
-          }}
-          onAskPulse={(seed) => {
-            setShowTrends(false);
-            openPulse(seed);
-          }}
-        />
+        <View style={layer('trends')}>
+          <TrendsScreen
+            result={result}
+            onClose={() => setShowTrends(false)}
+            onCheckIn={() => {
+              setShowTrends(false);
+              setShowCheckIn(true);
+            }}
+            onShare={() => {
+              setShowTrends(false);
+              setShowCard(true);
+            }}
+            onAskPulse={(seed) => {
+              setShowTrends(false);
+              openPulse(seed);
+            }}
+          />
+        </View>
       )}
       {showCard && result && (
-        <SignalCardScreen result={result} onClose={() => setShowCard(false)} />
+        <View style={layer('card')}>
+          <SignalCardScreen result={result} onClose={() => setShowCard(false)} />
+        </View>
       )}
       {resetLevel !== undefined && result && (
-        <ResetScreen
-          result={result}
-          level={resetLevel ?? undefined}
-          onClose={() => setResetLevel(undefined)}
-          onCheckIn={() => {
-            setResetLevel(undefined);
-            setShowCheckIn(true);
-          }}
-        />
+        <View style={layer('reset')}>
+          <ResetScreen
+            result={result}
+            level={resetLevel ?? undefined}
+            onClose={() => setResetLevel(undefined)}
+            onCheckIn={() => {
+              setResetLevel(undefined);
+              setShowCheckIn(true);
+            }}
+          />
+        </View>
       )}
+
+      {/* Legal renders above every other overlay so any screen can link to it. */}
+      {showLegal && <LegalScreen onClose={() => setShowLegal(false)} />}
 
       {/* Persistent ambience mute — always reachable, all screens. */}
       {soundSupported && (
@@ -357,7 +457,7 @@ class ErrorBoundary extends React.Component<
         <View style={styles.errFill}>
           <Text style={styles.errTitle}>Something hiccuped</Text>
           <Text style={styles.errBody}>
-            Circadia hit an unexpected error. Try again — your rhythm data is safe.
+            Circadia hit an unexpected error. Try again. Your rhythm data is safe.
           </Text>
           <Pressable style={styles.errBtn} onPress={() => this.setState({ error: null })}>
             <Text style={styles.errBtnText}>Reload</Text>
@@ -400,6 +500,9 @@ export default function App() {
 
 const styles = StyleSheet.create({
   appBg: { flex: 1, backgroundColor: '#000', alignItems: 'center' },
+  stage: { flex: 1 },
+  hidden: { display: 'none' },
+  overlay: { ...StyleSheet.absoluteFillObject },
   appColumn: { flex: 1, width: '100%', maxWidth: 520, overflow: 'hidden' },
   errFill: {
     flex: 1,

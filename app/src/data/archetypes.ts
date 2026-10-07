@@ -32,11 +32,11 @@ export const ARCHETYPES: Record<AnimalId, Archetype> = {
     emoji: '🐬',
     oneLiner: 'Light sleeper, sharp mind, runs hot',
     reading:
-      'You notice everything — which is a gift and the reason you’re tired. Your edge is real, but it needs quiet to recharge or it turns on you.',
+      'You notice everything, which is a gift and also the reason you’re tired. Your edge is real, but it needs quiet to recharge or it turns on you.',
     gradient: ['#08080A', '#141016', '#1C0C16'],
     accent: '#FF2E7E',
     strength:
-      'Pattern-spotting — you catch what everyone else misses.',
+      'Pattern-spotting. You catch what everyone else misses.',
     watchOut:
       'Over-stimulation. Your antennae never fully lower, so quiet isn’t optional.',
   },
@@ -46,13 +46,13 @@ export const ARCHETYPES: Record<AnimalId, Archetype> = {
     emoji: '🐺',
     oneLiner: 'Night energy, creative in bursts',
     reading:
-      'Your best hours start when most people are winding down. The trick isn’t more discipline — it’s a real stop time so the burst doesn’t cost you tomorrow.',
+      'Your best hours start when most people are winding down. The trick isn’t more discipline. It’s a real stop time so the burst doesn’t cost you tomorrow.',
     gradient: ['#08080A', '#141016', '#1C0C16'],
     accent: '#FF2E7E',
     strength:
       'Deep creative focus when the world goes quiet.',
     watchOut:
-      'Borrowing from tomorrow — the late burst has a cost if there’s no stop time.',
+      'Borrowing from tomorrow. The late burst has a cost if there’s no stop time.',
   },
   bear: {
     id: 'bear',
@@ -60,11 +60,11 @@ export const ARCHETYPES: Record<AnimalId, Archetype> = {
     emoji: '🐻',
     oneLiner: 'Steady energy, but may keep pushing past a needed reset',
     reading:
-      'You’re the one who keeps going — which is exactly why you crash slowly and hard. Protected rest isn’t a reward for you, it’s maintenance.',
+      'You’re the one who keeps going, which is exactly why you crash slowly and hard. Protected rest isn’t a reward for you, it’s maintenance.',
     gradient: ['#08080A', '#141016', '#1C0C16'],
     accent: '#FF2E7E',
     strength:
-      'Reliability — you sustain a pace others can’t.',
+      'Reliability. You sustain a pace others can’t.',
     watchOut:
       'The slow-build crash. You won’t feel empty until you suddenly are.',
   },
@@ -74,11 +74,11 @@ export const ARCHETYPES: Record<AnimalId, Archetype> = {
     emoji: '🐦',
     oneLiner: 'Fast-moving, often juggling several things at once',
     reading:
-      'Your mind tends to move quickly, which can make it harder to settle on one thing. You don’t need to slow down everywhere — just land on one thing at a time.',
+      'Your mind tends to move quickly, which can make it harder to settle on one thing. You don’t need to slow down everywhere. Just land on one thing at a time.',
     gradient: ['#08080A', '#141016', '#1C0C16'],
     accent: '#FF2E7E',
     strength:
-      'Speed and range — you move on things fast.',
+      'Speed and range. You move on things fast.',
     watchOut:
       'Scatter. Too many open loops tips you from fast into frozen.',
   },
@@ -88,11 +88,11 @@ export const ARCHETYPES: Record<AnimalId, Archetype> = {
     emoji: '🦊',
     oneLiner: 'Observant planner who tends to scan ahead',
     reading:
-      'You tend to notice potential problems early — useful, though it can make switching off harder. Your hardest skill isn’t planning, it’s permission to stop scanning.',
+      'You tend to notice potential problems early. That’s useful, though it can make switching off harder. Your hardest skill isn’t planning, it’s permission to stop scanning.',
     gradient: ['#08080A', '#141016', '#1C0C16'],
     accent: '#FF2E7E',
     strength:
-      'Foresight — you see problems coming and plan around them.',
+      'Foresight. You see problems coming and plan around them.',
     watchOut:
       'Over-control. The scanning that protects you also won’t let you rest.',
   },
@@ -102,11 +102,11 @@ export const ARCHETYPES: Record<AnimalId, Archetype> = {
     emoji: '🐙',
     oneLiner: 'Highly attuned to people and surroundings',
     reading:
-      'You may notice other people’s needs before checking in with your own. You don’t run out of energy loudly — you run out quietly, then all at once.',
+      'You may notice other people’s needs before checking in with your own. You don’t run out of energy loudly. You run out quietly, then all at once.',
     gradient: ['#08080A', '#141016', '#1C0C16'],
     accent: '#FF2E7E',
     strength:
-      'Emotional attunement — you read people and rooms instantly.',
+      'Emotional attunement. You read people and rooms instantly.',
     watchOut:
       'Self-erasure. You track everyone’s state but your own until you’re empty.',
   },

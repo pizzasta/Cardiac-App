@@ -8,7 +8,6 @@ import {
   Text,
   View,
 } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
 import { useTopInset } from '../hooks';
 import * as Haptics from 'expo-haptics';
 import { ARCHETYPES } from '../data/archetypes';
@@ -26,7 +25,13 @@ import {
 } from '../logic/pulselog';
 import { refreshSmartNudge } from '../logic/notifications';
 import PulseLine from '../components/PulseLine';
-import { F, T } from '../theme';
+import SimilarDaysCard from '../components/SimilarDaysCard';
+import AnimalEmblem from '../world/AnimalEmblem';
+import { TINTS } from '../data/archetypes';
+import { F } from '../theme';
+import { playSfx } from '../logic/sfx';
+import Scrim from '../components/Scrim';
+import PressableScale from '../components/PressableScale';
 
 export default function CheckInScreen({
   result,
@@ -34,12 +39,14 @@ export default function CheckInScreen({
   onTrends,
   onExplain,
   onReset,
+  onSaved,
 }: {
   result: RhythmResult;
   onClose: () => void;
   onTrends: () => void;
   onExplain: (seed: string) => void;
   onReset: (level: Level) => void;
+  onSaved?: (level: Level) => void;
 }) {
   const a = ARCHETYPES[result.animal];
   const morning = new Date().getHours() < 14;
@@ -48,12 +55,15 @@ export default function CheckInScreen({
   const [level, setLevel] = useState<Level | null>(null);
   const [reason, setReason] = useState<string | undefined>(undefined);
   const [saved, setSaved] = useState(false);
+  const [log, setLog] = useState<PulseEntry[]>([]);
+  const [hop, setHop] = useState(0);
 
   const beat = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
-    load().then((log) => {
-      const t = getToday(log);
+    load().then((entries) => {
+      setLog(entries);
+      const t = getToday(entries);
       setToday(t);
       if (t) {
         setLevel(t.level);
@@ -65,10 +75,13 @@ export default function CheckInScreen({
 
   const save = async () => {
     if (!level) return;
-    await logToday(level, reason);
+    setLog(await logToday(level, reason));
     // Re-time the smart nudge to the emerging pattern (native; no-op on web).
     refreshSmartNudge(result.animal).catch(() => {});
     setSaved(true);
+    setHop((h) => h + 1);
+    onSaved?.(level);
+    playSfx('success');
     if (Platform.OS !== 'web') {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     }
@@ -84,34 +97,46 @@ export default function CheckInScreen({
   const topInset = useTopInset();
   return (
     <View style={styles.fill}>
-      <LinearGradient colors={T.bgGradient} style={StyleSheet.absoluteFill} />
+      <Scrim shade="medium" />
 
       <View style={[styles.header, { paddingTop: topInset }]}>
         <Pressable onPress={onClose} hitSlop={12}>
           <Text style={styles.back}>‹ Close</Text>
         </Pressable>
-        <Text style={styles.headerTitle}>Daily Pulse</Text>
+        <Text style={styles.headerTitle}>Check-in</Text>
         <Pressable onPress={onTrends} hitSlop={12} style={styles.trendsBtn}>
           <Text style={[styles.trendsText, { color: a.accent }]}>Trends</Text>
         </Pressable>
       </View>
 
       <ScrollView contentContainerStyle={styles.body} showsVerticalScrollIndicator={false}>
+        {/* Your animal mirrors the level you pick, and hops when you save. */}
+        <AnimalEmblem
+          animal={result.animal}
+          accent={TINTS[result.animal]}
+          emoji={a.emoji}
+          bg={null}
+          sparks={false}
+          mood={level}
+          hop={hop}
+          style={styles.companion}
+        />
         <Text style={styles.kicker}>{morning ? 'MORNING FORECAST' : 'EVENING REFLECTION'}</Text>
-        <Text style={styles.question}>Where’s your signal{morning ? '' : ' been'}?</Text>
-        <Text style={styles.sub}>10 seconds. No streak to protect — just an honest read.</Text>
+        <Text style={styles.question}>How’s your energy{morning ? '' : ' been today'}?</Text>
+        <Text style={styles.sub}>10 seconds. No streak to protect, just an honest read.</Text>
 
         <View style={styles.levels}>
           {LEVELS.map((l) => {
             const active = level === l.id;
             return (
-              <Pressable
+              <PressableScale
                 key={l.id}
                 style={[
                   styles.levelCard,
                   active && { borderColor: a.accent, backgroundColor: `${a.accent}1f` },
                 ]}
                 onPress={() => {
+                  playSfx('select');
                   setLevel(l.id);
                   setSaved(false);
                 }}
@@ -121,7 +146,7 @@ export default function CheckInScreen({
                   <Text style={styles.levelLabel}>{l.label}</Text>
                   <Text style={styles.levelBlurb}>{l.blurb}</Text>
                 </View>
-              </Pressable>
+              </PressableScale>
             );
           })}
         </View>
@@ -162,27 +187,30 @@ export default function CheckInScreen({
 
         {level && (
           <>
-            <Pressable style={[styles.cta, { backgroundColor: a.accent }]} onPress={saved ? onTrends : save}>
-              <Text style={styles.ctaText}>{saved ? 'See your trends  →' : today ? 'Update today' : 'Log my signal'}</Text>
-            </Pressable>
+            <PressableScale style={[styles.cta, { backgroundColor: a.accent }]} onPress={saved ? onTrends : save}>
+              <Text style={styles.ctaText}>{saved ? 'See your trends  →' : today ? 'Update today' : 'Save check-in'}</Text>
+            </PressableScale>
             {saved && (
               <Pressable
                 style={[styles.explainBtn, { borderColor: `${a.accent}66` }]}
                 onPress={async () => {
-                  const log = await load();
-                  onExplain(buildSignalQuestion(log, level, reason));
+                  // Re-read storage: a background cloud sync may have added entries.
+                  const fresh = await load();
+                  setLog(fresh);
+                  onExplain(buildSignalQuestion(fresh, level, reason));
                 }}
               >
-                <Text style={[styles.explainText, { color: a.accent }]}>Why do I feel like this?  →</Text>
+                <Text style={[styles.explainText, { color: a.accent }]}>Ask about today  →</Text>
               </Pressable>
             )}
             {saved && level !== 'steady' && (
               <Pressable onPress={() => onReset(level)} hitSlop={8}>
                 <Text style={styles.resetLink}>
-                  {level === 'wired' ? 'Help it land' : 'Lift the signal'} — 60-sec reset  →
+                  {level === 'wired' ? 'Settle down' : 'Lift your energy'} with a 1-minute reset  →
                 </Text>
               </Pressable>
             )}
+            {saved && <SimilarDaysCard log={log} accent={a.accent} />}
           </>
         )}
       </ScrollView>
@@ -191,7 +219,7 @@ export default function CheckInScreen({
 }
 
 const styles = StyleSheet.create({
-  fill: { ...StyleSheet.absoluteFillObject, backgroundColor: T.bg },
+  fill: { ...StyleSheet.absoluteFillObject, backgroundColor: 'transparent' },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -205,6 +233,7 @@ const styles = StyleSheet.create({
   trendsBtn: { width: 64, alignItems: 'flex-end' },
   trendsText: { fontSize: 14, fontWeight: '700' },
   body: { paddingHorizontal: 22, paddingBottom: 48 },
+  companion: { height: 150, marginTop: 4, marginHorizontal: -22 },
   kicker: { color: 'rgba(255,255,255,0.6)', fontSize: 12, fontFamily: F.mono, letterSpacing: 1.5, marginTop: 14 },
   question: { color: '#fff', fontSize: 30, fontFamily: F.display, marginTop: 10 },
   sub: { color: 'rgba(255,255,255,0.65)', fontSize: 14, lineHeight: 20, marginTop: 8 },

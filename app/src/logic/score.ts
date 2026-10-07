@@ -7,7 +7,14 @@ export interface RhythmResult {
   peak: string;
   crash: string;
   recharge: string;
+  // A close second animal, when the result was near (shown as a "streak").
+  runnerUp?: AnimalId;
+  // The answers that pointed most strongly to the animal, as "question → answer".
+  reasons?: string[];
 }
+
+// Show the runner-up when it finished within this many points of the winner.
+const RUNNER_UP_GAP = 2;
 
 // Tie-break priority: more distinctive archetypes win ties so results
 // don't collapse to the "safe" middle.
@@ -72,11 +79,25 @@ export function scoreQuiz(answers: (Option | null)[]): RhythmResult {
     }
   });
 
+  const second = PRIORITY.filter((a) => a !== winner).reduce((b, a) => (totals[a] > totals[b] ? a : b));
+  const runnerUp =
+    totals[second] > 0 && totals[winner] - totals[second] <= RUNNER_UP_GAP ? second : undefined;
+
+  // The answers that gave the winner the most points (ties keep quiz order).
+  const reasons = answers
+    .map((opt, i) => ({ opt, i, pts: opt && typeof opt === 'object' ? ((opt as any).scores?.[winner] ?? 0) : 0 }))
+    .filter((r) => r.pts >= 2 && typeof (r.opt as any)?.label === 'string' && QUIZ[r.i])
+    .sort((a, b) => b.pts - a.pts || a.i - b.i)
+    .slice(0, 3)
+    .map((r) => `${QUIZ[r.i].prompt} → ${(r.opt as any).label}`);
+
   return {
     animal: winner,
     peak: chips.peak,
     crash: chips.crash,
     recharge: chips.recharge,
+    ...(runnerUp ? { runnerUp } : {}),
+    ...(reasons.length ? { reasons } : {}),
   };
 }
 

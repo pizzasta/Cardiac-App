@@ -11,12 +11,23 @@
 - [ ] Bump `version` in `app/app.json` and set `ios.buildNumber` / `android.versionCode` for each store upload.
 - [ ] Test sign-up, sign-in, sign-out, cloud sync, local-only use, returning-user restore, CSV export, delete data, and delete account on physical iOS and Android devices.
 - [ ] Verify account deletion removes the auth user and associated rows.
-- [ ] Publish a public privacy-policy URL.
-- [ ] Publish a public web account-deletion request/initiation page for Google Play.
-- [ ] Replace/verify the support contact shown in the legal screen.
-- [ ] Complete Apple privacy disclosures and Google Play Data safety / Health apps declarations from the behavior of the final build.
+- [ ] Set the real legal entity (`operator`) and a monitored inbox (`contactEmail`) in `app/src/data/legal.ts`, run `npm run gen:legal`, and have counsel review the Privacy Policy and Terms.
+- [ ] Confirm the public pages are live after the Pages deploy and use them in both store listings:
+  - Privacy Policy: https://pizzasta.github.io/Cardiac-App/privacy/
+  - Terms (Apple custom EULA, optional): https://pizzasta.github.io/Cardiac-App/terms/
+  - Account deletion (Google Play): https://pizzasta.github.io/Cardiac-App/delete-account/
+  - Support URL: https://pizzasta.github.io/Cardiac-App/support/
+- [ ] Apply migration `0005_privacy_retention.sql`, redeploy the `pulse` Edge Function, and set the `RATE_LIMIT_SALT` secret (see supabase/README.md).
+- [ ] Complete Apple privacy disclosures and Google Play Data safety / Health apps declarations from the behavior of the final build. Starting point, matching the Privacy Policy:
+  - Collected and linked to the user (account holders only): Health & fitness (check-ins, quiz answers), contact info (email, name), user ID, other user content (Ask Circadia questions, sent to the AI provider).
+  - Not used for tracking or advertising; no data sold; no third-party analytics or ad SDKs.
+  - Data encrypted in transit; users can request deletion in-app and via the web deletion page.
+  - No location, contacts, photos, microphone or camera access (expo-av's microphone permission is disabled in `app.json`).
 - [ ] Review final wellness copy so rhythm profiles are presented as app-generated reflections, not diagnoses, validated chronotypes, biological measurements, or guaranteed predictions.
-- [ ] Confirm Pulse refuses diagnosis, medication advice, and medical certainty in adversarial/manual tests.
+- [ ] Confirm Ask Circadia refuses diagnosis, medication advice, and medical certainty in adversarial/manual tests.
+- [ ] Confirm the AI consent screen appears before the first Ask Circadia request on a fresh install, and that turning it off in Settings stops requests.
+- [ ] Listen to interface sounds and ambience on a physical iPhone (silent switch on and off) and an Android phone.
+- [ ] Check the 3D world runs smoothly on an older iPhone and a mid-range Android phone (scrolling Today and Trends, the reading dive), and that "Reduce motion" makes it still.
 - [ ] Confirm notification copy does not present predicted crashes, burnout, or health states as facts.
 
 ## Recommended beta gate

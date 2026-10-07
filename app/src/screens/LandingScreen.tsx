@@ -8,10 +8,11 @@ import {
   View,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import Atmosphere from '../components/Atmosphere';
 import { ARCHETYPES } from '../data/archetypes';
 import { DISCLAIMER_SHORT } from '../data/disclaimer';
 import { T, F } from '../theme';
+import { playSfx } from '../logic/sfx';
+import PressableScale from '../components/PressableScale';
 
 const ACCENT = T.accent;
 
@@ -23,19 +24,19 @@ const STEPS = [
 
 const FEATURES = [
   { t: 'Your rhythm animal', s: 'Eight questions decode how your nervous system runs.' },
-  { t: 'A plan that fits your wiring', s: 'Your real peak, crash, and wind-down — as a daily flow.' },
-  { t: 'Pulse, your AI companion', s: 'Ask it anything. It knows your patterns.' },
+  { t: 'A plan that fits your wiring', s: 'Your real peak, dip and wind-down, as a daily flow.' },
+  { t: 'Days like today', s: 'See past days that looked like this one, and what came after.' },
   { t: 'Sleep on your schedule', s: 'A wind-down and wake window tuned to your chronotype.' },
-  { t: 'Nudges that land', s: 'Reminders timed to your rhythm, not the clock.' },
+  { t: 'A one-minute reset', s: 'A breathing pace matched to how you feel right now.' },
   { t: 'Backed by the science', s: 'Every recommendation traces to real research.' },
 ];
 
 const STAY = [
-  'It learns you — switching elsewhere means losing that.',
-  'It’s specific: “you crash at 2:14pm” beats “drink more water.”',
-  'It catches the dip before you do.',
-  'It sounds like a person you’d actually listen to.',
-  'Your rhythm changes, and so does your plan.',
+  'Your history builds up. Every check-in makes your patterns clearer.',
+  'It’s specific to you, not generic “drink more water” advice.',
+  'It shows what’s coming in your day, so a dip is less of a surprise.',
+  'Missing a day never resets you to zero.',
+  'Your data stays yours. Export it any time, free.',
 ];
 
 export default function LandingScreen({
@@ -55,9 +56,15 @@ export default function LandingScreen({
   const animals = Object.values(ARCHETYPES);
 
   const Cta = ({ label = 'Find your rhythm' }: { label?: string }) => (
-    <Pressable style={styles.cta} onPress={onStart}>
+    <PressableScale
+      style={styles.cta}
+      onPress={() => {
+        playSfx('tap');
+        onStart();
+      }}
+    >
       <Text style={styles.ctaText}>{label}  →</Text>
-    </Pressable>
+    </PressableScale>
   );
 
   return (
@@ -65,9 +72,8 @@ export default function LandingScreen({
       <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
         {/* HERO */}
         <View style={[styles.hero, { minHeight: Math.max(560, height) }]}>
-          <Atmosphere style={StyleSheet.absoluteFill} accent={ACCENT} />
           <LinearGradient
-            colors={['rgba(8,8,10,0.15)', 'rgba(8,8,10,0.55)', 'rgba(8,8,10,0.95)']}
+            colors={['rgba(6,6,10,0)', 'rgba(6,6,10,0.25)', 'rgba(6,6,10,0.85)']}
             style={StyleSheet.absoluteFill}
           />
 
@@ -85,11 +91,11 @@ export default function LandingScreen({
             <Text style={styles.kicker}>CIRCADIA</Text>
             <Text style={styles.h1}>You’re not tired.{'\n'}You’re out of rhythm.</Text>
             <Text style={styles.sub}>
-              A 60-second read of how your energy, stress, and sleep actually work — then a daily
+              A 60-second read of how your energy, stress, and sleep actually work, then a daily
               plan built around it.
             </Text>
             <Cta />
-            <Text style={styles.fine}>No signup — just curiosity.</Text>
+            <Text style={styles.fine}>No signup, just curiosity.</Text>
           </View>
         </View>
 
@@ -139,16 +145,16 @@ export default function LandingScreen({
           ))}
         </Section>
 
-        {/* PULSE SPOTLIGHT */}
-        <Section label="MEET PULSE">
-          <Text style={styles.h2}>An AI that actually knows you.</Text>
+        {/* DAYS LIKE TODAY SPOTLIGHT */}
+        <Section label="DAYS LIKE TODAY">
+          <Text style={styles.h2}>Your own history, not a guess.</Text>
           <View style={[styles.bubble, styles.userBubble]}>
-            <Text style={styles.userText}>when should I work out today?</Text>
+            <Text style={styles.userText}>I feel off today.</Text>
           </View>
           <View style={[styles.bubble, styles.pulseBubble]}>
             <Text style={styles.pulseText}>
-              Not this morning — you’re still catching up on sleep. Around 5pm your energy lifts and
-              movement will help you sleep tonight. Skip it if today felt like too much; that’s valid too.
+              3 similar days found. You also checked in as Flat on these days, and Sleep was selected on 2
+              of the 3. Your next recorded check-in was Steady on 2 of those 3 occasions.
             </Text>
           </View>
         </Section>
@@ -166,7 +172,7 @@ export default function LandingScreen({
 
         {/* SCIENCE STRIP */}
         <Section>
-          <Text style={styles.scienceLine}>Backed by real circadian research — not vibes.</Text>
+          <Text style={styles.scienceLine}>Backed by real circadian research, not vibes.</Text>
           <Pressable onPress={onScience} hitSlop={8}>
             <Text style={styles.scienceLink}>Read the science  ↗</Text>
           </Pressable>
@@ -207,7 +213,7 @@ function Section({ label, children }: { label?: string; children: React.ReactNod
 }
 
 const styles = StyleSheet.create({
-  fill: { flex: 1, backgroundColor: '#08080A' },
+  fill: { flex: 1, backgroundColor: 'transparent' },
   scroll: { paddingBottom: 40 },
 
   hero: { paddingHorizontal: 28, justifyContent: 'flex-end', paddingBottom: 56 },

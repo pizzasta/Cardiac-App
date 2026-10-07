@@ -53,6 +53,8 @@ system prompt + safety guardrails. The app sends only the user's data.
 ```bash
 npx supabase functions deploy pulse
 npx supabase secrets set ANTHROPIC_API_KEY=sk-ant-...
+# Salt for hashing anonymous IPs in rate-limit keys (any long random string):
+npx supabase secrets set RATE_LIMIT_SALT=$(openssl rand -hex 32)
 ```
 Then set `EXPO_PUBLIC_PULSE_FN` in `app/.env` to the function URL
 (`https://<ref>.functions.supabase.co/pulse`). Without it, Pulse falls back to

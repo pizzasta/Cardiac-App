@@ -8,7 +8,8 @@ import { pickStatement, STATEMENTS } from '../data/statements';
 import { shareText } from '../logic/share';
 import { canCaptureImage, captureAndShare } from '../logic/capture';
 import PulseLine from '../components/PulseLine';
-import { F, T } from '../theme';
+import { F } from '../theme';
+import Scrim from '../components/Scrim';
 
 export default function SignalCardScreen({
   result,
@@ -36,7 +37,7 @@ export default function SignalCardScreen({
       setStatus('shared');
       return;
     }
-    const r = await shareText(`“${statement}” — my ${a.name} rhythm, mapped by Circadia.`);
+    const r = await shareText(`“${statement}” (my ${a.name} rhythm, mapped by Circadia)`);
     if (r === 'copied') setStatus('copied');
     else if (r === 'shared') setStatus('shared');
   };
@@ -44,13 +45,13 @@ export default function SignalCardScreen({
   const topInset = useTopInset();
   return (
     <View style={styles.fill}>
-      <LinearGradient colors={T.bgGradient} style={StyleSheet.absoluteFill} />
+      <Scrim shade="medium" />
 
       <View style={[styles.header, { paddingTop: topInset }]}>
         <Pressable onPress={onClose} hitSlop={12}>
           <Text style={styles.back}>‹ Close</Text>
         </Pressable>
-        <Text style={styles.headerTitle}>Signal Card</Text>
+        <Text style={styles.headerTitle}>Rhythm card</Text>
         <View style={{ width: 64 }} />
       </View>
 
@@ -89,13 +90,13 @@ export default function SignalCardScreen({
       <View style={styles.footer}>
         <Pressable style={[styles.cta, { backgroundColor: tint }]} onPress={onShare}>
           <Text style={styles.ctaText}>
-            {status === 'copied' ? 'Copied to clipboard ✓' : status === 'shared' ? 'Shared ✓' : 'Share my Signal'}
+            {status === 'copied' ? 'Copied to clipboard ✓' : status === 'shared' ? 'Shared ✓' : 'Share my card'}
           </Text>
         </Pressable>
         <Text style={styles.hint}>
           {canCaptureImage
             ? 'One tap shares the card as an image.'
-            : 'Drop it on your story — screenshot the card above.'}
+            : 'Drop it on your story: screenshot the card above.'}
         </Text>
       </View>
     </View>
@@ -103,7 +104,7 @@ export default function SignalCardScreen({
 }
 
 const styles = StyleSheet.create({
-  fill: { ...StyleSheet.absoluteFillObject, backgroundColor: T.bg },
+  fill: { ...StyleSheet.absoluteFillObject, backgroundColor: 'transparent' },
   header: {
     flexDirection: 'row',
     alignItems: 'center',

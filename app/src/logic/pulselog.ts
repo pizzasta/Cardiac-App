@@ -113,8 +113,8 @@ export function trendInsight(log: PulseEntry[]): string {
   recent.forEach((r) => (counts[r.level] += 1));
   const top = (Object.entries(counts) as [Level, number][]).sort((a, b) => b[1] - a[1])[0][0];
   if (top === 'wired') return 'You’ve been running hot lately. Where does that energy land?';
-  if (top === 'flat') return 'Mostly low this stretch — under-recovered, not lazy.';
-  return 'Mostly steady — that’s the state good things get built in.';
+  if (top === 'flat') return 'Mostly low this stretch. Under-recovered, not lazy.';
+  return 'Mostly steady. That’s the state good things get built in.';
 }
 
 // Smart check-in time: when should we nudge for the daily Pulse?
@@ -147,10 +147,10 @@ export function suggestCheckInTime(
   let why = 'Timed to when you usually check in.';
   if (top === 'flat') {
     shift = -1;
-    why = 'You’ve been running low — nudging earlier to catch the dip.';
+    why = 'You’ve been running low, so the nudge comes earlier to catch the dip.';
   } else if (top === 'wired') {
     shift = -0.5;
-    why = 'You’ve been running hot — nudging earlier to land it sooner.';
+    why = 'You’ve been running hot, so the nudge comes earlier to help it land.';
   }
 
   let h = median - 0.5 + shift; // 30 min before the habitual time, plus trend
@@ -191,13 +191,13 @@ export function buildSignalQuestion(
 export function readFor(animalName: string, level: Level): { read: string; move: string } {
   if (level === 'wired')
     return {
-      read: `Wired right now. For a ${animalName}, that edge is real — but it needs somewhere to land.`,
+      read: `Wired right now. For a ${animalName}, that edge is real, but it needs somewhere to land.`,
       move: 'Four slow breaths, or five quiet minutes before the next thing.',
     };
   if (level === 'flat')
     return {
-      read: `Flat today. Not lazy — under-recovered. A ${animalName} crashes quiet, then all at once.`,
-      move: 'Lower the bar. One small, kind thing — then rest without guilt.',
+      read: `Flat today. Not lazy, just under-recovered. A ${animalName} crashes quiet, then all at once.`,
+      move: 'Lower the bar. One small, kind thing, then rest without guilt.',
     };
   return {
     read: 'Steady. That’s the state everything good gets built in.',

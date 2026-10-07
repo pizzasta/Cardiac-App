@@ -34,12 +34,13 @@ const cors: Record<string, string> = {
 };
 
 // ── Pulse's voice + guardrails (the chatbot prompt) ─────────────────────────
-const VOICE = `VOICE — follow exactly:
+const VOICE = `VOICE (follow exactly):
 - Talk like a perceptive friend who happens to know neuroscience. Never a therapist, never a hype coach, never a fortune cookie.
 - Smart, calm, personal, a little mysterious. Specific over vague.
-- Reference the actual pattern you see in their answers — that's the proof you're paying attention.
+- Reference the actual pattern you see in their answers. That's the proof you're paying attention.
 - Always give one concrete, doable thing. Always leave them an out; never moralize about rest, food, or productivity.
 - No fake-deep poetry, no "manifest your best self", no corporate-wellness language, no emoji spam.
+- Write in plain sentences. Never use em dashes (—); use a period, comma or colon instead.
 - Keep replies to 2-4 sentences unless they ask for more.`;
 
 const EVIDENCE = `EVIDENCE YOU CAN DRAW ON (only state what's supported; don't invent studies or numbers):
@@ -51,7 +52,7 @@ const EVIDENCE = `EVIDENCE YOU CAN DRAW ON (only state what's supported; don't i
 
 const BOUNDARIES = `BOUNDARIES:
 - You are not a doctor or therapist. Don't diagnose, name conditions, or give medical, psychiatric, or medication advice.
-- If they describe something clinical or concerning (persistent insomnia, panic, deep lows, self-harm), say plainly and calmly that it's worth talking to a qualified professional — brief, no alarm — then offer what you genuinely can help with.
+- If they describe something clinical or concerning (persistent insomnia, panic, deep lows, self-harm), say plainly and calmly that it's worth talking to a qualified professional (brief, no alarm), then offer what you genuinely can help with.
 - Treat the rhythm animal as an app-generated reflection, never a diagnosis, validated chronotype, or biological measurement.\n- Never claim Circadia can predict a crash, burnout, disease, hormone level, or nervous-system state. Use tentative language such as “you may notice” or “your answers suggest.”\n- If asked for medical or diagnostic certainty, decline gently and point them to a professional.`;
 
 const READING_PROMPT =
@@ -66,7 +67,7 @@ function buildSystem(p: any): string {
     : '';
   return `You are Pulse, the AI companion inside Circadia, a wellness app that helps people reflect on daily energy, sleep-routine, and focus patterns.
 
-The user just took the onboarding quiz. Their rhythm animal is the ${a.name ?? 'unknown'} (${a.oneLiner ?? ''}). From their actual answers: their reported focus window is ${c.peak ?? '—'}, a possible lower-energy window is ${c.crash ?? '—'}, and they say they recharge through ${c.recharge ?? '—'}.
+The user just took the onboarding quiz. Their rhythm animal is the ${a.name ?? 'unknown'} (${a.oneLiner ?? ''}). From their actual answers: their reported focus window is ${c.peak ?? 'unknown'}, a possible lower-energy window is ${c.crash ?? 'unknown'}, and they say they recharge through ${c.recharge ?? 'unknown'}.
 
 Their raw answers:
 ${profile}
@@ -83,6 +84,16 @@ function json(obj: unknown, status = 200): Response {
     status,
     headers: { ...cors, 'Content-Type': 'application/json' },
   });
+}
+
+// One-way hash of an IP for rate-limit keys, salted with a server secret when
+// one is configured (RATE_LIMIT_SALT) so hashes can't be reversed by lookup.
+async function hashIp(ip: string): Promise<string> {
+  // @ts-ignore Deno.env in the edge runtime
+  const salt = Deno.env.get('RATE_LIMIT_SALT') ?? 'circadia-rate-limit';
+  const bytes = new TextEncoder().encode(`${salt}:${ip}`);
+  const digest = await crypto.subtle.digest('SHA-256', bytes);
+  return Array.from(new Uint8Array(digest).slice(0, 16), (b) => b.toString(16).padStart(2, '0')).join('');
 }
 
 // Extract the Supabase user id from a JWT (null for the anon key / no token).
@@ -113,7 +124,8 @@ async function withinRateLimit(req: Request, kind: string): Promise<boolean> {
     const max = kind === 'reading' ? RATE_MAX_READING : RATE_MAX_CHAT;
     const sub = jwtSub(req.headers.get('Authorization'));
     const ip = (req.headers.get('x-forwarded-for') ?? '').split(',')[0].trim() || 'unknown';
-    const id = sub ? `pulse:u:${sub}:${bucket}` : `pulse:ip:${ip}:${bucket}`;
+    // Never store raw IPs: anonymous counters are keyed by a one-way hash.
+    const id = sub ? `pulse:u:${sub}:${bucket}` : `pulse:ip:${await hashIp(ip)}:${bucket}`;
 
     const admin = createClient(url, serviceKey);
     const { data, error } = await admin.rpc('check_rate_limit', {

@@ -48,8 +48,20 @@ export function parseProfile(raw: string | null): StoredProfile | null {
     const answers = (Array.isArray(p.answerIdx) ? p.answerIdx : [])
       .map((idx, i) => QUIZ[i]?.options[idx])
       .filter((o): o is Option => !!o);
+    const runnerUp =
+      r.runnerUp && r.runnerUp !== r.animal && Object.prototype.hasOwnProperty.call(ARCHETYPES, r.runnerUp)
+        ? r.runnerUp
+        : undefined;
+    const reasons = Array.isArray(r.reasons) ? r.reasons.filter((x) => typeof x === 'string').slice(0, 3) : [];
     return {
-      result: { animal: r.animal, peak: r.peak, crash: r.crash, recharge: r.recharge },
+      result: {
+        animal: r.animal,
+        peak: r.peak,
+        crash: r.crash,
+        recharge: r.recharge,
+        ...(runnerUp ? { runnerUp } : {}),
+        ...(reasons.length ? { reasons } : {}),
+      },
       answers,
     };
   } catch {

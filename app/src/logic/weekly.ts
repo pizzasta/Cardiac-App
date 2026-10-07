@@ -102,7 +102,7 @@ export function headlineFor(daysLogged: number, dominant: Level | null): string 
   };
   const lean = dominant ? label[dominant] : 'a mixed week';
   if (daysLogged >= 5) {
-    return `You showed up ${daysLogged} days — ${lean}.`;
+    return `You showed up ${daysLogged} days: ${lean}.`;
   }
-  return `${daysLogged} day${daysLogged === 1 ? '' : 's'} logged — ${lean} so far.`;
+  return `${daysLogged} day${daysLogged === 1 ? '' : 's'} logged: ${lean} so far.`;
 }

@@ -17,7 +17,7 @@ export const REMINDERS: Record<AnimalId, Reminder[]> = {
   ],
   wolf: [
     { hour: 11, minute: 0, title: 'Slow start is fine', body: 'Don’t make this hour the day’s first hard thing. Ease in.' },
-    { hour: 23, minute: 0, title: 'Set your stop time', body: 'You’re in your good hours — one creative thing, then a real cutoff.' },
+    { hour: 23, minute: 0, title: 'Set your stop time', body: 'You’re in your good hours. One creative thing, then a real cutoff.' },
   ],
   bear: [
     { hour: 18, minute: 0, title: 'Ease off', body: 'Your plan suggests a gentler evening may fit here. Consider letting the day land before adding more.' },

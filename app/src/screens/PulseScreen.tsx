@@ -9,7 +9,6 @@ import {
   TextInput,
   View,
 } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
 import { useTopInset } from '../hooks';
 import * as Speech from 'expo-speech';
 import { ARCHETYPES } from '../data/archetypes';
@@ -18,10 +17,9 @@ import { RhythmResult } from '../logic/score';
 import { askPulse, ChatTurn, generateReading, hasAI } from '../logic/ai';
 import { listen, voiceSupported } from '../logic/voice';
 import { DISCLAIMER_SHORT } from '../data/disclaimer';
-import Atmosphere from '../components/Atmosphere';
-import ImmersiveScene from '../components/ImmersiveScene';
 import PulseLoader from '../components/PulseLoader';
 import { F } from '../theme';
+import Scrim from '../components/Scrim';
 
 export default function PulseScreen({
   result,
@@ -116,12 +114,7 @@ export default function PulseScreen({
   const topInset = useTopInset();
   return (
     <View style={styles.fill}>
-      <ImmersiveScene animal={result.animal} style={StyleSheet.absoluteFill} />
-      <Atmosphere style={StyleSheet.absoluteFill} accent={a.accent} />
-      <LinearGradient
-        colors={[`${a.gradient[0]}cc`, 'rgba(8,8,10,0.8)', 'rgba(8,8,10,0.94)']}
-        style={StyleSheet.absoluteFill}
-      />
+      <Scrim shade="strong" />
 
       <KeyboardAvoidingView
         style={styles.fill}
@@ -131,7 +124,7 @@ export default function PulseScreen({
           <Pressable onPress={onBack} hitSlop={12}>
             <Text style={styles.back}>‹ Back</Text>
           </Pressable>
-          <Text style={styles.headerTitle}>{a.emoji}  Pulse</Text>
+          <Text style={styles.headerTitle}>{a.emoji}  Ask Circadia</Text>
           <Pressable onPress={toggleSpeak} hitSlop={12} style={styles.speaker}>
             <Text style={[styles.speakerIcon, speak && { color: a.accent }]}>
               {speak ? '🔊' : '🔇'}
@@ -160,7 +153,7 @@ export default function PulseScreen({
               {t.role === 'assistant' && (
                 <View style={styles.evidenceActions}>
                   <Pressable onPress={() => setWhyOpen(whyOpen === i ? null : i)}>
-                    <Text style={[styles.evidenceLink, { color: a.accent }]}>Why Pulse said this</Text>
+                    <Text style={[styles.evidenceLink, { color: a.accent }]}>Why this answer</Text>
                   </Pressable>
                   <Pressable onPress={() => setReported((r) => r.includes(i) ? r : [...r, i])}>
                     <Text style={styles.reportLink}>{reported.includes(i) ? 'Reported ✓' : 'Report response'}</Text>
@@ -171,7 +164,7 @@ export default function PulseScreen({
                 <View style={styles.evidenceCard}>
                   <Text style={styles.evidenceTitle}>WHAT PULSE USED</Text>
                   <Text style={styles.evidenceText}>Your Circadia quiz profile, the question you asked, and the conversation shown here.</Text>
-                  <Text style={styles.evidenceFine}>Pulse should not treat an association as a cause, diagnose a condition, or invent personal facts that are not in this context.</Text>
+                  <Text style={styles.evidenceFine}>Answers should not treat an association as a cause, diagnose a condition, or invent personal facts that are not in this context.</Text>
                 </View>
               )}
             </View>
@@ -205,7 +198,7 @@ export default function PulseScreen({
             <Text style={styles.hint}>
               {voiceSupported
                 ? 'Tap the mic and talk, or type. Tap the reading to hear it.'
-                : 'Ask me anything — “when should I work out?”, “why am I tired at 2pm?”'}
+                : 'Ask anything, like “when should I work out?” or “why am I tired at 2pm?”'}
             </Text>
           )}
         </ScrollView>
@@ -228,7 +221,7 @@ export default function PulseScreen({
             value={input}
             onChangeText={setInput}
             placeholder={
-              listening ? 'Listening…' : hasAI() ? 'Ask Pulse…' : 'Add an API key to chat'
+              listening ? 'Listening…' : hasAI() ? 'Ask a question…' : 'Add an API key to chat'
             }
             placeholderTextColor="rgba(255,255,255,0.45)"
             editable={hasAI() && !listening}
@@ -253,7 +246,7 @@ export default function PulseScreen({
 }
 
 const styles = StyleSheet.create({
-  fill: { flex: 1, backgroundColor: '#08080A' },
+  fill: { flex: 1, backgroundColor: 'transparent' },
   header: {
     flexDirection: 'row',
     alignItems: 'center',

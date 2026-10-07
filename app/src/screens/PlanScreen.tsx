@@ -8,10 +8,10 @@ import {
   Text,
   View,
 } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
 import { useTopInset } from '../hooks';
 import { ARCHETYPES } from '../data/archetypes';
 import { PLANS } from '../data/plans';
+import { personalFlow } from '../logic/personalPlan';
 import { REMINDERS } from '../data/reminders';
 import { DEEP_DIVE } from '../data/deepdive';
 import { DISCLAIMER_FULL } from '../data/disclaimer';
@@ -19,8 +19,9 @@ import { RhythmResult } from '../logic/score';
 import { canSchedule, disable as disableNotifs, enable as enableNotifs, isEnabled } from '../logic/notifications';
 import { load as loadLog, suggestCheckInTime } from '../logic/pulselog';
 import Protected from '../components/Protected';
-import Atmosphere from '../components/Atmosphere';
 import { F } from '../theme';
+import Scrim from '../components/Scrim';
+import PressableScale from '../components/PressableScale';
 
 function fmtTime(hour: number, minute: number): string {
   const ampm = hour < 12 ? 'AM' : 'PM';
@@ -55,6 +56,7 @@ export default function PlanScreen({
 }) {
   const a = ARCHETYPES[result.animal];
   const plan = PLANS[result.animal];
+  const flow = personalFlow(plan.flow, result);
 
   const [notifsOn, setNotifsOn] = useState(false);
   const [notifBusy, setNotifBusy] = useState(false);
@@ -98,11 +100,7 @@ export default function PlanScreen({
   const topInset = useTopInset();
   return (
     <View style={styles.fill}>
-      <Atmosphere style={StyleSheet.absoluteFill} accent={a.accent} />
-      <LinearGradient
-        colors={[`${a.gradient[0]}cc`, 'rgba(8,8,10,0.78)', 'rgba(8,8,10,0.92)']}
-        style={StyleSheet.absoluteFill}
-      />
+      <Scrim shade="medium" />
 
       <View style={[styles.header, { paddingTop: topInset }]}>
         <Pressable onPress={onBack} hitSlop={12}>
@@ -126,20 +124,20 @@ export default function PlanScreen({
           <Chip label="Recharge" value={result.recharge} accent={a.accent} />
         </View>
 
-        <Text style={styles.section}>DAILY PULSE</Text>
-        <Pressable style={[styles.pulseCard, { borderColor: `${a.accent}55` }]} onPress={onCheckIn}>
+        <Text style={styles.section}>CHECK-IN</Text>
+        <PressableScale style={[styles.pulseCard, { borderColor: `${a.accent}55` }]} onPress={onCheckIn}>
           <View style={{ flex: 1 }}>
-            <Text style={styles.pulseTitle}>Check in — 10 seconds</Text>
-            <Text style={styles.pulseSub}>Log today’s signal. No streak to protect, just an honest read.</Text>
+            <Text style={styles.pulseTitle}>Check in (10 seconds)</Text>
+            <Text style={styles.pulseSub}>Log how your energy feels today. No streak to protect, just an honest read.</Text>
           </View>
           <Text style={[styles.pulseArrow, { color: a.accent }]}>→</Text>
-        </Pressable>
+        </PressableScale>
         <View style={styles.pulseLinks}>
           <Pressable onPress={onTrends} hitSlop={8}>
             <Text style={[styles.pulseLink, { color: a.accent }]}>See your trends</Text>
           </Pressable>
           <Pressable onPress={onShareCard} hitSlop={8}>
-            <Text style={[styles.pulseLink, { color: a.accent }]}>Share your Signal Card ↗</Text>
+            <Text style={[styles.pulseLink, { color: a.accent }]}>Share your rhythm card ↗</Text>
           </Pressable>
         </View>
 
@@ -166,7 +164,7 @@ export default function PlanScreen({
               <Text style={styles.notifTitle}>Rhythm reminders</Text>
               <Text style={styles.notifSub}>
                 {notifsOn
-                  ? 'On — gentle nudges at your key moments.'
+                  ? 'On. Gentle nudges at your key moments.'
                   : 'Get nudged at your crash window and wind-down.'}
               </Text>
             </View>
@@ -207,21 +205,22 @@ export default function PlanScreen({
 
           {!canSchedule && (
             <Text style={styles.notifWeb}>
-              On the web we can only ask permission — install the phone app for daily reminders.
+              On the web we can only ask permission. Install the phone app for daily reminders.
             </Text>
           )}
         </View>
 
         <Text style={styles.section}>TODAY’S FLOW</Text>
         <View style={styles.timeline}>
-          {plan.flow.map((f, i) => (
+          {flow.map((f, i) => (
             <View key={i} style={styles.flowRow}>
               <View style={styles.timeCol}>
                 <Text style={[styles.time, { color: a.accent }]}>{f.time}</Text>
-                {i < plan.flow.length - 1 && <View style={styles.connector} />}
+                {i < flow.length - 1 && <View style={styles.connector} />}
               </View>
               <View style={styles.flowCard}>
                 <Text style={styles.flowTitle}>{f.title}</Text>
+                {f.personal && <Text style={[styles.yours, { color: a.accent }]}>FROM YOUR ANSWERS</Text>}
                 <Text style={styles.flowNote}>{f.note}</Text>
               </View>
             </View>
@@ -229,20 +228,20 @@ export default function PlanScreen({
         </View>
 
         <Text style={styles.section}>TIPS FOR A {a.name.toUpperCase()}</Text>
-        <Text style={styles.tipsHint}>Tap a tip to go deeper with Pulse.</Text>
+        <Text style={styles.tipsHint}>Tap a tip to ask a follow-up question.</Text>
         {plan.tips.map((t, i) => (
           <Pressable
             key={i}
             style={styles.tipCard}
             onPress={() =>
               onPulse(
-                `As a ${a.name}, give me a deeper, personal tip on ${t.label.toLowerCase()} — building on this: "${t.text}". One concrete thing I can do today.`
+                `As a ${a.name}, give me a deeper, personal tip on ${t.label.toLowerCase()}, building on this: "${t.text}". One concrete thing I can do today.`
               )
             }
           >
             <View style={styles.tipHead}>
               <Text style={[styles.tipLabel, { color: a.accent }]}>{t.label}</Text>
-              <Text style={[styles.tipGo, { color: a.accent }]}>Ask Pulse ›</Text>
+              <Text style={[styles.tipGo, { color: a.accent }]}>Ask ›</Text>
             </View>
             <Text style={styles.tipText}>{t.text}</Text>
           </Pressable>
@@ -253,7 +252,7 @@ export default function PlanScreen({
           onSignIn={onSignIn}
           accent={a.accent}
           title="🔒 Unlock your detailed plan"
-          message="Sign in to get your weekly-grain plan — deeper scheduling, caffeine and recovery timing, and the patterns to track for your rhythm."
+          message="Sign in to get your weekly-grain plan: deeper scheduling, caffeine and recovery timing, and the patterns to track for your rhythm."
         >
           <View style={styles.deepCard}>
             {DEEP_DIVE[result.animal].map((d, i) => (
@@ -266,14 +265,14 @@ export default function PlanScreen({
         </Protected>
 
         <Pressable style={[styles.cta, { backgroundColor: a.accent }]} onPress={() => onPulse()}>
-          <Text style={styles.ctaText}>Talk to Pulse  →</Text>
+          <Text style={styles.ctaText}>Ask a question  →</Text>
         </Pressable>
 
         <Pressable
           style={[styles.scienceBtn, { borderColor: `${a.accent}66` }]}
           onPress={onScience}
         >
-          <Text style={[styles.scienceText, { color: a.accent }]}>Why this works — the science</Text>
+          <Text style={[styles.scienceText, { color: a.accent }]}>Why this works: the science</Text>
         </Pressable>
 
         <Text style={styles.disclaimer}>{DISCLAIMER_FULL}</Text>
@@ -295,7 +294,7 @@ function Chip({ label, value, accent }: { label: string; value: string; accent: 
 }
 
 const styles = StyleSheet.create({
-  fill: { flex: 1, backgroundColor: '#08080A' },
+  fill: { flex: 1, backgroundColor: 'transparent' },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -304,9 +303,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 18,
     paddingBottom: 8,
   },
-  back: { color: 'rgba(255,255,255,0.85)', fontSize: 16, fontWeight: '600', width: 48 },
+  back: { color: 'rgba(255,255,255,0.85)', fontSize: 16, fontWeight: '600', width: 64 },
   headerTitle: { color: '#fff', fontSize: 18, fontFamily: F.display },
-  gear: { width: 48, alignItems: 'flex-end' },
+  gear: { width: 64, alignItems: 'flex-end' },
   gearIcon: { color: 'rgba(255,255,255,0.85)', fontSize: 20 },
   body: { paddingHorizontal: 22, paddingBottom: 40 },
   animal: { color: '#fff', fontSize: 30, fontFamily: F.display, marginTop: 8 },
@@ -406,6 +405,7 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   flowTitle: { color: '#fff', fontSize: 16, fontWeight: '700' },
+  yours: { fontSize: 10, fontFamily: F.mono, letterSpacing: 1, marginTop: 3 },
   flowNote: { color: 'rgba(255,255,255,0.78)', fontSize: 14, lineHeight: 20, marginTop: 4 },
   tipCard: {
     backgroundColor: 'rgba(255,255,255,0.06)',

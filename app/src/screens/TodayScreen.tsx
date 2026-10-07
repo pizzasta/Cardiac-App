@@ -13,6 +13,9 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useTopInset } from '../hooks';
 import { ARCHETYPES } from '../data/archetypes';
 import { PLANS } from '../data/plans';
+import { personalFlow } from '../logic/personalPlan';
+import AnimalEmblem from '../world/AnimalEmblem';
+import { TINTS } from '../data/archetypes';
 import { RhythmResult } from '../logic/score';
 import { PulseEntry, load, getToday, currentStreak } from '../logic/pulselog';
 import { weeklyReport, WeeklyReport } from '../logic/weekly';
@@ -31,6 +34,10 @@ import {
   stopExperiment,
 } from '../logic/experiments';
 import { currentFlowIndex, formatCountdown, nextShift } from '../logic/forecast';
+import { playSfx } from '../logic/sfx';
+import Scrim from '../components/Scrim';
+import Rise from '../components/Rise';
+import PressableScale from '../components/PressableScale';
 
 function greeting(now = new Date()): string {
   const h = now.getHours();
@@ -55,7 +62,7 @@ export default function TodayScreen({
   const topInset = useTopInset();
   const arch = ARCHETYPES[result.animal];
   const plan = PLANS[result.animal];
-  const flow = plan?.flow ?? [];
+  const flow = plan ? personalFlow(plan.flow, result) : [];
   // Re-render each minute so "now" and the countdown stay current.
   const [now, setNow] = useState(() => new Date());
   useEffect(() => {
@@ -103,11 +110,13 @@ export default function TodayScreen({
 
   return (
     <View style={styles.root}>
+      <Scrim shade="medium" />
       <ScrollView
         contentContainerStyle={[styles.content, { paddingTop: topInset + 12 }]}
         showsVerticalScrollIndicator={false}
       >
-        {/* Pulse header */}
+        <Rise>
+        {/* Header */}
         <LinearGradient
           colors={arch.gradient}
           start={{ x: 0, y: 0 }}
@@ -122,12 +131,24 @@ export default function TodayScreen({
             Your quiz suggests a stronger focus window around {result.peak} and a
             possible lower-energy window near {result.crash}. Your check-ins help refine the picture.
           </Text>
+          {/* Your animal, moving the way you checked in today. */}
+          <AnimalEmblem
+            animal={result.animal}
+            accent={TINTS[result.animal]}
+            emoji={arch.emoji}
+            bg={null}
+            sparks={false}
+            mood={today?.level ?? null}
+            style={styles.companion}
+          />
           {/* Rendered last so it sits above the header text and stays tappable. */}
           <Pressable onPress={onClose} hitSlop={12} style={styles.close}>
             <Text style={styles.closeText}>Done</Text>
           </Pressable>
         </LinearGradient>
 
+        </Rise>
+        <Rise delay={90}>
         {/* Rhythm ribbon: today's suggested rhythm, with the now-marker. */}
         <Text style={styles.section}>TODAY’S RHYTHM</Text>
         <View style={styles.ribbon}>
@@ -153,6 +174,8 @@ export default function TodayScreen({
           ))}
         </View>
 
+        </Rise>
+        <Rise delay={180}>
         {/* Now card: the single most relevant action for this moment. */}
         {nowItem && (
           <View style={[styles.nowCard, { borderColor: arch.accent }]}>
@@ -173,17 +196,20 @@ export default function TodayScreen({
           </View>
         )}
 
+        </Rise>
+        <Rise delay={270}>
         {/* Reset: secondary, state-matched — never competes with the check-in. */}
-        <Pressable onPress={onReset} style={styles.resetCard}>
+        <PressableScale onPress={onReset} style={styles.resetCard}>
           <View style={{ flex: 1 }}>
-            <Text style={styles.resetTitle}>60-second reset</Text>
+            <Text style={styles.resetTitle}>1-minute reset</Text>
             <Text style={styles.resetSub}>
               A breathing pace matched to {today ? `your ${today.level} check-in` : 'how you feel right now'}.
             </Text>
           </View>
           <Text style={[styles.resetArrow, { color: arch.accent }]}>→</Text>
-        </Pressable>
+        </PressableScale>
 
+        </Rise>
         {/* Today's flow */}
         <Text style={styles.section}>TODAY’S FLOW</Text>
         {flow.map((item, i) => (
@@ -194,24 +220,25 @@ export default function TodayScreen({
             <Text style={styles.flowTime}>{item.time}</Text>
             <View style={styles.flowBody}>
               <Text style={styles.flowTitle}>{item.title}</Text>
+              {item.personal && <Text style={[styles.yours, { color: arch.accent }]}>FROM YOUR ANSWERS</Text>}
               <Text style={styles.flowNote}>{item.note}</Text>
             </View>
           </View>
         ))}
 
         {/* Check-in nudge: soft, optional, never guilt-trips. */}
-        <Pressable
+        <PressableScale
           onPress={onCheckIn}
           style={[styles.checkIn, { backgroundColor: arch.accent }]}
         >
           <Text style={styles.checkInText}>
             {today ? 'Update today’s check-in' : 'How’s your energy right now?'}
           </Text>
-        </Pressable>
+        </PressableScale>
 
         {/* Weekly reveal */}
         {report && (
-          <Pressable onPress={onTrends} style={styles.weekCard}>
+          <PressableScale onPress={onTrends} style={styles.weekCard}>
             <Text style={styles.weekLabel}>THIS WEEK</Text>
             <Text style={styles.weekHeadline}>{report.headline}</Text>
             <View style={styles.weekStats}>
@@ -220,7 +247,7 @@ export default function TodayScreen({
               <Stat value={String(streak)} label="day streak" />
             </View>
             <Text style={styles.weekMore}>See your patterns →</Text>
-          </Pressable>
+          </PressableScale>
         )}
 
         <Text style={styles.section}>RHYTHM EXPERIMENT</Text>
@@ -228,8 +255,8 @@ export default function TodayScreen({
           <View style={[styles.experimentCard, { borderColor: `${arch.accent}55`, borderWidth: 1 }]}>
             <Text style={[styles.experimentKicker, { color: arch.accent }]}>RESULTS · {lastExperiment.title.toUpperCase()}</Text>
             <View style={styles.weekStats}>
-              <Stat value={outcome.before ?? '—'} label={`before (${outcome.beforeCount})`} />
-              <Stat value={outcome.during ?? '—'} label={`during (${outcome.duringCount})`} />
+              <Stat value={outcome.before ?? 'none'} label={`before (${outcome.beforeCount})`} />
+              <Stat value={outcome.during ?? 'none'} label={`during (${outcome.duringCount})`} />
             </View>
             <Text style={styles.experimentText}>{outcome.summary}</Text>
             {outcome.commonReason && (
@@ -267,10 +294,13 @@ export default function TodayScreen({
         ) : (
           <View style={styles.experimentChoices}>
             {EXPERIMENTS.slice(0, 3).map((item) => (
-              <Pressable key={item.id} style={styles.experimentChoice} onPress={async () => setExperiment(await startExperiment(item))}>
+              <PressableScale key={item.id} style={styles.experimentChoice} onPress={async () => {
+                playSfx('select');
+                setExperiment(await startExperiment(item));
+              }}>
                 <Text style={styles.experimentTitle}>{item.title}</Text>
                 <Text style={styles.experimentText}>{item.days}-day observation →</Text>
-              </Pressable>
+              </PressableScale>
             ))}
           </View>
         )}
@@ -302,9 +332,10 @@ function Stat({ value, label }: { value: string; label: string }) {
 }
 
 const styles = StyleSheet.create({
-  root: { ...StyleSheet.absoluteFillObject, backgroundColor: T.bg },
+  root: { ...StyleSheet.absoluteFillObject, backgroundColor: 'transparent' },
   content: { paddingHorizontal: 20, paddingBottom: 24 },
-  header: { borderRadius: 20, padding: 20, marginBottom: 24 },
+  header: { borderRadius: 20, padding: 20, marginBottom: 24, overflow: 'hidden' },
+  companion: { position: 'absolute', right: -6, top: 26, width: 120, height: 96 },
   close: { position: 'absolute', top: 16, right: 16 },
   closeText: { color: T.text, fontFamily: F.mono, fontSize: 13, opacity: 0.8 },
   kicker: {
@@ -371,6 +402,7 @@ const styles = StyleSheet.create({
   flowTime: { color: T.muted, fontFamily: F.mono, fontSize: 12, width: 52 },
   flowBody: { flex: 1 },
   flowTitle: { color: T.text, fontSize: 15 },
+  yours: { fontFamily: F.mono, fontSize: 9, letterSpacing: 1, marginTop: 2 },
   flowNote: { color: T.muted, fontSize: 13, lineHeight: 18, marginTop: 2 },
   checkIn: {
     borderRadius: 14,

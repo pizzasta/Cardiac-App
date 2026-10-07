@@ -16,7 +16,7 @@ export async function captureAndShare(ref: React.RefObject<unknown>): Promise<bo
       result: 'tmpfile',
     });
     if (!(await Sharing.isAvailableAsync())) return false;
-    await Sharing.shareAsync(uri, { mimeType: 'image/png', dialogTitle: 'Share your Signal Card' });
+    await Sharing.shareAsync(uri, { mimeType: 'image/png', dialogTitle: 'Share your rhythm card' });
     return true;
   } catch {
     return false;

@@ -24,7 +24,7 @@ export const QUIZ: Question[] = [
     id: 'sleep',
     prompt: 'When does your brain actually shut off at night?',
     options: [
-      { label: 'Easily — out fast', scores: { bear: 3, fox: 1 } },
+      { label: 'Easily, out fast', scores: { bear: 3, fox: 1 } },
       { label: 'Takes forever', scores: { dolphin: 3, fox: 1 } },
       { label: 'Wired late', scores: { wolf: 3, dolphin: 1 } },
       { label: 'Crash hard, then wake up', scores: { dolphin: 2, bear: 1 } },

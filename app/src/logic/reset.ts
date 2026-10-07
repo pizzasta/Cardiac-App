@@ -46,7 +46,7 @@ export const RESETS: Record<Level, ResetPattern> = {
   steady: {
     id: 'box',
     title: 'Box breath',
-    why: 'Already steady. Four even sides — a minute to lock in the state before the next thing.',
+    why: 'Already steady. Four even sides, a minute to lock in the state before the next thing.',
     phases: [
       { kind: 'in', secs: 4 },
       { kind: 'hold', secs: 4 },
