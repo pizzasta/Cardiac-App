@@ -1,7 +1,7 @@
 import React from 'react';
 import { StyleSheet } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import { daylightNow } from '../world/clock';
+import { useDaylight } from '../world/clock';
 
 // A see-through shade over the 3D world so text stays readable while the world
 // keeps showing. `light` for hero screens, `strong` behind dense content.
@@ -23,7 +23,7 @@ function colorsFor(shade: keyof typeof SHADES, day: number): [string, string, st
 }
 
 export default function Scrim({ shade = 'medium' }: { shade?: keyof typeof SHADES }) {
-  const day = daylightNow();
+  const day = useDaylight();
   return (
     <LinearGradient
       pointerEvents="none"

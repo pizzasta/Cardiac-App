@@ -29,7 +29,7 @@ import {
   TILE_LENGTH,
   WorldMode,
 } from './rig';
-import { localHour } from './clock';
+import { useLocalHour } from './clock';
 import { AnimalId } from '../data/archetypes';
 import Atmosphere from '../components/Atmosphere';
 import { T } from '../theme';
@@ -54,15 +54,18 @@ interface Live {
   mode: WorldMode;
   tint: THREE.Color;
   still: boolean;
+  // Local hour, refreshed by useLocalHour (every minute and on resume).
+  hour: number;
   pointer: { x: number; y: number };
 }
 
 // Shared, frame-to-frame state that useFrame reads without re-rendering.
-function useLive(mode: WorldMode, tint: string, still: boolean): React.MutableRefObject<Live> {
-  const live = useRef<Live>({ mode, tint: new THREE.Color(tint), still, pointer: { x: 0, y: 0 } });
+function useLive(mode: WorldMode, tint: string, still: boolean, hour: number): React.MutableRefObject<Live> {
+  const live = useRef<Live>({ mode, tint: new THREE.Color(tint), still, hour, pointer: { x: 0, y: 0 } });
   live.current.mode = mode;
   live.current.tint.set(tint);
   live.current.still = still;
+  live.current.hour = hour;
   return live;
 }
 
@@ -99,7 +102,6 @@ function Rig({ live, params }: { live: React.MutableRefObject<Live>; params: Rea
   const { camera, scene, gl } = useThree();
   const look = useRef(new THREE.Vector3(...STATIONS[live.current.mode].lookAt));
   const first = useRef(true);
-  const hour = useRef(localHour());
 
   useFrame((_, rawDt) => {
     const dt = Math.min(rawDt, 0.05);
@@ -111,11 +113,9 @@ function Rig({ live, params }: { live: React.MutableRefObject<Live>; params: Rea
     first.current = false;
     const speed = mode === 'reading' ? 2.4 : 1.4;
 
-    // The clock moves slowly; re-read it about once a minute of frames.
-    if (Math.random() < 0.002) hour.current = localHour();
-    p.elevation = damp(p.elevation, sunElevation(hour.current), 0.5 * k, dt);
+    p.elevation = damp(p.elevation, sunElevation(live.current.hour), 0.5 * k, dt);
     p.day = daylight(p.elevation);
-    p.dusk = sunsetGlow(hour.current, p.elevation);
+    p.dusk = sunsetGlow(live.current.hour, p.elevation);
     timeColor(p.fog, PALETTE.fog, p.day);
     p.fog.lerp(DUSK.fog, 0.75 * p.dusk);
     if (scene.fog) (scene.fog as THREE.Fog).color.copy(p.fog);
@@ -611,9 +611,9 @@ function Scene({
     glow: STATIONS[live.current.mode].glow,
     t: 0,
     color: live.current.tint.clone(),
-    elevation: sunElevation(localHour()),
-    day: daylight(sunElevation(localHour())),
-    dusk: sunsetGlow(localHour(), sunElevation(localHour())),
+    elevation: sunElevation(live.current.hour),
+    day: daylight(sunElevation(live.current.hour)),
+    dusk: sunsetGlow(live.current.hour, sunElevation(live.current.hour)),
     fog: new THREE.Color(BG),
   });
   return (
@@ -670,7 +670,8 @@ export default function World({
   hop?: number;
   still?: boolean;
 }) {
-  const live = useLive(mode, tint, still);
+  const hour = useLocalHour();
+  const live = useLive(mode, tint, still, hour);
   const [active, setActive] = useState(true);
 
   useEffect(() => {
@@ -703,7 +704,8 @@ export default function World({
           camera={{ position: STATIONS[mode].camera, fov: 55, near: 0.1, far: 3000 }}
         >
           <Scene animal={animal} mood={mood} hop={hop} mode={mode} live={live} />
-          {still && <Settle deps={[mode, tint, animal]} />}
+          {/* Redraw when anything visible changes, including the hour. */}
+          {still && <Settle deps={[mode, tint, animal, hour]} />}
         </Canvas>
       </GLBoundary>
     </View>
