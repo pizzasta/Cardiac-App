@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Animated, Easing, StyleSheet, Text, View } from 'react-native';
+import { Animated, Easing, StyleSheet, Text } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 
 const LINES = [

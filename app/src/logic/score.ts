@@ -1,5 +1,5 @@
 import { AnimalId } from '../data/archetypes';
-import { Option, QUIZ, Scores } from '../data/quiz';
+import { Option, QUIZ } from '../data/quiz';
 
 export interface RhythmResult {
   animal: AnimalId;

@@ -23,7 +23,7 @@ export default function RhythmConstellation({
 
   return (
     <Svg width="100%" height={120} viewBox="0 0 320 120">
-      {selected.slice(1).map((point, index) => (
+      {selected.slice(1).map((point) => (
         <Line
           key={point.entry.date}
           x1={selected[0].x}

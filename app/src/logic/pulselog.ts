@@ -1,5 +1,4 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { AnimalId } from '../data/archetypes';
 import { pushCheckIn } from './sync';
 
 // A tiny, forgiving daily check-in log. One entry per local day; logging again

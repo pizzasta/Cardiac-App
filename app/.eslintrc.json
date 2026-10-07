@@ -14,7 +14,8 @@
     "browser": true
   },
   "plugins": [
-    "@typescript-eslint"
+    "@typescript-eslint",
+    "react-hooks"
   ],
   "extends": [
     "eslint:recommended",
@@ -25,7 +26,8 @@
     "dist-web/",
     "dist-ios/",
     "node_modules/",
-    "src/types/db.ts"
+    "src/types/db.ts",
+    "dist/"
   ],
   "rules": {
     "@typescript-eslint/no-explicit-any": "off",
@@ -41,6 +43,8 @@
       {
         "allowEmptyCatch": true
       }
-    ]
+    ],
+    "react-hooks/rules-of-hooks": "error",
+    "react-hooks/exhaustive-deps": "warn"
   }
 }
