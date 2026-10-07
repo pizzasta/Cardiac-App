@@ -28,6 +28,7 @@ import { refreshSmartNudge } from '../logic/notifications';
 import PulseLine from '../components/PulseLine';
 import SimilarDaysCard from '../components/SimilarDaysCard';
 import { F, T } from '../theme';
+import { playSfx } from '../logic/sfx';
 
 export default function CheckInScreen({
   result,
@@ -72,6 +73,7 @@ export default function CheckInScreen({
     // Re-time the smart nudge to the emerging pattern (native; no-op on web).
     refreshSmartNudge(result.animal).catch(() => {});
     setSaved(true);
+    playSfx('success');
     if (Platform.OS !== 'web') {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     }
@@ -115,6 +117,7 @@ export default function CheckInScreen({
                   active && { borderColor: a.accent, backgroundColor: `${a.accent}1f` },
                 ]}
                 onPress={() => {
+                  playSfx('select');
                   setLevel(l.id);
                   setSaved(false);
                 }}
@@ -171,7 +174,12 @@ export default function CheckInScreen({
             {saved && (
               <Pressable
                 style={[styles.explainBtn, { borderColor: `${a.accent}66` }]}
-                onPress={() => onExplain(buildSignalQuestion(log, level, reason))}
+                onPress={async () => {
+                  // Re-read storage: a background cloud sync may have added entries.
+                  const fresh = await load();
+                  setLog(fresh);
+                  onExplain(buildSignalQuestion(fresh, level, reason));
+                }}
               >
                 <Text style={[styles.explainText, { color: a.accent }]}>Ask about today  →</Text>
               </Pressable>
