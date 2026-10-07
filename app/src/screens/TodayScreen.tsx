@@ -17,7 +17,7 @@ import { RhythmResult } from '../logic/score';
 import { PulseEntry, load, getToday, currentStreak } from '../logic/pulselog';
 import { weeklyReport, WeeklyReport } from '../logic/weekly';
 import { F, T } from '../theme';
-import { ActiveExperiment, EXPERIMENTS, experimentDay, getActiveExperiment, startExperiment, stopExperiment } from '../logic/experiments';
+import { ActiveExperiment, ExperimentOutcome, EXPERIMENTS, dismissLastExperiment, experimentDay, experimentOutcome, getActiveExperiment, getLastExperiment, startExperiment, stopExperiment } from '../logic/experiments';
 
 function parseFlowTime(label: string): { mins: number; explicitMeridiem: boolean } {
   const match = /^(\d{1,2}):(\d{2})\s*(AM|PM)?$/i.exec(label.trim());
@@ -107,6 +107,8 @@ export default function TodayScreen({
   const [streak, setStreak] = useState(0);
   const [report, setReport] = useState<WeeklyReport | null>(null);
   const [experiment, setExperiment] = useState<ActiveExperiment | null>(null);
+  const [lastExperiment, setLastExperiment] = useState<ActiveExperiment | null>(null);
+  const [outcome, setOutcome] = useState<ExperimentOutcome | null>(null);
 
   // Refresh local stats whenever the screen mounts.
   useEffect(() => {
@@ -117,7 +119,11 @@ export default function TodayScreen({
       setToday(getToday(log));
       setStreak(currentStreak(log));
       setReport(weeklyReport(log));
-      setExperiment(await getActiveExperiment());
+      const active = await getActiveExperiment();
+      const last = await getLastExperiment();
+      setExperiment(active);
+      setLastExperiment(last);
+      setOutcome(last ? experimentOutcome(last, log) : null);
     })();
     return () => {
       alive = false;
