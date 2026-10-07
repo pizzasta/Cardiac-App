@@ -1,4 +1,19 @@
-import { damp, heartbeat, hopHeight, HOP_SECONDS, mixHex, moodMotion, rippleRadius, STATIONS, terrainHeight, BEAT_SECONDS } from './rig';
+import {
+  BEAT_SECONDS,
+  damp,
+  daylight,
+  groundHeight,
+  heartbeat,
+  hopHeight,
+  HOP_SECONDS,
+  mixHex,
+  moodMotion,
+  ridgeline,
+  STATIONS,
+  sunElevation,
+  sunsetGlow,
+  TILE_LENGTH,
+} from './rig';
 
 describe('heartbeat', () => {
   it('beats twice (lub-dub) and then rests', () => {
@@ -13,28 +28,45 @@ describe('heartbeat', () => {
   });
 });
 
-describe('rippleRadius', () => {
-  it('grows through each beat and resets', () => {
-    expect(rippleRadius(0)).toBe(0);
-    expect(rippleRadius(BEAT_SECONDS / 2)).toBeCloseTo(15);
-    expect(rippleRadius(BEAT_SECONDS * 1.25)).toBeCloseTo(7.5);
-  });
-});
-
-describe('terrainHeight', () => {
-  it('is finite and bounded', () => {
+describe('groundHeight', () => {
+  it('joins seamlessly from one tile to the next', () => {
     for (let x = -20; x <= 20; x += 2.5) {
-      for (let z = -40; z <= 10; z += 2.5) {
-        const h = terrainHeight(x, z, 1.3, 4.2, 1.4);
-        expect(Number.isFinite(h)).toBe(true);
-        expect(Math.abs(h)).toBeLessThan(5);
-      }
+      expect(groundHeight(x, -TILE_LENGTH / 2)).toBeCloseTo(groundHeight(x, TILE_LENGTH / 2), 6);
     }
   });
 
-  it('scales with amplitude and flattens to zero', () => {
-    expect(terrainHeight(3, -5, 0.5, 1, 0)).toBeCloseTo(0);
-    expect(terrainHeight(3, -5, 0.5, 1, 2)).toBeCloseTo(2 * terrainHeight(3, -5, 0.5, 1, 1));
+  it('keeps a gentle path in the middle and hills at the sides', () => {
+    for (let z = -30; z <= 30; z += 3) {
+      expect(Math.abs(groundHeight(0, z))).toBeLessThan(0.4);
+      expect(groundHeight(18, z)).toBeGreaterThan(groundHeight(0, z));
+    }
+  });
+});
+
+describe('ridgeline', () => {
+  it('stays in range and varies along the skyline', () => {
+    const hs = Array.from({ length: 200 }, (_, i) => ridgeline(i * 2 - 200, 1));
+    hs.forEach((h) => {
+      expect(h).toBeGreaterThanOrEqual(0);
+      expect(h).toBeLessThanOrEqual(1);
+    });
+    expect(Math.max(...hs) - Math.min(...hs)).toBeGreaterThan(0.3);
+  });
+});
+
+describe('time of day', () => {
+  it('puts the sun up by day, low at dusk and below the horizon at night', () => {
+    expect(sunElevation(12.5)).toBeGreaterThan(8);
+    expect(Math.abs(sunElevation(19))).toBeLessThan(0.5);
+    expect(sunElevation(1)).toBeLessThan(-8);
+    expect(sunElevation(25)).toBeCloseTo(sunElevation(1));
+  });
+
+  it('maps elevation to daylight 0..1', () => {
+    expect(daylight(-12)).toBe(0);
+    expect(daylight(9)).toBe(1);
+    expect(daylight(0)).toBeGreaterThan(0);
+    expect(daylight(0)).toBeLessThan(1);
   });
 });
 
@@ -82,5 +114,14 @@ describe('mood motion', () => {
     expect(hopHeight(HOP_SECONDS * 0.3)).toBeCloseTo(0.6, 1);
     expect(hopHeight(HOP_SECONDS * 0.8)).toBeCloseTo(0.2, 1);
     expect(hopHeight(HOP_SECONDS)).toBe(0);
+  });
+});
+
+describe('sunsetGlow', () => {
+  it('peaks at sunset, fades by night and midday, and skips sunrise', () => {
+    expect(sunsetGlow(19.2, sunElevation(19.2))).toBeGreaterThan(0.8);
+    expect(sunsetGlow(23.5, sunElevation(23.5))).toBeLessThan(0.05);
+    expect(sunsetGlow(13, sunElevation(13))).toBeLessThan(0.05);
+    expect(sunsetGlow(6.2, sunElevation(6.2))).toBe(0);
   });
 });

@@ -1,62 +1,105 @@
-// Rhythm World — one persistent 3D place that lives behind every screen.
+// Rhythm World: one persistent 3D landscape that lives behind every screen.
 //
-// A glowing waveform landscape (the app's pulse line stretched into terrain),
-// drifting fireflies, a horizon glow, and a heartbeat ripple that rolls out
-// from your rhythm animal on the horizon. The camera glides to a different
-// station for each screen (see rig.ts), and the world takes on your animal's
-// colour after the reveal.
+// A natural place rather than a graphic: a physically based sky that follows
+// the person's local time (sunrise, golden day, sunset, starry night), rolling
+// hills along a quiet valley, two ranges of distant mountains fading into
+// haze, low mist and warm fireflies. Your rhythm animal waits on the path
+// ahead after the reveal. The camera glides to a different spot for each
+// screen (see rig.ts).
 //
 // Respects "reduce motion" (renders a still frame), pauses in the background,
 // and falls back to the flat gradient backdrop when WebGL isn't available.
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { AppState, Platform, StyleSheet, View } from 'react-native';
 import * as THREE from 'three';
+import { Sky as SkyShader } from 'three/examples/jsm/objects/Sky.js';
 import { Canvas, useFrame, useThree } from './fiber';
 import GLBoundary from './GLBoundary';
 import Animal from './animals';
 import { dotTexture, glowTexture } from './textures';
-import { damp, heartbeat, Mood, STATIONS, terrainHeight, WorldMode } from './rig';
+import {
+  damp,
+  daylight,
+  groundHeight,
+  Mood,
+  ridgeline,
+  STATIONS,
+  sunElevation,
+  sunsetGlow,
+  TILE_LENGTH,
+  WorldMode,
+} from './rig';
+import { useLocalHour } from './clock';
 import { AnimalId } from '../data/archetypes';
 import Atmosphere from '../components/Atmosphere';
 import { T } from '../theme';
 
 const NATIVE = Platform.OS !== 'web';
 const BG = '#06060A';
-// Phones run JS far slower than desktop browsers, so they get a coarser grid
-// that is re-shaped every other frame (the motion is slow enough to hide it).
-const TERRAIN = { width: 44, depth: 60, cols: NATIVE ? 40 : 84, rows: NATIVE ? 56 : 112 };
-const TERRAIN_EVERY = NATIVE ? 2 : 1;
-const FIREFLIES = NATIVE ? 110 : 220;
-const TOTEM: [number, number, number] = [0, 2.6, -16];
+const TILE = { width: 90, cols: NATIVE ? 50 : 90, rows: NATIVE ? 34 : 60 };
+const TILES = 3; // leapfrogging ground tiles, nearest to farthest
+const FIREFLIES = NATIVE ? 90 : 180;
+const TOTEM: [number, number, number] = [0, 1.0, -16];
+// Sun and moon directions, as compass angles (180 = straight ahead).
+const SUN_AZIMUTH = 180;
+const MOON = { azimuth: 145, elevation: 24 };
+
+// Night, twilight and (soft) day colours for haze, sky light and ground.
+const PALETTE = {
+  fog: { night: new THREE.Color('#0b0d18'), dusk: new THREE.Color('#3a3046'), day: new THREE.Color('#6e7890') },
+  sky: { night: new THREE.Color('#1b2340'), dusk: new THREE.Color('#5b4a6e'), day: new THREE.Color('#9fb3d6') },
+};
 
 interface Live {
   mode: WorldMode;
   tint: THREE.Color;
   still: boolean;
+  // Local hour, refreshed by useLocalHour (every minute and on resume).
+  hour: number;
   pointer: { x: number; y: number };
 }
 
 // Shared, frame-to-frame state that useFrame reads without re-rendering.
-function useLive(mode: WorldMode, tint: string, still: boolean): React.MutableRefObject<Live> {
-  const live = useRef<Live>({ mode, tint: new THREE.Color(tint), still, pointer: { x: 0, y: 0 } });
+function useLive(mode: WorldMode, tint: string, still: boolean, hour: number): React.MutableRefObject<Live> {
+  const live = useRef<Live>({ mode, tint: new THREE.Color(tint), still, hour, pointer: { x: 0, y: 0 } });
   live.current.mode = mode;
   live.current.tint.set(tint);
   live.current.still = still;
+  live.current.hour = hour;
   return live;
 }
 
 // Smoothed scene parameters that every layer reads.
 interface Params {
   travel: number;
-  amplitude: number;
   glow: number;
-  scroll: number;
   t: number;
   color: THREE.Color;
+  // Sun elevation (degrees) and daylight 0..1, from the local clock.
+  elevation: number;
+  day: number;
+  // Deep-pink sunset glow, 0..1 (evenings only).
+  dusk: number;
+  fog: THREE.Color;
+}
+
+
+// Mix night → dusk → day for a daylight value (dusk peaks around 0.35).
+function timeColor(out: THREE.Color, set: { night: THREE.Color; dusk: THREE.Color; day: THREE.Color }, day: number) {
+  if (day < 0.35) return out.copy(set.night).lerp(set.dusk, day / 0.35);
+  return out.copy(set.dusk).lerp(set.day, (day - 0.35) / 0.65);
+}
+
+function dirFrom(azimuthDeg: number, elevationDeg: number, out = new THREE.Vector3()) {
+  return out.setFromSphericalCoords(
+    1,
+    THREE.MathUtils.degToRad(90 - elevationDeg),
+    THREE.MathUtils.degToRad(azimuthDeg)
+  );
 }
 
 function Rig({ live, params }: { live: React.MutableRefObject<Live>; params: React.MutableRefObject<Params> }) {
-  const { camera } = useThree();
+  const { camera, scene, gl } = useThree();
   const look = useRef(new THREE.Vector3(...STATIONS[live.current.mode].lookAt));
   const first = useRef(true);
 
@@ -70,14 +113,20 @@ function Rig({ live, params }: { live: React.MutableRefObject<Live>; params: Rea
     first.current = false;
     const speed = mode === 'reading' ? 2.4 : 1.4;
 
+    p.elevation = damp(p.elevation, sunElevation(live.current.hour), 0.5 * k, dt);
+    p.day = daylight(p.elevation);
+    p.dusk = sunsetGlow(live.current.hour, p.elevation);
+    timeColor(p.fog, PALETTE.fog, p.day);
+    p.fog.lerp(DUSK.fog, 0.75 * p.dusk);
+    if (scene.fog) (scene.fog as THREE.Fog).color.copy(p.fog);
+    // Darker exposure as the day brightens keeps the sky from washing out
+    // behind white text.
+    gl.toneMappingExposure = 0.5 - 0.36 * p.day - 0.16 * p.dusk;
+
     p.travel = damp(p.travel, still ? 0 : s.travel, 1.2 * k, dt);
-    p.amplitude = damp(p.amplitude, s.amplitude, 1.5 * k, dt);
     p.glow = damp(p.glow, s.glow, 2 * k, dt);
     p.color.lerp(tint, 1 - Math.exp(-1.5 * k * dt));
-    if (!still) {
-      p.t += dt;
-      p.scroll += p.travel * dt;
-    }
+    if (!still) p.t += dt;
 
     const px = still ? 0 : pointer.x * 0.7;
     const py = still ? 0 : pointer.y * 0.35;
@@ -92,94 +141,339 @@ function Rig({ live, params }: { live: React.MutableRefObject<Live>; params: Rea
   return null;
 }
 
-// Smooth, softly lit dunes with a few glowing contour lines across them: the
-// app's pulse line repeated into the distance. No grid.
-const CONTOUR_EVERY = NATIVE ? 4 : 5;
-
-function Terrain({ params }: { params: React.MutableRefObject<Params> }) {
-  const ground = useRef<THREE.MeshStandardMaterial>(null);
-  const lines = useRef<THREE.LineBasicMaterial>(null);
-
-  const { geometry, contours, base } = useMemo(() => {
-    const g = new THREE.PlaneGeometry(TERRAIN.width, TERRAIN.depth, TERRAIN.cols, TERRAIN.rows);
-    g.rotateX(-Math.PI / 2);
-    g.translate(0, 0, -TERRAIN.depth / 2 + 6);
-    const pos = g.attributes.position as THREE.BufferAttribute;
-    const xz = new Float32Array(pos.count * 2);
-    for (let i = 0; i < pos.count; i++) {
-      xz[i * 2] = pos.getX(i);
-      xz[i * 2 + 1] = pos.getZ(i);
-    }
-    // Contour lines share the ground's vertices: every Nth row, left to right.
-    const idx: number[] = [];
-    const row = TERRAIN.cols + 1;
-    for (let r = 0; r <= TERRAIN.rows; r += CONTOUR_EVERY) {
-      for (let c = 0; c < TERRAIN.cols; c++) idx.push(r * row + c, r * row + c + 1);
-    }
-    const lg = new THREE.BufferGeometry();
-    lg.setAttribute('position', pos);
-    lg.setIndex(idx);
-    return { geometry: g, contours: lg, base: xz };
+// A physically based sky (Preetham scattering) lit by a sun that follows the
+// local clock, plus sun and moon lighting for the land.
+function Sky({ params }: { params: React.MutableRefObject<Params> }) {
+  const sky = useMemo(() => {
+    const s = new SkyShader();
+    s.scale.setScalar(1500);
+    const u = s.material.uniforms;
+    u.turbidity.value = 3;
+    u.rayleigh.value = 3;
+    u.mieCoefficient.value = 0.004;
+    u.mieDirectionalG.value = 0.86;
+    return s;
   }, []);
+  const sun = useRef<THREE.DirectionalLight>(null);
+  const moonLight = useRef<THREE.DirectionalLight>(null);
+  const hemi = useRef<THREE.HemisphereLight>(null);
+  const dir = useMemo(() => new THREE.Vector3(), []);
+  const moonDir = useMemo(() => dirFrom(MOON.azimuth, MOON.elevation), []);
 
   useEffect(
     () => () => {
-      geometry.dispose();
-      contours.dispose();
+      sky.geometry.dispose();
+      sky.material.dispose();
     },
-    [geometry, contours]
+    [sky]
   );
-  const frame = useRef(0);
-  const dark = useMemo(() => new THREE.Color(BG), []);
 
   useFrame(() => {
     const p = params.current;
-    const pos = geometry.attributes.position as THREE.BufferAttribute;
-    const reshape = frame.current++ % TERRAIN_EVERY === 0;
-    if (reshape) {
-      for (let i = 0; i < pos.count; i++) {
-        pos.setY(i, terrainHeight(base[i * 2], base[i * 2 + 1], p.t, p.scroll, p.amplitude, [TOTEM[0], TOTEM[2]]));
-      }
-      pos.needsUpdate = true;
-      geometry.computeVertexNormals();
+    dirFrom(SUN_AZIMUTH, p.elevation, dir);
+    sky.material.uniforms.sunPosition.value.copy(dir);
+    if (sun.current) {
+      sun.current.position.copy(dir).multiplyScalar(100);
+      sun.current.intensity = 1.6 * Math.max(0, p.day - 0.15);
     }
-    if (ground.current) {
-      ground.current.color.copy(dark).lerp(p.color, 0.14);
-      ground.current.emissive.copy(p.color).multiplyScalar(0.035 * p.glow);
+    if (moonLight.current) {
+      moonLight.current.position.copy(moonDir).multiplyScalar(100);
+      moonLight.current.intensity = 0.35 * (1 - p.day);
     }
-    if (lines.current) {
-      lines.current.color.copy(p.color);
-      lines.current.opacity = 0.45 * p.glow;
+    if (hemi.current) {
+      timeColor(hemi.current.color, PALETTE.sky, p.day).lerp(DUSK.light, 0.6 * p.dusk);
+      hemi.current.intensity = 0.6 + 0.8 * p.day;
     }
   });
 
   return (
-    <group>
-      <mesh geometry={geometry}>
-        <meshStandardMaterial
-          ref={ground}
-          roughness={0.55}
-          metalness={0.15}
-          polygonOffset
-          polygonOffsetFactor={1}
-          polygonOffsetUnits={1}
-        />
-      </mesh>
-      <lineSegments geometry={contours}>
-        <lineBasicMaterial ref={lines} transparent depthWrite={false} blending={THREE.AdditiveBlending} />
-      </lineSegments>
+    <>
+      <primitive object={sky} />
+      <hemisphereLight ref={hemi} args={['#5b4a6e', '#0a0d0b', 0.5]} />
+      <directionalLight ref={sun} color="#ffd2a1" />
+      <directionalLight ref={moonLight} color="#a9bcff" />
+    </>
+  );
+}
+
+// Evening colours: a deep magenta horizon fading to plum, with pink haze.
+const DUSK = {
+  horizon: new THREE.Color('#a3104e'),
+  mid: new THREE.Color('#3e0a2c'),
+  fog: new THREE.Color('#3d1631'),
+  light: new THREE.Color('#b0507e'),
+};
+
+// A deep-pink sunset laid over the physically based sky in the evening.
+// Per-vertex alpha keeps it strongest at the horizon and clear overhead.
+function SunsetGlow({ params }: { params: React.MutableRefObject<Params> }) {
+  const mat = useRef<THREE.MeshBasicMaterial>(null);
+  const geometry = useMemo(() => {
+    const g = new THREE.SphereGeometry(1200, 48, 24);
+    const pos = g.attributes.position as THREE.BufferAttribute;
+    const colors = new Float32Array(pos.count * 4);
+    const c = new THREE.Color();
+    for (let i = 0; i < pos.count; i++) {
+      const h = Math.max(0, pos.getY(i) / 1200);
+      // Brightest toward the sunset (straight ahead), dimmer behind.
+      const ahead = 0.6 + 0.4 * Math.max(0, -pos.getZ(i) / 1200);
+      c.copy(DUSK.horizon).lerp(DUSK.mid, Math.min(1, h * 2.2));
+      const alpha = Math.min(1, Math.exp(-h * 1.6) * 1.1) * ahead;
+      colors.set([c.r, c.g, c.b, pos.getY(i) < -40 ? 0 : alpha], i * 4);
+    }
+    g.setAttribute('color', new THREE.BufferAttribute(colors, 4));
+    return g;
+  }, []);
+  useEffect(() => () => geometry.dispose(), [geometry]);
+  useFrame(() => {
+    if (mat.current) mat.current.opacity = 0.95 * params.current.dusk;
+  });
+  return (
+    <mesh geometry={geometry}>
+      <meshBasicMaterial ref={mat} vertexColors side={THREE.BackSide} transparent depthWrite={false} fog={false} toneMapped={false} />
+    </mesh>
+  );
+}
+
+// The scattering model has no real night, so a deep-blue night sky fades in
+// over it after sunset.
+function NightSky({ params }: { params: React.MutableRefObject<Params> }) {
+  const mat = useRef<THREE.MeshBasicMaterial>(null);
+  const geometry = useMemo(() => {
+    const g = new THREE.SphereGeometry(1000, 32, 16);
+    const pos = g.attributes.position as THREE.BufferAttribute;
+    const colors = new Float32Array(pos.count * 3);
+    const zenith = new THREE.Color('#050816');
+    const horizon = new THREE.Color('#1a2140');
+    const c = new THREE.Color();
+    for (let i = 0; i < pos.count; i++) {
+      const h = Math.max(0, pos.getY(i) / 1000);
+      c.copy(horizon).lerp(zenith, Math.pow(h, 0.6));
+      colors.set([c.r, c.g, c.b], i * 3);
+    }
+    g.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+    return g;
+  }, []);
+  useEffect(() => () => geometry.dispose(), [geometry]);
+  useFrame(() => {
+    if (mat.current) mat.current.opacity = Math.max(0, Math.min(1, 1 - params.current.day * 2.5));
+  });
+  return (
+    <mesh geometry={geometry}>
+      <meshBasicMaterial ref={mat} vertexColors side={THREE.BackSide} transparent depthWrite={false} fog={false} toneMapped={false} />
+    </mesh>
+  );
+}
+
+// A soft moon high on the left, visible from dusk through the night.
+function Moon({ params }: { params: React.MutableRefObject<Params> }) {
+  const core = useRef<THREE.SpriteMaterial>(null);
+  const halo = useRef<THREE.SpriteMaterial>(null);
+  const pos = useMemo(() => dirFrom(MOON.azimuth, MOON.elevation).multiplyScalar(500), []);
+  useFrame(() => {
+    const night = 1 - params.current.day;
+    if (core.current) core.current.opacity = 0.95 * night;
+    if (halo.current) halo.current.opacity = 0.22 * night;
+  });
+  return (
+    <group position={pos}>
+      <sprite scale={70}>
+        <spriteMaterial ref={halo} map={glowTexture()} color="#c9d6ff" transparent depthWrite={false} fog={false} />
+      </sprite>
+      <sprite scale={16}>
+        <spriteMaterial ref={core} map={glowTexture()} color="#f4f1e6" transparent depthWrite={false} fog={false} />
+      </sprite>
     </group>
   );
 }
 
+// Stars that come out as the sky darkens.
+const STARS = NATIVE ? 220 : 450;
+function Stars({ params }: { params: React.MutableRefObject<Params> }) {
+  const mat = useRef<THREE.PointsMaterial>(null);
+  const geometry = useMemo(() => {
+    const pos = new Float32Array(STARS * 3);
+    for (let i = 0; i < STARS; i++) {
+      const az = Math.random() * Math.PI * 2;
+      const el = 0.08 + Math.random() * 1.4;
+      pos[i * 3] = Math.cos(az) * Math.cos(el) * 600;
+      pos[i * 3 + 1] = Math.sin(el) * 600;
+      pos[i * 3 + 2] = Math.sin(az) * Math.cos(el) * 600;
+    }
+    const g = new THREE.BufferGeometry();
+    g.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+    return g;
+  }, []);
+  useEffect(() => () => geometry.dispose(), [geometry]);
+  useFrame(() => {
+    const p = params.current;
+    const dark = Math.max(0, 1 - p.day * 2.2);
+    if (mat.current) mat.current.opacity = (0.75 + 0.15 * Math.sin(p.t * 0.7)) * dark;
+  });
+  return (
+    <points geometry={geometry}>
+      <pointsMaterial
+        ref={mat}
+        size={2.2}
+        map={dotTexture()}
+        color="#ffffff"
+        transparent
+        depthWrite={false}
+        fog={false}
+        sizeAttenuation
+      />
+    </points>
+  );
+}
+
+// Two ranges of mountains on the horizon; distance and fog give the haze.
+function Mountains() {
+  const ranges = useMemo(
+    () =>
+      [
+        { z: -175, height: 22, depth: 70, seed: 1, color: '#232a38' },
+        { z: -290, height: 48, depth: 110, seed: 2, color: '#323a52' },
+      ].map((r) => {
+        const g = new THREE.PlaneGeometry(900, r.depth, NATIVE ? 160 : 260, 14);
+        g.rotateX(-Math.PI / 2);
+        const pos = g.attributes.position as THREE.BufferAttribute;
+        for (let i = 0; i < pos.count; i++) {
+          const x = pos.getX(i);
+          // 0 at the front edge rising to the ridge at the back.
+          const back = 0.5 - pos.getZ(i) / r.depth;
+          const rise = Math.sin(Math.max(0, Math.min(1, back)) * Math.PI * 0.5);
+          pos.setY(i, ridgeline(x, r.seed) * r.height * rise - 2);
+        }
+        g.computeVertexNormals();
+        return { ...r, geometry: g };
+      }),
+    []
+  );
+  useEffect(() => () => ranges.forEach((r) => r.geometry.dispose()), [ranges]);
+  return (
+    <>
+      {ranges.map((r) => (
+        <mesh key={r.seed} geometry={r.geometry} position={[0, 0, r.z]}>
+          <meshStandardMaterial color={r.color} roughness={1} />
+        </mesh>
+      ))}
+    </>
+  );
+}
+
+// Rolling hills along a valley. Three identical tiles leapfrog toward the
+// camera; the ground shape repeats every tile, so the joins are seamless and
+// nothing is recomputed per frame.
+function Ground({ params }: { params: React.MutableRefObject<Params> }) {
+  const tiles = useRef<(THREE.Mesh | null)[]>([]);
+  const geometry = useMemo(() => {
+    const g = new THREE.PlaneGeometry(TILE.width, TILE_LENGTH, TILE.cols, TILE.rows);
+    g.rotateX(-Math.PI / 2);
+    const pos = g.attributes.position as THREE.BufferAttribute;
+    const colors = new Float32Array(pos.count * 3);
+    const low = new THREE.Color('#2b3a2e');
+    const high = new THREE.Color('#4a5a40');
+    const c = new THREE.Color();
+    for (let i = 0; i < pos.count; i++) {
+      const x = pos.getX(i);
+      const z = pos.getZ(i);
+      const y = groundHeight(x, z);
+      pos.setY(i, y);
+      // Slightly lighter on the hillsides, with a little natural variation.
+      const v = Math.min(1, Math.max(0, y / 6 + 0.25 + 0.15 * Math.sin(x * 1.7 + z * 0.9)));
+      c.copy(low).lerp(high, v);
+      colors.set([c.r, c.g, c.b], i * 3);
+    }
+    g.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+    g.computeVertexNormals();
+    return g;
+  }, []);
+  useEffect(() => () => geometry.dispose(), [geometry]);
+
+  useFrame((_, rawDt) => {
+    const dt = Math.min(rawDt, 0.05);
+    const p = params.current;
+    tiles.current.forEach((m) => {
+      if (!m) return;
+      m.position.z += p.travel * dt;
+      // Once a tile is fully behind the camera, send it to the far end.
+      if (m.position.z - TILE_LENGTH / 2 > 12) m.position.z -= TILES * TILE_LENGTH;
+    });
+  });
+
+  return (
+    <>
+      {Array.from({ length: TILES }, (_, i) => (
+        <mesh
+          key={i}
+          ref={(m) => {
+            tiles.current[i] = m;
+          }}
+          geometry={geometry}
+          position={[0, 0, -i * TILE_LENGTH]}
+        >
+          <meshStandardMaterial vertexColors roughness={0.95} />
+        </mesh>
+      ))}
+    </>
+  );
+}
+
+// Low banks of mist in the middle distance, tinted by the time of day.
+function Mist({ params }: { params: React.MutableRefObject<Params> }) {
+  const mats = useRef<(THREE.SpriteMaterial | null)[]>([]);
+  const sprites = useRef<(THREE.Sprite | null)[]>([]);
+  const banks = [
+    { x: -14, y: 2.2, z: -55, w: 90, h: 9 },
+    { x: 18, y: 3, z: -90, w: 120, h: 12 },
+    { x: 0, y: 4, z: -135, w: 180, h: 16 },
+  ];
+  useFrame(() => {
+    const p = params.current;
+    mats.current.forEach((m, i) => {
+      if (!m) return;
+      m.color.copy(p.fog).lerp(new THREE.Color('#ffffff'), 0.08);
+      m.opacity = 0.32 - i * 0.05;
+    });
+    sprites.current.forEach((s, i) => {
+      if (s) s.position.x = banks[i].x + Math.sin(p.t * 0.05 + i * 2) * 6;
+    });
+  });
+  return (
+    <>
+      {banks.map((b, i) => (
+        <sprite
+          key={i}
+          ref={(s) => {
+            sprites.current[i] = s;
+          }}
+          position={[b.x, b.y, b.z]}
+          scale={[b.w, b.h, 1]}
+        >
+          <spriteMaterial
+            ref={(m) => {
+              mats.current[i] = m;
+            }}
+            map={glowTexture()}
+            transparent
+            depthWrite={false}
+          />
+        </sprite>
+      ))}
+    </>
+  );
+}
+
+// Warm fireflies drifting over the valley, brightest after dusk.
+const WARM = new THREE.Color('#ffd98a');
 function Fireflies({ params }: { params: React.MutableRefObject<Params> }) {
   const mat = useRef<THREE.PointsMaterial>(null);
   const { geometry, seeds } = useMemo(() => {
     const pos = new Float32Array(FIREFLIES * 3);
     const seeds = new Float32Array(FIREFLIES * 2);
     for (let i = 0; i < FIREFLIES; i++) {
-      pos[i * 3] = (Math.random() - 0.5) * 34;
-      pos[i * 3 + 1] = 0.4 + Math.random() * 6;
+      pos[i * 3] = (Math.random() - 0.5) * 30;
+      pos[i * 3 + 1] = 0.4 + Math.random() * 3.5;
       pos[i * 3 + 2] = 6 - Math.random() * 48;
       seeds[i * 2] = Math.random() * Math.PI * 2;
       seeds[i * 2 + 1] = 0.3 + Math.random() * 0.9;
@@ -201,14 +495,13 @@ function Fireflies({ params }: { params: React.MutableRefObject<Params> }) {
       const f = seeds[i * 2 + 1];
       arr[i * 3] += Math.sin(p.t * f + phase) * 0.004;
       arr[i * 3 + 1] += Math.cos(p.t * f * 0.8 + phase) * 0.003;
-      // Drift toward the camera with the landscape, wrapping to the far end.
       arr[i * 3 + 2] += p.travel * dt;
       if (arr[i * 3 + 2] > 8) arr[i * 3 + 2] -= 50;
     }
     pos.needsUpdate = true;
     if (mat.current) {
-      mat.current.color.copy(p.color).lerp(new THREE.Color('#ffffff'), 0.35);
-      mat.current.opacity = (0.55 + 0.35 * Math.sin(p.t * 1.7)) * p.glow;
+      mat.current.color.copy(WARM).lerp(p.color, 0.2);
+      mat.current.opacity = (0.6 + 0.3 * Math.sin(p.t * 1.7)) * (1 - 0.75 * p.day) * p.glow;
     }
   });
 
@@ -216,7 +509,7 @@ function Fireflies({ params }: { params: React.MutableRefObject<Params> }) {
     <points geometry={geometry}>
       <pointsMaterial
         ref={mat}
-        size={0.22}
+        size={0.16}
         map={dotTexture()}
         transparent
         depthWrite={false}
@@ -227,120 +520,8 @@ function Fireflies({ params }: { params: React.MutableRefObject<Params> }) {
   );
 }
 
-// A gradient sky dome: near-black overhead, a warm glow of your colour at the
-// horizon. Vertex colours, so it is smooth on every device.
-function Sky({ params }: { params: React.MutableRefObject<Params> }) {
-  const geometry = useMemo(() => {
-    const g = new THREE.SphereGeometry(90, 32, 20);
-    g.setAttribute('color', new THREE.BufferAttribute(new Float32Array(g.attributes.position.count * 3), 3));
-    return g;
-  }, []);
-  useEffect(() => () => geometry.dispose(), [geometry]);
-  const top = useMemo(() => new THREE.Color('#030306'), []);
-  const tmp = useMemo(() => new THREE.Color(), []);
-  const last = useRef('');
-
-  useFrame(() => {
-    const p = params.current;
-    const key = p.color.getHexString() + p.glow.toFixed(2);
-    if (key === last.current) return; // only recolour when the tint changes
-    last.current = key;
-    const pos = geometry.attributes.position as THREE.BufferAttribute;
-    const col = geometry.attributes.color as THREE.BufferAttribute;
-    for (let i = 0; i < pos.count; i++) {
-      // 0 at the horizon, 1 straight up (below the horizon stays dark).
-      const h = Math.max(0, pos.getY(i) / 90);
-      const glow = Math.exp(-h * 9) * 0.32 * p.glow;
-      tmp.copy(top).lerp(p.color, glow);
-      col.setXYZ(i, tmp.r, tmp.g, tmp.b);
-    }
-    col.needsUpdate = true;
-  });
-
-  return (
-    <mesh geometry={geometry}>
-      <meshBasicMaterial vertexColors side={THREE.BackSide} fog={false} depthWrite={false} />
-    </mesh>
-  );
-}
-
-// A soft moon on the horizon with a wide halo, swelling with the heartbeat.
-function Moon({ params }: { params: React.MutableRefObject<Params> }) {
-  const core = useRef<THREE.SpriteMaterial>(null);
-  const halo = useRef<THREE.SpriteMaterial>(null);
-  const haloSprite = useRef<THREE.Sprite>(null);
-  const light = useRef<THREE.PointLight>(null);
-  const white = useMemo(() => new THREE.Color('#ffffff'), []);
-  useFrame(() => {
-    const p = params.current;
-    const beat = heartbeat(p.t);
-    if (core.current) {
-      core.current.color.copy(p.color).lerp(white, 0.55);
-      core.current.opacity = 0.9 * p.glow;
-    }
-    if (halo.current) {
-      halo.current.color.copy(p.color);
-      halo.current.opacity = (0.5 + 0.25 * beat) * p.glow;
-    }
-    if (haloSprite.current) haloSprite.current.scale.setScalar(34 + 4 * beat);
-    if (light.current) {
-      light.current.color.copy(p.color).lerp(white, 0.3);
-      light.current.intensity = (70 + 30 * beat) * p.glow;
-    }
-  });
-  return (
-    <group position={[0, 5, -60]}>
-      {/* Lights the dune crests from the horizon, in your colour. */}
-      <pointLight ref={light} position={[0, 1, 20]} distance={80} decay={1.4} />
-      <sprite ref={haloSprite} scale={34}>
-        <spriteMaterial ref={halo} map={glowTexture()} transparent depthWrite={false} blending={THREE.AdditiveBlending} fog={false} />
-      </sprite>
-      <sprite scale={9}>
-        <spriteMaterial ref={core} map={glowTexture()} transparent depthWrite={false} blending={THREE.AdditiveBlending} fog={false} />
-      </sprite>
-    </group>
-  );
-}
-
-// Faint stars across the upper sky, slowly twinkling.
-const STARS = NATIVE ? 160 : 320;
-function Stars({ params }: { params: React.MutableRefObject<Params> }) {
-  const mat = useRef<THREE.PointsMaterial>(null);
-  const geometry = useMemo(() => {
-    const pos = new Float32Array(STARS * 3);
-    for (let i = 0; i < STARS; i++) {
-      const az = Math.random() * Math.PI * 2;
-      const el = 0.12 + Math.random() * 1.3; // stay above the horizon glow
-      pos[i * 3] = Math.cos(az) * Math.cos(el) * 85;
-      pos[i * 3 + 1] = Math.sin(el) * 85;
-      pos[i * 3 + 2] = Math.sin(az) * Math.cos(el) * 85;
-    }
-    const g = new THREE.BufferGeometry();
-    g.setAttribute('position', new THREE.BufferAttribute(pos, 3));
-    return g;
-  }, []);
-  useEffect(() => () => geometry.dispose(), [geometry]);
-  useFrame(() => {
-    if (mat.current) mat.current.opacity = (0.55 + 0.2 * Math.sin(params.current.t * 0.7)) * params.current.glow;
-  });
-  return (
-    <points geometry={geometry}>
-      <pointsMaterial
-        ref={mat}
-        size={0.5}
-        map={dotTexture()}
-        color="#ffffff"
-        transparent
-        depthWrite={false}
-        blending={THREE.AdditiveBlending}
-        fog={false}
-        sizeAttenuation
-      />
-    </points>
-  );
-}
-
-// Your rhythm animal on the horizon (a pulsing core before the reveal).
+// Your rhythm animal on the path ahead; before the reveal, a soft wisp of
+// light floating where it will appear.
 function Totem({
   animal,
   color,
@@ -360,8 +541,10 @@ function Totem({
 }) {
   const presence = useRef(visible ? 1 : 0);
   const group = useRef<THREE.Group>(null);
-  const mat = useRef<THREE.MeshStandardMaterial>(null);
+  const wisp = useRef<THREE.SpriteMaterial>(null);
+  const wispHalo = useRef<THREE.SpriteMaterial>(null);
   const light = useRef<THREE.PointLight>(null);
+  const white = useMemo(() => new THREE.Color('#ffffff'), []);
 
   useFrame((_, rawDt) => {
     const p = params.current;
@@ -369,26 +552,21 @@ function Totem({
     if (!g) return;
     presence.current = damp(presence.current, visible ? 1 : 0, 3, Math.min(rawDt, 0.05));
     g.visible = presence.current > 0.01;
-    const beat = heartbeat(p.t);
-    if (!animal) {
-      // Before the reveal: a slowly turning, pulsing core.
-      g.rotation.y = p.t * 0.4;
-      g.rotation.x = Math.sin(p.t) * 0.1;
-    } else {
-      // The animal turns slowly so its whole shape reads from the horizon.
-      g.rotation.y = Math.sin(p.t * 0.25) * 0.6;
-      g.rotation.x = 0;
+    g.position.y = TOTEM[1] + (animal ? 0 : 0.8 + Math.sin(p.t * 0.9) * 0.25);
+    g.rotation.y = animal ? Math.sin(p.t * 0.25) * 0.6 : 0;
+    g.scale.setScalar((animal ? 1.2 : 1) * presence.current);
+    const pulse = 0.85 + 0.15 * Math.sin(p.t * 1.3);
+    if (wisp.current) {
+      wisp.current.color.copy(p.color).lerp(white, 0.6);
+      wisp.current.opacity = pulse * p.glow;
     }
-    g.position.y = TOTEM[1] + Math.sin(p.t * 0.6) * 0.18;
-    g.scale.setScalar((animal ? 1.3 : 1 + 0.08 * beat) * presence.current);
-    if (mat.current) {
-      mat.current.color.copy(p.color);
-      mat.current.emissive.copy(p.color);
-      mat.current.emissiveIntensity = (0.35 + 0.65 * beat) * p.glow;
+    if (wispHalo.current) {
+      wispHalo.current.color.copy(p.color);
+      wispHalo.current.opacity = 0.45 * pulse * p.glow;
     }
     if (light.current) {
       light.current.color.copy(p.color);
-      light.current.intensity = (6 + 10 * beat) * p.glow * presence.current;
+      light.current.intensity = (animal ? 4 : 8) * pulse * p.glow * presence.current;
     }
   });
 
@@ -397,12 +575,16 @@ function Totem({
       {animal ? (
         <Animal animal={animal} color={color} mood={mood} hop={hop} still={still} />
       ) : (
-        <mesh>
-          <icosahedronGeometry args={[0.9, 1]} />
-          <meshStandardMaterial ref={mat} roughness={0.35} metalness={0.25} flatShading wireframe />
-        </mesh>
+        <>
+          <sprite scale={5}>
+            <spriteMaterial ref={wispHalo} map={glowTexture()} transparent depthWrite={false} blending={THREE.AdditiveBlending} />
+          </sprite>
+          <sprite scale={1.2}>
+            <spriteMaterial ref={wisp} map={glowTexture()} transparent depthWrite={false} blending={THREE.AdditiveBlending} />
+          </sprite>
+        </>
       )}
-      <pointLight ref={light} distance={18} decay={1.6} />
+      <pointLight ref={light} distance={14} decay={1.6} />
     </group>
   );
 }
@@ -426,23 +608,26 @@ function Scene({
   const showTotem = ['landing', 'quiz', 'reading', 'home'].includes(mode);
   const params = useRef<Params>({
     travel: 0,
-    amplitude: STATIONS[live.current.mode].amplitude,
     glow: STATIONS[live.current.mode].glow,
-    scroll: 0,
     t: 0,
     color: live.current.tint.clone(),
+    elevation: sunElevation(live.current.hour),
+    day: daylight(sunElevation(live.current.hour)),
+    dusk: sunsetGlow(live.current.hour, sunElevation(live.current.hour)),
+    fog: new THREE.Color(BG),
   });
   return (
     <>
-      <color attach="background" args={[BG]} />
-      <fog attach="fog" args={[BG, 12, 58]} />
-      <hemisphereLight args={['#2a2440', '#050507', 0.55]} />
-      <directionalLight position={[0, 6, 12]} intensity={0.35} />
+      <fog attach="fog" args={[BG, 25, 420]} />
       <Rig live={live} params={params} />
       <Sky params={params} />
+      <SunsetGlow params={params} />
+      <NightSky params={params} />
       <Stars params={params} />
       <Moon params={params} />
-      <Terrain params={params} />
+      <Mountains />
+      <Ground params={params} />
+      <Mist params={params} />
       <Fireflies params={params} />
       <Totem
         animal={animal}
@@ -480,12 +665,13 @@ export default function World({
   mode: WorldMode;
   animal: AnimalId | null;
   tint?: string;
-  // Today's check-in, so the animal on the horizon moves like you feel.
+  // Today's check-in, so the animal moves like you feel.
   mood?: Mood | null;
   hop?: number;
   still?: boolean;
 }) {
-  const live = useLive(mode, tint, still);
+  const hour = useLocalHour();
+  const live = useLive(mode, tint, still, hour);
   const [active, setActive] = useState(true);
 
   useEffect(() => {
@@ -515,10 +701,11 @@ export default function World({
           frameloop={frameloop}
           dpr={NATIVE ? 1 : [1, 1.5]}
           gl={{ antialias: !NATIVE, powerPreference: 'low-power' } as any}
-          camera={{ position: STATIONS[mode].camera, fov: 55, near: 0.1, far: 120 }}
+          camera={{ position: STATIONS[mode].camera, fov: 55, near: 0.1, far: 3000 }}
         >
           <Scene animal={animal} mood={mood} hop={hop} mode={mode} live={live} />
-          {still && <Settle deps={[mode, tint, animal]} />}
+          {/* Redraw when anything visible changes, including the hour. */}
+          {still && <Settle deps={[mode, tint, animal, hour]} />}
         </Canvas>
       </GLBoundary>
     </View>
