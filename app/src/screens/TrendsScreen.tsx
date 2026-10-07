@@ -7,6 +7,7 @@ import { ARCHETYPES, TINTS } from '../data/archetypes';
 import { RhythmResult } from '../logic/score';
 import {
   checkInsInWindow,
+  compareGoodDays,
   currentStreak,
   Level,
   load,
@@ -28,11 +29,13 @@ export default function TrendsScreen({
   onClose,
   onCheckIn,
   onShare,
+  onAskPulse,
 }: {
   result: RhythmResult;
   onClose: () => void;
   onCheckIn: () => void;
   onShare: () => void;
+  onAskPulse: (seed: string) => void;
 }) {
   const a = ARCHETYPES[result.animal];
   const tint = TINTS[result.animal];
@@ -71,6 +74,7 @@ export default function TrendsScreen({
   const rhythm = checkInsInWindow(log, DAYS);
   const streak = currentStreak(log);
   const hasData = log.length > 0;
+  const goodDays = compareGoodDays(log);
 
   // Build contiguous line segments so gaps read as gaps, not as a flat lie.
   const segments: string[] = [];
