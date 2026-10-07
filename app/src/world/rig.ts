@@ -88,3 +88,35 @@ export function mixHex(a: string, b: string, t: number): string {
   const out = [16, 8, 0].map((s) => Math.round(ch(pa, s) + (ch(pb, s) - ch(pa, s)) * k));
   return '#' + out.map((v) => v.toString(16).padStart(2, '0')).join('');
 }
+
+// How an animal moves for a given check-in mood.
+export type Mood = 'wired' | 'steady' | 'flat';
+
+export interface MoodMotion {
+  speed: number; // time multiplier for all idle motion
+  bounce: number; // height of the idle bounce
+  jitter: number; // small fast shake (wired)
+  droop: number; // head-down tilt in radians (flat)
+}
+
+export function moodMotion(mood: Mood | null | undefined): MoodMotion {
+  switch (mood) {
+    case 'wired':
+      return { speed: 1.9, bounce: 0.22, jitter: 0.05, droop: -0.08 };
+    case 'flat':
+      return { speed: 0.5, bounce: 0.03, jitter: 0, droop: 0.28 };
+    case 'steady':
+      return { speed: 1, bounce: 0.08, jitter: 0, droop: 0 };
+    default:
+      return { speed: 1, bounce: 0.06, jitter: 0, droop: 0 };
+  }
+}
+
+// Height of a happy hop `since` seconds after it was triggered (0 when done).
+export const HOP_SECONDS = 0.9;
+export function hopHeight(since: number): number {
+  if (since < 0 || since >= HOP_SECONDS) return 0;
+  const p = since / HOP_SECONDS;
+  // Two hops: a big one, then a small one.
+  return p < 0.6 ? Math.sin((p / 0.6) * Math.PI) * 0.6 : Math.sin(((p - 0.6) / 0.4) * Math.PI) * 0.2;
+}

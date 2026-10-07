@@ -146,3 +146,23 @@
                                                                                                                                                                                                                                                                                                                                                     expect(result.animal).toBe('dolphin');
                                                                                                                                                                                                                                                                                                                                                       });
                                                                                                                                                                                                                                                                                                                                                       });
+
+describe('scoreQuiz: runner-up and reasons', () => {
+  it('explains the result with the answers that pointed to it', () => {
+    const r = scoreQuiz(QUIZ.map((q) => q.options[0]));
+    expect(r.reasons?.length).toBeGreaterThan(0);
+    r.reasons?.forEach((line) => expect(line).toContain(' → '));
+  });
+
+  it('names a close runner-up and never the winner itself', () => {
+    let sawRunnerUp = false;
+    for (let i = 0; i < 4; i++) {
+      const r = scoreQuiz(QUIZ.map((q, j) => q.options[(i + j) % 4]));
+      if (r.runnerUp) {
+        sawRunnerUp = true;
+        expect(r.runnerUp).not.toBe(r.animal);
+      }
+    }
+    expect(sawRunnerUp).toBe(true);
+  });
+});

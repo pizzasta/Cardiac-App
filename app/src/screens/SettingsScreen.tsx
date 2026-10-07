@@ -85,7 +85,7 @@ export default function SettingsScreen({
   const runExport = async () => {
     const log = await loadLog();
     if (!log.length) {
-      setExportNote('No check-ins yet — log a few days, then export.');
+      setExportNote('No check-ins yet. Log a few days, then export.');
       return;
     }
     const r = await exportCsv(log, result);
@@ -239,7 +239,7 @@ export default function SettingsScreen({
                 {!result
                   ? 'Take the quiz to set reminders for your rhythm.'
                   : notifsOn
-                  ? 'On — gentle reminders around your suggested rhythm windows. Check-in timing can adapt to your recent habit.'
+                  ? 'On. Gentle reminders around your suggested rhythm windows. Check-in timing can adapt to your recent habit.'
                   : 'Optional check-in, focus and wind-down reminders based on your rhythm profile.'}
               </Text>
             </View>
@@ -256,7 +256,7 @@ export default function SettingsScreen({
             </Pressable>
           </View>
           {!canSchedule && result && (
-            <Text style={styles.note}>On the web we can only ask permission — the phone app delivers daily reminders.</Text>
+            <Text style={styles.note}>On the web we can only ask permission. The phone app delivers daily reminders.</Text>
           )}
         </View>
 
@@ -288,7 +288,7 @@ export default function SettingsScreen({
         <View style={[styles.card, { marginBottom: 12 }]}>
           <Text style={styles.rowTitle}>Export my data</Text>
           <Text style={styles.rowSub}>
-            Every check-in as a CSV you own — open it in any spreadsheet or share it with someone you
+            Every check-in as a CSV you own. Open it in any spreadsheet or share it with someone you
             trust. Free, always.
           </Text>
           <Pressable style={[styles.btn, styles.btnGhost]} onPress={runExport}>

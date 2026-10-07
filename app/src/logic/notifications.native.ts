@@ -75,7 +75,7 @@ async function scheduleCheckIn(animal: AnimalId): Promise<void> {
     identifier: CHECKIN_ID,
     content: {
       title: 'Quick check-in?',
-      body: '10-second check-in — notice how your energy feels right now.',
+      body: 'A 10-second check-in. How does your energy feel right now?',
     },
     trigger: {
       hour: t.hour,

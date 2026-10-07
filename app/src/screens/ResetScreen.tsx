@@ -177,7 +177,7 @@ export default function ResetScreen({
         {stage === 'done' && (
           <>
             <Text style={styles.why}>
-              That’s a minute you gave back to yourself. Notice how you feel now — no need to
+              That’s a minute you gave back to yourself. Notice how you feel now. No need to
               force a change.
             </Text>
             <Pressable style={[styles.cta, { backgroundColor: a.accent }]} onPress={onCheckIn}>

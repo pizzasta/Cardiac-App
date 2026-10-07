@@ -140,7 +140,7 @@ export default function TrendsScreen({
           )}
         </View>
         <Text style={styles.forgive}>
-          Rest days count too. Miss one and the line dims — it doesn’t reset.
+          Rest days count too. Miss one and the line dims. It doesn’t reset.
         </Text>
 
         {/* The waveform */}

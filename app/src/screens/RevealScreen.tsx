@@ -10,7 +10,7 @@ import {
   View,
 } from 'react-native';
 import * as Haptics from 'expo-haptics';
-import { ARCHETYPES } from '../data/archetypes';
+import { ARCHETYPES, TINTS } from '../data/archetypes';
 import { RhythmResult } from '../logic/score';
 import { DISCLAIMER_SHORT } from '../data/disclaimer';
 import { F } from '../theme';
@@ -78,7 +78,7 @@ export default function RevealScreen({
             <View style={[styles.emblem, { borderColor: `${a.accent}55` }]}>
               <AnimalEmblem
                 animal={a.id}
-                accent={a.accent}
+                accent={TINTS[a.id]}
                 emoji={a.emoji}
                 bg={a.gradient[1]}
                 style={StyleSheet.absoluteFill}
@@ -87,8 +87,33 @@ export default function RevealScreen({
           </Animated.View>
 
           <Text style={styles.name}>{a.name}</Text>
+          {result.runnerUp && (
+            <Text style={[styles.streak, { color: a.accent }]}>
+              with a {ARCHETYPES[result.runnerUp].name} streak {ARCHETYPES[result.runnerUp].emoji}
+            </Text>
+          )}
           <Text style={styles.oneLiner}>{a.oneLiner}</Text>
           <Text style={styles.reading}>{a.reading}</Text>
+
+          {!!result.reasons?.length && (
+            <View style={[styles.traitCard, styles.whyCard]}>
+              <Text style={[styles.traitLabel, { color: a.accent }]}>WHY YOU GOT {a.name.toUpperCase()}</Text>
+              {result.reasons.map((line) => {
+                const [q, ans] = line.split(' → ');
+                return (
+                  <View key={line} style={styles.whyRow}>
+                    <Text style={styles.whyQ}>{q}</Text>
+                    <Text style={styles.whyA}>{ans}</Text>
+                  </View>
+                );
+              })}
+              {result.runnerUp && (
+                <Text style={styles.whyNote}>
+                  It was close: your answers also pointed toward {ARCHETYPES[result.runnerUp].name}.
+                </Text>
+              )}
+            </View>
+          )}
 
           <View style={styles.traits}>
             <View style={[styles.traitCard, { borderColor: `${a.accent}44` }]}>
@@ -184,6 +209,12 @@ const styles = StyleSheet.create({
   },
   traitLabel: { fontSize: 11, fontFamily: F.mono, letterSpacing: 1, marginBottom: 4 },
   traitText: { color: '#fff', fontSize: 14, lineHeight: 20 },
+  streak: { fontSize: 15, fontWeight: '700', textAlign: 'center', marginTop: 2, marginBottom: 6 },
+  whyCard: { borderColor: 'rgba(255,255,255,0.18)', marginTop: 18, marginBottom: 2 },
+  whyRow: { marginTop: 8 },
+  whyQ: { color: 'rgba(255,255,255,0.6)', fontSize: 12, lineHeight: 17 },
+  whyA: { color: '#fff', fontSize: 14, fontWeight: '700', lineHeight: 20 },
+  whyNote: { color: 'rgba(255,255,255,0.6)', fontSize: 12, lineHeight: 17, marginTop: 10 },
   chips: { flexDirection: 'row', gap: 10, marginTop: 18, width: '100%', maxWidth: 360 },
   chip: {
     flex: 1,

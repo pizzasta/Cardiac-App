@@ -198,7 +198,7 @@ export default function PulseScreen({
             <Text style={styles.hint}>
               {voiceSupported
                 ? 'Tap the mic and talk, or type. Tap the reading to hear it.'
-                : 'Ask me anything — “when should I work out?”, “why am I tired at 2pm?”'}
+                : 'Ask anything, like “when should I work out?” or “why am I tired at 2pm?”'}
             </Text>
           )}
         </ScrollView>

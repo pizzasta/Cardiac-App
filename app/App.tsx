@@ -32,7 +32,8 @@ import { Option } from './src/data/quiz';
 import { QUIZ } from './src/data/quiz';
 import { ARCHETYPES, TINTS } from './src/data/archetypes';
 import World from './src/world/World';
-import type { WorldMode } from './src/world/rig';
+import type { Mood, WorldMode } from './src/world/rig';
+import { getToday, load as loadLog } from './src/logic/pulselog';
 import { useReducedMotion } from './src/hooks';
 import { RhythmResult, scoreQuiz } from './src/logic/score';
 import { AuthProvider, useAuth } from './src/logic/auth';
@@ -65,6 +66,14 @@ function Flow() {
   const [showToday, setShowToday] = useState(false);
   const [showTrends, setShowTrends] = useState(false);
   const [showCard, setShowCard] = useState(false);
+  // Today's check-in mood drives how the animal moves; `hop` makes it jump.
+  const [mood, setMood] = useState<Mood | null>(null);
+  const [hop, setHop] = useState(0);
+  useEffect(() => {
+    loadLog()
+      .then((log) => setMood(getToday(log)?.level ?? null))
+      .catch(() => {});
+  }, []);
   // undefined = closed; null = open, default to today's check-in level.
   const [resetLevel, setResetLevel] = useState<Level | null | undefined>(undefined);
   // App-wide rainforest ambience + persistent mute/volume (remembered across visits).
@@ -190,6 +199,7 @@ function Flow() {
     setShowCard(false);
     setResetLevel(undefined);
     setConsentFor(null);
+    setMood(null);
   };
 
   // The 3D world behind everything: which camera station, and whose colour.
@@ -227,6 +237,8 @@ function Flow() {
         mode={worldMode}
         animal={showAnimal ? result!.animal : null}
         tint={showAnimal ? TINTS[result!.animal] : T.accent}
+        mood={mood}
+        hop={hop}
         still={reducedMotion}
       />
       {/* While a world-backed overlay is open, hide the stage screen underneath
@@ -368,6 +380,10 @@ function Flow() {
               setShowCheckIn(false);
               setResetLevel(level);
             }}
+            onSaved={(level) => {
+              setMood(level);
+              setHop((h) => h + 1);
+            }}
           />
         </View>
       )}
@@ -441,7 +457,7 @@ class ErrorBoundary extends React.Component<
         <View style={styles.errFill}>
           <Text style={styles.errTitle}>Something hiccuped</Text>
           <Text style={styles.errBody}>
-            Circadia hit an unexpected error. Try again — your rhythm data is safe.
+            Circadia hit an unexpected error. Try again. Your rhythm data is safe.
           </Text>
           <Pressable style={styles.errBtn} onPress={() => this.setState({ error: null })}>
             <Text style={styles.errBtnText}>Reload</Text>

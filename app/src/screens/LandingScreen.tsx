@@ -24,19 +24,19 @@ const STEPS = [
 
 const FEATURES = [
   { t: 'Your rhythm animal', s: 'Eight questions decode how your nervous system runs.' },
-  { t: 'A plan that fits your wiring', s: 'Your real peak, crash, and wind-down — as a daily flow.' },
-  { t: 'Days like today', s: 'See past days that looked like this one — and what came after.' },
+  { t: 'A plan that fits your wiring', s: 'Your real peak, dip and wind-down, as a daily flow.' },
+  { t: 'Days like today', s: 'See past days that looked like this one, and what came after.' },
   { t: 'Sleep on your schedule', s: 'A wind-down and wake window tuned to your chronotype.' },
   { t: 'A one-minute reset', s: 'A breathing pace matched to how you feel right now.' },
   { t: 'Backed by the science', s: 'Every recommendation traces to real research.' },
 ];
 
 const STAY = [
-  'Your history builds up — every check-in makes your patterns clearer.',
+  'Your history builds up. Every check-in makes your patterns clearer.',
   'It’s specific to you, not generic “drink more water” advice.',
   'It shows what’s coming in your day, so a dip is less of a surprise.',
   'Missing a day never resets you to zero.',
-  'Your data stays yours — export it any time, free.',
+  'Your data stays yours. Export it any time, free.',
 ];
 
 export default function LandingScreen({
@@ -91,11 +91,11 @@ export default function LandingScreen({
             <Text style={styles.kicker}>CIRCADIA</Text>
             <Text style={styles.h1}>You’re not tired.{'\n'}You’re out of rhythm.</Text>
             <Text style={styles.sub}>
-              A 60-second read of how your energy, stress, and sleep actually work — then a daily
+              A 60-second read of how your energy, stress, and sleep actually work, then a daily
               plan built around it.
             </Text>
             <Cta />
-            <Text style={styles.fine}>No signup — just curiosity.</Text>
+            <Text style={styles.fine}>No signup, just curiosity.</Text>
           </View>
         </View>
 
@@ -172,7 +172,7 @@ export default function LandingScreen({
 
         {/* SCIENCE STRIP */}
         <Section>
-          <Text style={styles.scienceLine}>Backed by real circadian research — not vibes.</Text>
+          <Text style={styles.scienceLine}>Backed by real circadian research, not vibes.</Text>
           <Pressable onPress={onScience} hitSlop={8}>
             <Text style={styles.scienceLink}>Read the science  ↗</Text>
           </Pressable>

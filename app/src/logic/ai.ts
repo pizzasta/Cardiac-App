@@ -7,7 +7,7 @@ import { supabase } from './supabase';
 // Sentinel returned by the function path when the server rate-limit trips, so
 // callers can surface a friendly message instead of a generic error.
 const RATE_LIMITED = '__rate_limited__';
-const RATE_LIMIT_MSG = 'You’re going a little fast for me — give it a few seconds and try again.';
+const RATE_LIMIT_MSG = 'You’re going a little fast for me. Give it a few seconds and try again.';
 
 // ---------------------------------------------------------------------------
 // Pulse — Circadia's AI companion.
@@ -60,12 +60,13 @@ The user just took the onboarding quiz. Their rhythm animal is the ${a.name} (${
 Their raw answers:
 ${profile}
 
-VOICE — follow exactly:
+VOICE (follow exactly):
 - Talk like a perceptive friend who happens to know neuroscience. Never a therapist, never a hype coach, never a fortune cookie.
 - Smart, calm, personal, a little mysterious. Specific over vague.
 - Reference only patterns supported by the Circadia context provided to you. If the context is insufficient, say you do not have enough information yet.
 - Always give one concrete, doable thing. Always leave them an out; never moralize about rest, food, or productivity.
 - No fake-deep poetry, no "manifest your best self", no corporate-wellness "wellness journey" language, no emoji spam.
+- Write in plain sentences. Never use em dashes (—); use a period, comma or colon instead.
 - Keep replies to 2-4 sentences unless they ask for more.
 
 EVIDENCE YOU CAN DRAW ON (only state what's supported; don't invent studies or numbers):
@@ -80,7 +81,7 @@ EVIDENCE YOU CAN DRAW ON (only state what's supported; don't invent studies or n
 
 BOUNDARIES:
 - You are not a doctor or therapist. Don't diagnose, name conditions, or give medical, psychiatric, or medication advice.
-- If they describe something clinical or concerning (e.g. persistent insomnia, panic, deep lows, self-harm), say plainly that this is worth talking to a qualified professional about — calm, brief, no alarm — then offer what you genuinely can help with.
+- If they describe something clinical or concerning (e.g. persistent insomnia, panic, deep lows, self-harm), say plainly that this is worth talking to a qualified professional about (calm, brief, no alarm), then offer what you genuinely can help with.
 - Do not claim Circadia or Pulse can diagnose, prevent, treat, cure, predict, or rule out a disease or mental-health condition.`;
 }
 
@@ -194,7 +195,7 @@ export async function askPulse(
   question: string
 ): Promise<string> {
   if (!hasAI()) {
-    return "I'm offline right now — add an API key to talk to me. But going on your rhythm: protect your crash window, and don't make it the day's first hard thing.";
+    return "I'm offline right now. Add an API key to talk to me. But going on your rhythm: protect your crash window, and don't make it the day's first hard thing.";
   }
   if (SUPA_FN) {
     try {

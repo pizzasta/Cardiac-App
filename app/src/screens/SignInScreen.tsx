@@ -191,7 +191,7 @@ export default function SignInScreen({ onClose, onLegal }: { onClose: () => void
             </Pressable>
           ) : (
             <Text style={styles.fine}>
-              We use this to save your plan. No password — this is an early prototype.
+              We use this to save your plan. No password needed in this early version.
             </Text>
           )}
 

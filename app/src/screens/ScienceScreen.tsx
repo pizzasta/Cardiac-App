@@ -29,7 +29,7 @@ export default function ScienceScreen({
 
       <ScrollView contentContainerStyle={styles.body}>
         <Text style={styles.intro}>
-          Why working with your rhythm helps — drawn from peer-reviewed and public-health research.
+          Why working with your rhythm helps, drawn from peer-reviewed and public-health research.
           Tap any card to read the source.
         </Text>
 
@@ -42,7 +42,7 @@ export default function ScienceScreen({
         ))}
 
         <Text style={styles.footer}>
-          These are research findings, not promises — many are population-level associations, and
+          These are research findings, not promises. Many are population-level associations, and
           individual results vary. Circadia is for self-awareness, not medical advice.
         </Text>
       </ScrollView>

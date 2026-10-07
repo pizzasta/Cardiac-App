@@ -13,6 +13,9 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useTopInset } from '../hooks';
 import { ARCHETYPES } from '../data/archetypes';
 import { PLANS } from '../data/plans';
+import { personalFlow } from '../logic/personalPlan';
+import AnimalEmblem from '../world/AnimalEmblem';
+import { TINTS } from '../data/archetypes';
 import { RhythmResult } from '../logic/score';
 import { PulseEntry, load, getToday, currentStreak } from '../logic/pulselog';
 import { weeklyReport, WeeklyReport } from '../logic/weekly';
@@ -59,7 +62,7 @@ export default function TodayScreen({
   const topInset = useTopInset();
   const arch = ARCHETYPES[result.animal];
   const plan = PLANS[result.animal];
-  const flow = plan?.flow ?? [];
+  const flow = plan ? personalFlow(plan.flow, result) : [];
   // Re-render each minute so "now" and the countdown stay current.
   const [now, setNow] = useState(() => new Date());
   useEffect(() => {
@@ -128,6 +131,16 @@ export default function TodayScreen({
             Your quiz suggests a stronger focus window around {result.peak} and a
             possible lower-energy window near {result.crash}. Your check-ins help refine the picture.
           </Text>
+          {/* Your animal, moving the way you checked in today. */}
+          <AnimalEmblem
+            animal={result.animal}
+            accent={TINTS[result.animal]}
+            emoji={arch.emoji}
+            bg={null}
+            sparks={false}
+            mood={today?.level ?? null}
+            style={styles.companion}
+          />
           {/* Rendered last so it sits above the header text and stays tappable. */}
           <Pressable onPress={onClose} hitSlop={12} style={styles.close}>
             <Text style={styles.closeText}>Done</Text>
@@ -207,6 +220,7 @@ export default function TodayScreen({
             <Text style={styles.flowTime}>{item.time}</Text>
             <View style={styles.flowBody}>
               <Text style={styles.flowTitle}>{item.title}</Text>
+              {item.personal && <Text style={[styles.yours, { color: arch.accent }]}>FROM YOUR ANSWERS</Text>}
               <Text style={styles.flowNote}>{item.note}</Text>
             </View>
           </View>
@@ -241,8 +255,8 @@ export default function TodayScreen({
           <View style={[styles.experimentCard, { borderColor: `${arch.accent}55`, borderWidth: 1 }]}>
             <Text style={[styles.experimentKicker, { color: arch.accent }]}>RESULTS · {lastExperiment.title.toUpperCase()}</Text>
             <View style={styles.weekStats}>
-              <Stat value={outcome.before ?? '—'} label={`before (${outcome.beforeCount})`} />
-              <Stat value={outcome.during ?? '—'} label={`during (${outcome.duringCount})`} />
+              <Stat value={outcome.before ?? 'none'} label={`before (${outcome.beforeCount})`} />
+              <Stat value={outcome.during ?? 'none'} label={`during (${outcome.duringCount})`} />
             </View>
             <Text style={styles.experimentText}>{outcome.summary}</Text>
             {outcome.commonReason && (
@@ -320,7 +334,8 @@ function Stat({ value, label }: { value: string; label: string }) {
 const styles = StyleSheet.create({
   root: { ...StyleSheet.absoluteFillObject, backgroundColor: 'transparent' },
   content: { paddingHorizontal: 20, paddingBottom: 24 },
-  header: { borderRadius: 20, padding: 20, marginBottom: 24 },
+  header: { borderRadius: 20, padding: 20, marginBottom: 24, overflow: 'hidden' },
+  companion: { position: 'absolute', right: -6, top: 26, width: 120, height: 96 },
   close: { position: 'absolute', top: 16, right: 16 },
   closeText: { color: T.text, fontFamily: F.mono, fontSize: 13, opacity: 0.8 },
   kicker: {
@@ -387,6 +402,7 @@ const styles = StyleSheet.create({
   flowTime: { color: T.muted, fontFamily: F.mono, fontSize: 12, width: 52 },
   flowBody: { flex: 1 },
   flowTitle: { color: T.text, fontSize: 15 },
+  yours: { fontFamily: F.mono, fontSize: 9, letterSpacing: 1, marginTop: 2 },
   flowNote: { color: T.muted, fontSize: 13, lineHeight: 18, marginTop: 2 },
   checkIn: {
     borderRadius: 14,

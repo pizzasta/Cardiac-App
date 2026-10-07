@@ -37,7 +37,7 @@ export default function SignalCardScreen({
       setStatus('shared');
       return;
     }
-    const r = await shareText(`“${statement}” — my ${a.name} rhythm, mapped by Circadia.`);
+    const r = await shareText(`“${statement}” (my ${a.name} rhythm, mapped by Circadia)`);
     if (r === 'copied') setStatus('copied');
     else if (r === 'shared') setStatus('shared');
   };
@@ -96,7 +96,7 @@ export default function SignalCardScreen({
         <Text style={styles.hint}>
           {canCaptureImage
             ? 'One tap shares the card as an image.'
-            : 'Drop it on your story — screenshot the card above.'}
+            : 'Drop it on your story: screenshot the card above.'}
         </Text>
       </View>
     </View>

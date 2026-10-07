@@ -59,6 +59,18 @@ Landing copy that over-promised was also rewritten: "An AI that actually knows y
 | Two versions of tomorrow ("Parallel Day") | **Fold into Experiments** | Overlaps with experiments plus results. Add a 1-day "Try one change tomorrow" experiment instead of a second simulator concept. |
 | Camera AR overlay ("Rhythm Lens") | **Skip** | Adds a camera permission and privacy questions in review, plus performance cost, and invites the "is it scanning me?" confusion we're avoiding. Low daily value. |
 
+## Quiz review: useful beats more animals
+
+Scoring all 65,536 possible answer sets showed:
+- 18% end in an exact tie (decided by a fixed priority list) and 47% are won by a single point.
+- The plan used the animal's default times, so for roughly 4 in 10 people the focus block contradicted the time they said they focus best.
+- Results are uneven (Bear 24%, Octopus 10.5%).
+
+Decision: keep six animals. Eight questions can't reliably separate more, and six memorable identities beat ten blurry ones. Instead:
+- The daily plan's focus and dip steps now use the person's own answers (`logic/personalPlan.ts`), marked "From your answers".
+- Close results show the runner-up ("with a Bear streak").
+- The reveal explains "Why you got Dolphin" using the answers that pointed there.
+
 ## Next opportunities (not built yet)
 
 - **Apple Health / Health Connect sleep import** to sharpen the forecast (Rise's main moat).

@@ -1,4 +1,4 @@
-import { damp, heartbeat, mixHex, rippleRadius, STATIONS, terrainHeight, BEAT_SECONDS } from './rig';
+import { damp, heartbeat, hopHeight, HOP_SECONDS, mixHex, moodMotion, rippleRadius, STATIONS, terrainHeight, BEAT_SECONDS } from './rig';
 
 describe('heartbeat', () => {
   it('beats twice (lub-dub) and then rests', () => {
@@ -61,5 +61,26 @@ describe('helpers', () => {
     expect(mixHex('#000000', '#ffffff', 0.5)).toBe('#808080');
     expect(mixHex('#ff2e7e', '#4fc3f7', 0)).toBe('#ff2e7e');
     expect(mixHex('#ff2e7e', '#4fc3f7', 1)).toBe('#4fc3f7');
+  });
+});
+
+describe('mood motion', () => {
+  it('is quick for wired, slow and drooping for flat, calm for steady', () => {
+    const w = moodMotion('wired');
+    const f = moodMotion('flat');
+    const s = moodMotion('steady');
+    expect(w.speed).toBeGreaterThan(s.speed);
+    expect(f.speed).toBeLessThan(s.speed);
+    expect(w.bounce).toBeGreaterThan(s.bounce);
+    expect(f.droop).toBeGreaterThan(0);
+    expect(w.jitter).toBeGreaterThan(0);
+    expect(moodMotion(null)).toEqual(expect.objectContaining({ jitter: 0, droop: 0 }));
+  });
+
+  it('hops twice and lands', () => {
+    expect(hopHeight(-0.1)).toBe(0);
+    expect(hopHeight(HOP_SECONDS * 0.3)).toBeCloseTo(0.6, 1);
+    expect(hopHeight(HOP_SECONDS * 0.8)).toBeCloseTo(0.2, 1);
+    expect(hopHeight(HOP_SECONDS)).toBe(0);
   });
 });

@@ -11,6 +11,7 @@ import {
 import { useTopInset } from '../hooks';
 import { ARCHETYPES } from '../data/archetypes';
 import { PLANS } from '../data/plans';
+import { personalFlow } from '../logic/personalPlan';
 import { REMINDERS } from '../data/reminders';
 import { DEEP_DIVE } from '../data/deepdive';
 import { DISCLAIMER_FULL } from '../data/disclaimer';
@@ -55,6 +56,7 @@ export default function PlanScreen({
 }) {
   const a = ARCHETYPES[result.animal];
   const plan = PLANS[result.animal];
+  const flow = personalFlow(plan.flow, result);
 
   const [notifsOn, setNotifsOn] = useState(false);
   const [notifBusy, setNotifBusy] = useState(false);
@@ -125,7 +127,7 @@ export default function PlanScreen({
         <Text style={styles.section}>CHECK-IN</Text>
         <PressableScale style={[styles.pulseCard, { borderColor: `${a.accent}55` }]} onPress={onCheckIn}>
           <View style={{ flex: 1 }}>
-            <Text style={styles.pulseTitle}>Check in — 10 seconds</Text>
+            <Text style={styles.pulseTitle}>Check in (10 seconds)</Text>
             <Text style={styles.pulseSub}>Log how your energy feels today. No streak to protect, just an honest read.</Text>
           </View>
           <Text style={[styles.pulseArrow, { color: a.accent }]}>→</Text>
@@ -162,7 +164,7 @@ export default function PlanScreen({
               <Text style={styles.notifTitle}>Rhythm reminders</Text>
               <Text style={styles.notifSub}>
                 {notifsOn
-                  ? 'On — gentle nudges at your key moments.'
+                  ? 'On. Gentle nudges at your key moments.'
                   : 'Get nudged at your crash window and wind-down.'}
               </Text>
             </View>
@@ -203,21 +205,22 @@ export default function PlanScreen({
 
           {!canSchedule && (
             <Text style={styles.notifWeb}>
-              On the web we can only ask permission — install the phone app for daily reminders.
+              On the web we can only ask permission. Install the phone app for daily reminders.
             </Text>
           )}
         </View>
 
         <Text style={styles.section}>TODAY’S FLOW</Text>
         <View style={styles.timeline}>
-          {plan.flow.map((f, i) => (
+          {flow.map((f, i) => (
             <View key={i} style={styles.flowRow}>
               <View style={styles.timeCol}>
                 <Text style={[styles.time, { color: a.accent }]}>{f.time}</Text>
-                {i < plan.flow.length - 1 && <View style={styles.connector} />}
+                {i < flow.length - 1 && <View style={styles.connector} />}
               </View>
               <View style={styles.flowCard}>
                 <Text style={styles.flowTitle}>{f.title}</Text>
+                {f.personal && <Text style={[styles.yours, { color: a.accent }]}>FROM YOUR ANSWERS</Text>}
                 <Text style={styles.flowNote}>{f.note}</Text>
               </View>
             </View>
@@ -232,7 +235,7 @@ export default function PlanScreen({
             style={styles.tipCard}
             onPress={() =>
               onPulse(
-                `As a ${a.name}, give me a deeper, personal tip on ${t.label.toLowerCase()} — building on this: "${t.text}". One concrete thing I can do today.`
+                `As a ${a.name}, give me a deeper, personal tip on ${t.label.toLowerCase()}, building on this: "${t.text}". One concrete thing I can do today.`
               )
             }
           >
@@ -249,7 +252,7 @@ export default function PlanScreen({
           onSignIn={onSignIn}
           accent={a.accent}
           title="🔒 Unlock your detailed plan"
-          message="Sign in to get your weekly-grain plan — deeper scheduling, caffeine and recovery timing, and the patterns to track for your rhythm."
+          message="Sign in to get your weekly-grain plan: deeper scheduling, caffeine and recovery timing, and the patterns to track for your rhythm."
         >
           <View style={styles.deepCard}>
             {DEEP_DIVE[result.animal].map((d, i) => (
@@ -269,7 +272,7 @@ export default function PlanScreen({
           style={[styles.scienceBtn, { borderColor: `${a.accent}66` }]}
           onPress={onScience}
         >
-          <Text style={[styles.scienceText, { color: a.accent }]}>Why this works — the science</Text>
+          <Text style={[styles.scienceText, { color: a.accent }]}>Why this works: the science</Text>
         </Pressable>
 
         <Text style={styles.disclaimer}>{DISCLAIMER_FULL}</Text>
@@ -402,6 +405,7 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   flowTitle: { color: '#fff', fontSize: 16, fontWeight: '700' },
+  yours: { fontSize: 10, fontFamily: F.mono, letterSpacing: 1, marginTop: 3 },
   flowNote: { color: 'rgba(255,255,255,0.78)', fontSize: 14, lineHeight: 20, marginTop: 4 },
   tipCard: {
     backgroundColor: 'rgba(255,255,255,0.06)',

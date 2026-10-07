@@ -13,9 +13,9 @@ import { AppState, Platform, StyleSheet, View } from 'react-native';
 import * as THREE from 'three';
 import { Canvas, useFrame, useThree } from './fiber';
 import GLBoundary from './GLBoundary';
-import { creatureFor } from './creatures';
+import Animal from './animals';
 import { dotTexture } from './textures';
-import { damp, heartbeat, STATIONS, terrainHeight, WorldMode } from './rig';
+import { damp, heartbeat, Mood, STATIONS, terrainHeight, WorldMode } from './rig';
 import { AnimalId } from '../data/archetypes';
 import Atmosphere from '../components/Atmosphere';
 import { T } from '../theme';
@@ -245,10 +245,18 @@ function HorizonGlow({ params }: { params: React.MutableRefObject<Params> }) {
 // Your rhythm animal on the horizon (a pulsing core before the reveal).
 function Totem({
   animal,
+  color,
+  mood,
+  hop,
+  still,
   visible,
   params,
 }: {
   animal: AnimalId | null;
+  color: string;
+  mood: Mood | null;
+  hop: number;
+  still: boolean;
   visible: boolean;
   params: React.MutableRefObject<Params>;
 }) {
@@ -256,7 +264,6 @@ function Totem({
   const group = useRef<THREE.Group>(null);
   const mat = useRef<THREE.MeshStandardMaterial>(null);
   const light = useRef<THREE.PointLight>(null);
-  const cfg = animal ? creatureFor(animal) : null;
 
   useFrame((_, rawDt) => {
     const p = params.current;
@@ -265,10 +272,17 @@ function Totem({
     presence.current = damp(presence.current, visible ? 1 : 0, 3, Math.min(rawDt, 0.05));
     g.visible = presence.current > 0.01;
     const beat = heartbeat(p.t);
-    g.rotation.y = p.t * (cfg?.spin ?? 0.4);
-    g.rotation.x = Math.sin(p.t * (cfg?.bob ?? 1)) * (cfg?.tilt ?? 0.1);
-    g.position.y = TOTEM[1] + Math.sin(p.t * (cfg?.bob ?? 1) * 0.6) * 0.18;
-    g.scale.setScalar((1 + 0.08 * beat) * presence.current);
+    if (!animal) {
+      // Before the reveal: a slowly turning, pulsing core.
+      g.rotation.y = p.t * 0.4;
+      g.rotation.x = Math.sin(p.t) * 0.1;
+    } else {
+      // The animal turns slowly so its whole shape reads from the horizon.
+      g.rotation.y = Math.sin(p.t * 0.25) * 0.6;
+      g.rotation.x = 0;
+    }
+    g.position.y = TOTEM[1] + Math.sin(p.t * 0.6) * 0.18;
+    g.scale.setScalar((animal ? 1.3 : 1 + 0.08 * beat) * presence.current);
     if (mat.current) {
       mat.current.color.copy(p.color);
       mat.current.emissive.copy(p.color);
@@ -282,16 +296,30 @@ function Totem({
 
   return (
     <group ref={group} position={TOTEM}>
-      <mesh>
-        {cfg ? cfg.geometry : <icosahedronGeometry args={[0.9, 1]} />}
-        <meshStandardMaterial ref={mat} roughness={0.35} metalness={0.25} flatShading wireframe={!cfg} />
-      </mesh>
+      {animal ? (
+        <Animal animal={animal} color={color} mood={mood} hop={hop} still={still} />
+      ) : (
+        <mesh>
+          <icosahedronGeometry args={[0.9, 1]} />
+          <meshStandardMaterial ref={mat} roughness={0.35} metalness={0.25} flatShading wireframe />
+        </mesh>
+      )}
       <pointLight ref={light} distance={18} decay={1.6} />
     </group>
   );
 }
 
-function Scene({ animal, live }: { animal: AnimalId | null; live: React.MutableRefObject<Live> }) {
+function Scene({
+  animal,
+  mood,
+  hop,
+  live,
+}: {
+  animal: AnimalId | null;
+  mood: Mood | null;
+  hop: number;
+  live: React.MutableRefObject<Live>;
+}) {
   // The totem is the hero only on open, scenic screens. It steps back for the
   // reveal (which has its own close-up emblem), the reset (the breathing orb is
   // the focus) and dense screens, where it would sit behind text.
@@ -314,7 +342,15 @@ function Scene({ animal, live }: { animal: AnimalId | null; live: React.MutableR
       <HorizonGlow params={params} />
       <Terrain params={params} />
       <Fireflies params={params} />
-      <Totem animal={animal} visible={showTotem} params={params} />
+      <Totem
+        animal={animal}
+        color={'#' + live.current.tint.getHexString()}
+        mood={mood}
+        hop={hop}
+        still={live.current.still}
+        visible={showTotem}
+        params={params}
+      />
     </>
   );
 }
@@ -335,11 +371,16 @@ export default function World({
   mode,
   animal,
   tint = T.accent,
+  mood = null,
+  hop = 0,
   still = false,
 }: {
   mode: WorldMode;
   animal: AnimalId | null;
   tint?: string;
+  // Today's check-in, so the animal on the horizon moves like you feel.
+  mood?: Mood | null;
+  hop?: number;
   still?: boolean;
 }) {
   const live = useLive(mode, tint, still);
@@ -374,7 +415,7 @@ export default function World({
           gl={{ antialias: !NATIVE, powerPreference: 'low-power' } as any}
           camera={{ position: STATIONS[mode].camera, fov: 55, near: 0.1, far: 120 }}
         >
-          <Scene animal={animal} live={live} />
+          <Scene animal={animal} mood={mood} hop={hop} live={live} />
           {still && <Settle deps={[mode, tint, animal]} />}
         </Canvas>
       </GLBoundary>

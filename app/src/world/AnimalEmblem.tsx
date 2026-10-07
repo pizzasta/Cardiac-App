@@ -3,31 +3,15 @@ import { StyleProp, StyleSheet, Text, View, ViewStyle } from 'react-native';
 import * as THREE from 'three';
 import { Canvas, useFrame } from './fiber';
 import GLBoundary from './GLBoundary';
-import { creatureFor } from './creatures';
+import Animal from './animals';
+import { Mood } from './rig';
+import { useReducedMotion } from '../hooks';
 import { dotTexture } from './textures';
 import { AnimalId } from '../data/archetypes';
 
-// The rhythm animal as a moving 3D form, on web and native. Falls back to the
-// emoji when WebGL isn't available.
-
-function Creature({ animal, accent }: { animal: AnimalId; accent: string }) {
-  const ref = useRef<THREE.Mesh>(null);
-  const cfg = creatureFor(animal);
-  useFrame((state, delta) => {
-    const m = ref.current;
-    if (!m) return;
-    const t = state.clock.elapsedTime;
-    m.rotation.y += cfg.spin * Math.min(delta, 0.05);
-    m.rotation.x = Math.sin(t * cfg.bob) * cfg.tilt;
-    m.position.y = Math.sin(t * cfg.bob) * 0.12;
-  });
-  return (
-    <mesh ref={ref}>
-      {cfg.geometry}
-      <meshStandardMaterial color={accent} emissive={accent} emissiveIntensity={0.25} roughness={0.35} metalness={0.2} flatShading />
-    </mesh>
-  );
-}
+// The rhythm animal in 3D, moving and reacting to mood, on web and native.
+// Falls back to the emoji when WebGL isn't available. Pass bg={null} for a
+// transparent canvas that sits on top of other content.
 
 function Sparks({ accent }: { accent: string }) {
   const ref = useRef<THREE.Points>(null);
@@ -69,29 +53,40 @@ export default function AnimalEmblem({
   accent,
   emoji = '✦',
   bg = '#0b1a16',
+  mood = null,
+  hop = 0,
+  sparks = true,
   style,
 }: {
   animal: AnimalId;
   accent: string;
   emoji?: string;
-  bg?: string;
+  bg?: string | null;
+  mood?: Mood | null;
+  hop?: number;
+  sparks?: boolean;
   style?: StyleProp<ViewStyle>;
 }) {
+  const still = useReducedMotion();
   const fallback = (
-    <View style={[styles.fallback, { backgroundColor: bg }, style]}>
+    <View style={[styles.fallback, bg ? { backgroundColor: bg } : null, style]}>
       <Text style={styles.emoji}>{emoji}</Text>
     </View>
   );
   return (
     <GLBoundary fallback={fallback}>
       <View style={style} pointerEvents="none">
-        <Canvas style={StyleSheet.absoluteFill as any} camera={{ position: [0, 0, 4.6], fov: 55 }}>
-          <color attach="background" args={[bg]} />
-          <ambientLight intensity={0.5} />
-          <directionalLight position={[3, 4, 5]} intensity={1.3} color="#ffffff" />
+        <Canvas
+          style={StyleSheet.absoluteFill as any}
+          gl={{ alpha: !bg } as any}
+          camera={{ position: [0, 0.25, 3.5], fov: 50 }}
+        >
+          {bg ? <color attach="background" args={[bg]} /> : null}
+          <ambientLight intensity={0.7} />
+          <directionalLight position={[3, 4, 5]} intensity={1.6} color="#ffffff" />
           <pointLight position={[-4, -2, 2]} intensity={8} color={accent} />
-          <Creature animal={animal} accent={accent} />
-          <Sparks accent={accent} />
+          <Animal animal={animal} color={accent} mood={mood} hop={hop} still={still} />
+          {sparks && <Sparks accent={accent} />}
         </Canvas>
       </View>
     </GLBoundary>

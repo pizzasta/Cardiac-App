@@ -25,3 +25,18 @@ describe('profile persistence', () => {
     expect(await loadProfile()).toBeNull();
   });
 });
+
+describe('profile persistence: runner-up and reasons', () => {
+  it('keeps a valid runner-up and reasons, drops invalid ones', () => {
+    const ok = parseProfile(
+      serializeProfile({ ...result, runnerUp: 'bear', reasons: ['Q → A'] }, answers)
+    );
+    expect(ok?.result.runnerUp).toBe('bear');
+    expect(ok?.result.reasons).toEqual(['Q → A']);
+    const bad = parseProfile(
+      JSON.stringify({ v: 1, result: { ...result, runnerUp: 'unicorn', reasons: [1, 2] }, answerIdx: [] })
+    );
+    expect(bad?.result.runnerUp).toBeUndefined();
+    expect(bad?.result.reasons).toBeUndefined();
+  });
+});

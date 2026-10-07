@@ -8,7 +8,7 @@ export const STATEMENTS: Record<AnimalId, string[]> = {
     'Your nervous system never fully clocks out.',
     'You recover through silence.',
     'You’d notice the one thing wrong in a perfect room.',
-    'You’re not overreacting — you’re early.',
+    'You’re not overreacting. You’re early.',
   ],
   wolf: [
     'Your best ideas arrive after midnight.',
@@ -20,9 +20,9 @@ export const STATEMENTS: Record<AnimalId, string[]> = {
   bear: [
     'You crash slowly, then all at once.',
     'You hold a pace others can’t sustain.',
-    'You’re not lazy — you’re under-recovered.',
+    'You’re not lazy. You’re under-recovered.',
     'You stabilize everyone but yourself.',
-    'You don’t rest — you collapse.',
+    'You don’t rest. You collapse.',
   ],
   hummingbird: [
     'Your mind speeds up when it should slow down.',
