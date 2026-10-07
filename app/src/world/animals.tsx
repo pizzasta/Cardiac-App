@@ -23,9 +23,11 @@ interface Palette {
 function usePalette(color: string): Palette {
   const pal = useMemo<Palette>(
     () => ({
-      body: new THREE.MeshStandardMaterial({ roughness: 0.5, metalness: 0.1, flatShading: true }),
-      light: new THREE.MeshStandardMaterial({ roughness: 0.6, flatShading: true }),
-      dark: new THREE.MeshStandardMaterial({ roughness: 0.6, flatShading: true }),
+      // Smooth shading with a soft satin finish, to sit naturally in the
+      // realistic landscape.
+      body: new THREE.MeshStandardMaterial({ roughness: 0.42, metalness: 0.05 }),
+      light: new THREE.MeshStandardMaterial({ roughness: 0.5 }),
+      dark: new THREE.MeshStandardMaterial({ roughness: 0.48 }),
       eye: new THREE.MeshStandardMaterial({ color: '#0b0b10', roughness: 0.2 }),
       shine: new THREE.MeshBasicMaterial({ color: '#ffffff' }),
     }),
@@ -46,25 +48,35 @@ function usePalette(color: string): Palette {
 }
 
 // Primitive helpers.
+// Shapes are high-detail so smooth shading reads as rounded, not faceted.
+// `d` is a relative detail hint from the original low-poly design: tiny
+// parts (eyes, highlights) stay lighter, everything else gets 32x24.
 function Ball({ m, p = [0, 0, 0], s = [1, 1, 1], r = [0, 0, 0], d = 14 }: { m: THREE.Material; p?: V3; s?: V3; r?: V3; d?: number }) {
+  const w = d <= 6 ? 16 : 32;
   return (
     <mesh material={m} position={p} scale={s} rotation={r}>
-      <sphereGeometry args={[1, d, Math.max(6, Math.round(d * 0.7))]} />
+      <sphereGeometry args={[1, w, Math.round(w * 0.75)]} />
     </mesh>
   );
 }
 function Cone({ m, p = [0, 0, 0], s = [1, 1, 1], r = [0, 0, 0], seg = 8 }: { m: THREE.Material; p?: V3; s?: V3; r?: V3; seg?: number }) {
   return (
     <mesh material={m} position={p} scale={s} rotation={r}>
-      <coneGeometry args={[1, 1, seg]} />
+      <coneGeometry args={[1, 1, Math.max(24, seg * 4), 4]} />
     </mesh>
   );
 }
 function Leg({ m, p, len = 0.5, w = 0.11 }: { m: THREE.Material; p: V3; len?: number; w?: number }) {
   return (
-    <mesh material={m} position={[p[0], p[1] - len / 2, p[2]]}>
-      <cylinderGeometry args={[w, w * 0.85, len, 7]} />
-    </mesh>
+    <group>
+      <mesh material={m} position={[p[0], p[1] - len / 2, p[2]]}>
+        <cylinderGeometry args={[w, w * 0.85, len, 20]} />
+      </mesh>
+      {/* Rounded foot */}
+      <mesh material={m} position={[p[0], p[1] - len, p[2]]} scale={[w * 0.95, w * 0.7, w * 0.95]}>
+        <sphereGeometry args={[1, 20, 14]} />
+      </mesh>
+    </group>
   );
 }
 function Eye({ pal, p, size = 0.07 }: { pal: Palette; p: V3; size?: number }) {
@@ -251,7 +263,7 @@ const Fox: Rig = (pal, register) => {
         <Cone m={pal.light} p={[0.34, -0.06, 0]} s={[0.12, 0.38, 0.12]} r={[0, 0, -PI / 2]} seg={6} />
         <Ball m={pal.eye} p={[0.54, -0.05, 0]} s={[0.04, 0.04, 0.04]} d={6} />
         <mesh ref={earL} material={pal.dark} position={[-0.02, 0.33, 0.13]} scale={[0.1, 0.32, 0.06]} rotation={[0.2, 0, 0]}>
-          <coneGeometry args={[1, 1, 4]} />
+          <coneGeometry args={[1, 1, 24, 4]} />
         </mesh>
         <Cone m={pal.dark} p={[-0.02, 0.33, -0.13]} s={[0.1, 0.32, 0.06]} r={[-0.2, 0, 0]} seg={4} />
         <Eye pal={pal} p={[0.2, 0.08, 0.16]} size={0.045} />
