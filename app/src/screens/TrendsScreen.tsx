@@ -19,6 +19,7 @@ import {
 import { useAuth } from '../logic/auth';
 import { fetchStreak, fetchWeeksTracked, pullCheckIns, subscribeCheckIns } from '../logic/sync';
 import { F, T } from '../theme';
+import { readResonance } from '../logic/resonance';
 
 const DAYS = 14;
 const VW = 320;
@@ -75,6 +76,7 @@ export default function TrendsScreen({
   const streak = currentStreak(log);
   const hasData = log.length > 0;
   const goodDays = compareGoodDays(log);
+  const resonance = readResonance(log);
 
   // Build contiguous line segments so gaps read as gaps, not as a flat lie.
   const segments: string[] = [];
@@ -207,6 +209,28 @@ export default function TrendsScreen({
           )}
         </View>
 
+        <View style={styles.resonanceCard}>
+          <Text style={[styles.insightKicker, { color: a.accent }]}>RESONANCE</Text>
+          <Text style={styles.discoveryTitle}>{resonance.ready ? 'This day has a familiar shape' : 'The picture is still forming'}</Text>
+          <Text style={styles.insightText}>{resonance.thread}</Text>
+          {resonance.matches.length > 0 && (
+            <View style={styles.resonanceDates}>
+              {resonance.matches.map((entry) => (
+                <View key={entry.date} style={styles.resonanceDay}>
+                  <Text style={styles.resonanceDate}>{entry.date}</Text>
+                  <Text style={styles.resonanceSignal}>{entry.level}{entry.reason ? ` · ${entry.reason}` : ''}</Text>
+                </View>
+              ))}
+            </View>
+          )}
+          <Text style={styles.discoveryFine}>{resonance.trace} This is a reflection of what you recorded, not a forecast.</Text>
+          {resonance.pulseQuestion ? (
+            <Pressable style={[styles.goodDaysBtn, { borderColor: a.accent }]} onPress={() => onAskPulse(resonance.pulseQuestion)}>
+              <Text style={[styles.goodDaysBtnText, { color: a.accent }]}>Follow the Thread →</Text>
+            </Pressable>
+          ) : null}
+        </View>
+
         {/* Insight */}
         <View style={[styles.insightCard, { borderColor: `${a.accent}44` }]}>
           <Text style={[styles.insightKicker, { color: a.accent }]}>THE PATTERN</Text>
@@ -276,6 +300,11 @@ const styles = StyleSheet.create({
   factorValue: { color: T.muted, fontFamily: F.mono, fontSize: 11, textAlign: 'right' },
   goodDaysBtn: { borderWidth: 1, borderRadius: 18, paddingVertical: 12, alignItems: 'center', marginTop: 14 },
   goodDaysBtnText: { fontSize: 13, fontWeight: '700' },
+  resonanceCard: { backgroundColor: 'rgba(18,18,20,0.72)', borderColor: 'rgba(255,255,255,0.14)', borderWidth: 1, borderRadius: 18, padding: 18, marginTop: 24 },
+  resonanceDates: { gap: 7, marginTop: 12 },
+  resonanceDay: { flexDirection: 'row', justifyContent: 'space-between', gap: 12, borderTopWidth: 1, borderTopColor: T.hairline, paddingTop: 8 },
+  resonanceDate: { color: T.muted, fontFamily: F.mono, fontSize: 11 },
+  resonanceSignal: { color: T.text, fontSize: 12, textTransform: 'capitalize' },
   insightCard: {
     backgroundColor: 'rgba(18,18,20,0.55)',
     borderWidth: 1,
