@@ -143,10 +143,6 @@ Deno.serve(async (req: Request) => {
     if (!(await withinRateLimit(req, String(body.kind ?? 'chat'))))
       return json({ error: 'rate_limited' }, 429);
 
-    let system: string;
-    let messages: { role: string; content: string }[];
-    let maxTokens = 400;
-
     if (body.kind !== 'reading' && body.kind !== 'chat') {
       return json({ error: 'invalid request kind' }, 400);
     }
