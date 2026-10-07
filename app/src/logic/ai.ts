@@ -1,4 +1,5 @@
 import Anthropic from '@anthropic-ai/sdk';
+import { blendFor } from '../data/blends';
 import { ARCHETYPES } from '../data/archetypes';
 import { Option, QUIZ } from '../data/quiz';
 import { RhythmResult } from './score';
@@ -47,6 +48,14 @@ export interface ChatTurn {
 }
 
 // Pulse's voice — the guardrails from the concept doc, enforced as a system prompt.
+// The animal's one-liner, plus the blend when there is one, e.g.
+// "...; blend: Steady Dolphin (A Bear streak: ...)".
+function describe(result: RhythmResult): string {
+  const a = ARCHETYPES[result.animal];
+  const blend = blendFor(result);
+  return blend ? `${a.oneLiner}; blend: ${blend.name} (${blend.line})` : a.oneLiner;
+}
+
 function systemPrompt(result: RhythmResult, answers: Option[]): string {
   const a = ARCHETYPES[result.animal];
   const profile = answers
@@ -55,7 +64,7 @@ function systemPrompt(result: RhythmResult, answers: Option[]): string {
 
   return `You are Pulse, the AI companion inside Circadia, a wellness app that reads people's nervous-system rhythms.
 
-The user just took the onboarding quiz. Their rhythm animal is the ${a.name} (${a.oneLiner}). From their actual answers: peak focus ${result.peak}, crash risk around ${result.crash}, recharges through ${result.recharge}.
+The user just took the onboarding quiz. Their rhythm animal is the ${a.name} (${describe(result)}). From their actual answers: peak focus ${result.peak}, crash risk around ${result.crash}, recharges through ${result.recharge}.
 
 Their raw answers:
 ${profile}
@@ -92,7 +101,7 @@ type Msg = { role: 'user' | 'assistant'; content: string };
 function profilePieces(result: RhythmResult, answers: Option[]) {
   const a = ARCHETYPES[result.animal];
   return {
-    archetype: { name: a.name, oneLiner: a.oneLiner },
+    archetype: { name: a.name, oneLiner: describe(result) },
     chips: { peak: result.peak, crash: result.crash, recharge: result.recharge },
     profileLines: answers.map((opt, i) => `${QUIZ[i].prompt} → ${opt.label}`),
   };

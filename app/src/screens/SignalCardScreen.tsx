@@ -10,6 +10,7 @@ import { canCaptureImage, captureAndShare } from '../logic/capture';
 import PulseLine from '../components/PulseLine';
 import { F } from '../theme';
 import Scrim from '../components/Scrim';
+import { displayName } from '../data/blends';
 
 export default function SignalCardScreen({
   result,
@@ -37,7 +38,7 @@ export default function SignalCardScreen({
       setStatus('shared');
       return;
     }
-    const r = await shareText(`“${statement}” (my ${a.name} rhythm, mapped by Circadia)`);
+    const r = await shareText(`“${statement}” (my ${displayName(result)} rhythm, mapped by Circadia)`);
     if (r === 'copied') setStatus('copied');
     else if (r === 'shared') setStatus('shared');
   };
@@ -68,7 +69,7 @@ export default function SignalCardScreen({
             <View style={[styles.emblem, { borderColor: `${tint}66` }]}>
               <Text style={styles.emblemEmoji}>{a.emoji}</Text>
             </View>
-            <Text style={[styles.cardKicker, { color: tint }]}>{a.name.toUpperCase()} RHYTHM</Text>
+            <Text style={[styles.cardKicker, { color: tint }]}>{displayName(result).toUpperCase()} RHYTHM</Text>
           </View>
 
           <Text style={styles.statement}>{statement}</Text>

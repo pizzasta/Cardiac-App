@@ -22,6 +22,7 @@ import Protected from '../components/Protected';
 import { F } from '../theme';
 import Scrim from '../components/Scrim';
 import PressableScale from '../components/PressableScale';
+import { blendFor, displayName } from '../data/blends';
 
 function fmtTime(hour: number, minute: number): string {
   const ampm = hour < 12 ? 'AM' : 'PM';
@@ -56,6 +57,7 @@ export default function PlanScreen({
 }) {
   const a = ARCHETYPES[result.animal];
   const plan = PLANS[result.animal];
+  const blend = blendFor(result);
   const flow = personalFlow(plan.flow, result);
 
   const [notifsOn, setNotifsOn] = useState(false);
@@ -114,7 +116,7 @@ export default function PlanScreen({
 
       <ScrollView contentContainerStyle={styles.body}>
         <Text style={styles.animal}>
-          {a.emoji}  {a.name}
+          {a.emoji}  {displayName(result)}
         </Text>
         <Text style={styles.intro}>{plan.intro}</Text>
 
@@ -246,6 +248,24 @@ export default function PlanScreen({
             <Text style={styles.tipText}>{t.text}</Text>
           </Pressable>
         ))}
+        {blend && (
+          <Pressable
+            style={[styles.tipCard, { borderColor: `${a.accent}55`, borderWidth: 1 }]}
+            onPress={() =>
+              onPulse(
+                `I'm a ${blend.name} (a ${a.name} with a ${ARCHETYPES[blend.streak].name} streak). Give me one concrete way to use this tip today: "${blend.tip.text}"`
+              )
+            }
+          >
+            <View style={styles.tipHead}>
+              <Text style={[styles.tipLabel, { color: a.accent }]}>
+                FROM YOUR {ARCHETYPES[blend.streak].name.toUpperCase()} STREAK · {blend.tip.label}
+              </Text>
+              <Text style={[styles.tipGo, { color: a.accent }]}>Ask ›</Text>
+            </View>
+            <Text style={styles.tipText}>{blend.tip.text}</Text>
+          </Pressable>
+        )}
 
         <Text style={styles.section}>DETAILED PLAN</Text>
         <Protected

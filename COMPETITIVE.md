@@ -71,6 +71,13 @@ Decision: keep six animals. Eight questions can't reliably separate more, and si
 - Close results show the runner-up ("with a Bear streak").
 - The reveal explains "Why you got Dolphin" using the answers that pointed there.
 
+### Round two: 12 questions and named blends
+
+- Added four questions aimed at the hardest pairs to separate: a free day (Fox / Bear / Wolf), a loud room (Dolphin / Octopus), a big decision (Fox / Octopus / Hummingbird) and natural bedtime (Wolf / Bear / Fox).
+- Ties now break on "signature" answers (the 3-point picks that most define an animal) before the fixed priority list.
+- Re-scoring all 16.7 million answer sets: every animal lands between 14.5% and 18.3% (was 10.5% to 24.3%), and unresolved ties fell from 18% to 5.7%.
+- Named blends (`data/blends.ts`): when a second animal finishes within 3 points, its streak flavours the name, e.g. "Steady Dolphin" (a Dolphin with a Bear streak). That's 30 named identities; about three in four people get one. Each blend adds a line on the reveal and a tip from the streak animal's plan.
+
 ## Next opportunities (not built yet)
 
 - **Apple Health / Health Connect sleep import** to sharpen the forecast (Rise's main moat).

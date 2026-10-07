@@ -38,6 +38,7 @@ import { playSfx } from '../logic/sfx';
 import Scrim from '../components/Scrim';
 import Rise from '../components/Rise';
 import PressableScale from '../components/PressableScale';
+import { displayName } from '../data/blends';
 
 function greeting(now = new Date()): string {
   const h = now.getHours();
@@ -124,7 +125,7 @@ export default function TodayScreen({
           style={styles.header}
         >
           <Text style={styles.kicker}>
-            {arch.emoji} {arch.name.toUpperCase()}
+            {arch.emoji} {displayName(result).toUpperCase()}
           </Text>
           <Text style={styles.greeting}>{greeting(now)}.</Text>
           <Text style={styles.headerCopy}>

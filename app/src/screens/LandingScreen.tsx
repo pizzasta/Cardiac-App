@@ -17,13 +17,13 @@ import PressableScale from '../components/PressableScale';
 const ACCENT = T.accent;
 
 const STEPS = [
-  { n: '1', t: 'Answer 8 questions', s: 'Sixty seconds. No account, no fluff.' },
+  { n: '1', t: 'Answer 12 questions', s: 'About 90 seconds. No account, no fluff.' },
   { n: '2', t: 'Meet your rhythm animal', s: 'How your nervous system actually runs.' },
   { n: '3', t: 'Get your daily plan', s: 'Your real peaks, crashes, and wind-down.' },
 ];
 
 const FEATURES = [
-  { t: 'Your rhythm animal', s: 'Eight questions decode how your nervous system runs.' },
+  { t: 'Your rhythm animal', s: 'Twelve quick questions decode how your energy runs.' },
   { t: 'A plan that fits your wiring', s: 'Your real peak, dip and wind-down, as a daily flow.' },
   { t: 'Days like today', s: 'See past days that looked like this one, and what came after.' },
   { t: 'Sleep on your schedule', s: 'A wind-down and wake window tuned to your chronotype.' },
@@ -91,7 +91,7 @@ export default function LandingScreen({
             <Text style={styles.kicker}>CIRCADIA</Text>
             <Text style={styles.h1}>You’re not tired.{'\n'}You’re out of rhythm.</Text>
             <Text style={styles.sub}>
-              A 60-second read of how your energy, stress, and sleep actually work, then a daily
+              A 90-second read of how your energy, stress, and sleep actually work, then a daily
               plan built around it.
             </Text>
             <Cta />
@@ -181,7 +181,7 @@ export default function LandingScreen({
         {/* FINAL CTA */}
         <Section>
           <Text style={styles.h1b}>Find your rhythm.</Text>
-          <Text style={styles.sub}>60 seconds. Free. No signup to start.</Text>
+          <Text style={styles.sub}>90 seconds. Free. No signup to start.</Text>
           <Cta />
         </Section>
 
