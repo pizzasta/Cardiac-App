@@ -205,3 +205,53 @@ export function readFor(animalName: string, level: Level): { read: string; move:
     move: 'Good moment to do the one thing that actually matters today.',
   };
 }
+
+
+export interface GoodDayPattern {
+  ready: boolean;
+  total: number;
+  steadyDays: number;
+  factors: { reason: string; steadyPct: number; otherPct: number; difference: number }[];
+  summary: string;
+  pulseQuestion: string;
+}
+
+export function compareGoodDays(log: PulseEntry[], minimum = 7): GoodDayPattern {
+  const recent = log.slice(-30);
+  const steady = recent.filter((entry) => entry.level === 'steady');
+  const other = recent.filter((entry) => entry.level !== 'steady');
+  const ready = recent.length >= minimum && steady.length >= 2 && other.length >= 2;
+
+  const factors = REASONS.map((reason) => {
+    const steadyCount = steady.filter((entry) => entry.reason === reason).length;
+    const otherCount = other.filter((entry) => entry.reason === reason).length;
+    const steadyPct = steady.length ? Math.round((steadyCount / steady.length) * 100) : 0;
+    const otherPct = other.length ? Math.round((otherCount / other.length) * 100) : 0;
+    return { reason, steadyPct, otherPct, difference: steadyPct - otherPct };
+  })
+    .filter((factor) => factor.steadyPct > 0)
+    .sort((a, b) => b.difference - a.difference || b.steadyPct - a.steadyPct)
+    .slice(0, 3);
+
+  const top = factors[0];
+  const summary = !ready
+    ? 'Keep checking in. Compare My Good Days unlocks after at least 7 check-ins with a mix of Steady and other days.'
+    : top && top.difference > 0
+      ? `"${top.reason}" showed up more often on your Steady check-ins than on your other check-ins.`
+      : 'Your Steady days do not show one clear reason pattern yet.';
+
+  const factorText = factors.length
+    ? factors.map((factor) => `${factor.reason}: ${factor.steadyPct}% of Steady days vs ${factor.otherPct}% of other days`).join('; ')
+    : 'No clear reason pattern yet';
+
+  const pulseQuestion = [
+    'Compare my better Circadia days using only my check-in history.',
+    `I have ${recent.length} recent check-ins, including ${steady.length} Steady days.`,
+    `Observed reason patterns: ${factorText}.`,
+    'Explain what looks different about my Steady days in plain language.',
+    'Treat these as associations only. Do not claim causation, diagnosis, or medical certainty.',
+    'Give me one small experiment I could try based on the pattern.',
+  ].join(' ');
+
+  return { ready, total: recent.length, steadyDays: steady.length, factors, summary, pulseQuestion };
+}

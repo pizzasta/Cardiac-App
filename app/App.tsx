@@ -265,6 +265,10 @@ function Flow() {
             setShowTrends(false);
             setShowCard(true);
           }}
+          onAskPulse={(seed) => {
+            setShowTrends(false);
+            openPulse(seed);
+          }}
         />
       )}
       {showCard && result && (

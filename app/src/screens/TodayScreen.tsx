@@ -17,23 +17,63 @@ import { RhythmResult } from '../logic/score';
 import { PulseEntry, load, getToday, currentStreak } from '../logic/pulselog';
 import { weeklyReport, WeeklyReport } from '../logic/weekly';
 import { F, T } from '../theme';
-import { ActiveExperiment, EXPERIMENTS, experimentDay, getActiveExperiment, startExperiment, stopExperiment } from '../logic/experiments';
+import { ActiveExperiment, ExperimentOutcome, EXPERIMENTS, dismissLastExperiment, experimentDay, experimentOutcome, getActiveExperiment, getLastExperiment, startExperiment, stopExperiment } from '../logic/experiments';
 
-// Minutes since midnight for a 'HH:MM' label; -1 if unparseable.
-function toMinutes(hhmm: string): number {
-  const m = /^(\d{1,2}):(\d{2})/.exec(hhmm.trim());
-  if (!m) return -1;
-  return parseInt(m[1], 10) * 60 + parseInt(m[2], 10);
+function parseFlowTime(label: string): { mins: number; explicitMeridiem: boolean } {
+  const match = /^(\d{1,2}):(\d{2})\s*(AM|PM)?$/i.exec(label.trim());
+  if (!match) return { mins: -1, explicitMeridiem: false };
+
+  let hour = parseInt(match[1], 10) % 12;
+  const minute = parseInt(match[2], 10);
+  const meridiem = match[3]?.toUpperCase();
+  if (meridiem === 'PM') hour += 12;
+
+  return { mins: hour * 60 + minute, explicitMeridiem: !!meridiem };
+}
+
+// The flow is authored in chronological order, while many labels omit AM/PM.
+// Convert those labels into an increasing timeline so 1:45 after 9:30 becomes
+// 13:45, and a final 12:00 after 9:00 can represent midnight (1440).
+function effectiveFlowMinutes(flow: FlowItem[]): number[] {
+  const out: number[] = [];
+  let previous = -1;
+
+  for (const item of flow) {
+    const parsed = parseFlowTime(item.time);
+    if (parsed.mins < 0) {
+      out.push(previous);
+      continue;
+    }
+
+    let value = parsed.mins;
+    if (!parsed.explicitMeridiem) {
+      while (value <= previous) value += 12 * 60;
+    }
+
+    out.push(value);
+    previous = value;
+  }
+
+  return out;
 }
 
 // The flow item whose time has most recently passed = where you are 'now'.
-// Before the first item, fall back to the first; with no flow, -1.
+// Very-late items that wrap past midnight remain selectable just after midnight;
+// otherwise, before the first daytime item we intentionally fall back to item 0.
 function currentFlowIndex(flow: FlowItem[], now = new Date()): number {
   if (flow.length === 0) return -1;
-  const mins = now.getHours() * 60 + now.getMinutes();
+
+  const timeline = effectiveFlowMinutes(flow);
+  let nowMinutes = now.getHours() * 60 + now.getMinutes();
+
+  const hasWrappedLateNightItem = timeline.some((value) => value >= 24 * 60);
+  if (hasWrappedLateNightItem && nowMinutes < 4 * 60) {
+    nowMinutes += 24 * 60;
+  }
+
   let idx = 0;
-  for (let i = 0; i < flow.length; i++) {
-    if (toMinutes(flow[i].time) <= mins) idx = i;
+  for (let i = 0; i < timeline.length; i++) {
+    if (timeline[i] >= 0 && timeline[i] <= nowMinutes) idx = i;
   }
   return idx;
 }
@@ -67,6 +107,8 @@ export default function TodayScreen({
   const [streak, setStreak] = useState(0);
   const [report, setReport] = useState<WeeklyReport | null>(null);
   const [experiment, setExperiment] = useState<ActiveExperiment | null>(null);
+  const [lastExperiment, setLastExperiment] = useState<ActiveExperiment | null>(null);
+  const [outcome, setOutcome] = useState<ExperimentOutcome | null>(null);
 
   // Refresh local stats whenever the screen mounts.
   useEffect(() => {
@@ -77,7 +119,11 @@ export default function TodayScreen({
       setToday(getToday(log));
       setStreak(currentStreak(log));
       setReport(weeklyReport(log));
-      setExperiment(await getActiveExperiment());
+      const active = await getActiveExperiment();
+      const last = await getLastExperiment();
+      setExperiment(active);
+      setLastExperiment(last);
+      setOutcome(last ? experimentOutcome(last, log) : null);
     })();
     return () => {
       alive = false;
@@ -105,12 +151,12 @@ export default function TodayScreen({
           </Text>
           <Text style={styles.greeting}>{greeting()}.</Text>
           <Text style={styles.headerCopy}>
-            Your focus should be sharpest around {result.peak}. Watch the dip
-            near {result.crash}.
+            Your quiz suggests a stronger focus window around {result.peak} and a
+            possible lower-energy window near {result.crash}. Your check-ins help refine the picture.
           </Text>
         </LinearGradient>
 
-        {/* Rhythm ribbon: today's predicted energy, with the now-marker. */}
+        {/* Rhythm ribbon: today's suggested rhythm, with the now-marker. */}
         <Text style={styles.section}>TODAY’S RHYTHM</Text>
         <View style={styles.ribbon}>
           {flow.map((item, i) => (

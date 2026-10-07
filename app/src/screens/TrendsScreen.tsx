@@ -7,6 +7,7 @@ import { ARCHETYPES, TINTS } from '../data/archetypes';
 import { RhythmResult } from '../logic/score';
 import {
   checkInsInWindow,
+  compareGoodDays,
   currentStreak,
   Level,
   load,
@@ -18,6 +19,8 @@ import {
 import { useAuth } from '../logic/auth';
 import { fetchStreak, fetchWeeksTracked, pullCheckIns, subscribeCheckIns } from '../logic/sync';
 import { F, T } from '../theme';
+import { readResonance } from '../logic/resonance';
+import RhythmConstellation from '../components/RhythmConstellation';
 
 const DAYS = 14;
 const VW = 320;
@@ -28,11 +31,13 @@ export default function TrendsScreen({
   onClose,
   onCheckIn,
   onShare,
+  onAskPulse,
 }: {
   result: RhythmResult;
   onClose: () => void;
   onCheckIn: () => void;
   onShare: () => void;
+  onAskPulse: (seed: string) => void;
 }) {
   const a = ARCHETYPES[result.animal];
   const tint = TINTS[result.animal];
@@ -71,6 +76,8 @@ export default function TrendsScreen({
   const rhythm = checkInsInWindow(log, DAYS);
   const streak = currentStreak(log);
   const hasData = log.length > 0;
+  const goodDays = compareGoodDays(log);
+  const resonance = readResonance(log);
 
   // Build contiguous line segments so gaps read as gaps, not as a flat lie.
   const segments: string[] = [];
@@ -185,6 +192,47 @@ export default function TrendsScreen({
           </View>
         )}
 
+        <View style={styles.goodDaysCard}>
+          <Text style={[styles.insightKicker, { color: a.accent }]}>COMPARE MY GOOD DAYS</Text>
+          <Text style={styles.discoveryTitle}>{goodDays.ready ? 'What looks different on your Steady days' : 'Keep checking in to unlock this'}</Text>
+          <Text style={styles.insightText}>{goodDays.summary}</Text>
+          {goodDays.ready && goodDays.factors.map((factor) => (
+            <View key={factor.reason} style={styles.factorRow}>
+              <Text style={styles.factorName}>{factor.reason}</Text>
+              <Text style={styles.factorValue}>{factor.steadyPct}% Steady · {factor.otherPct}% other</Text>
+            </View>
+          ))}
+          <Text style={styles.discoveryFine}>Based only on your Circadia check-ins. These are associations, not proof of cause.</Text>
+          {goodDays.ready && (
+            <Pressable style={[styles.goodDaysBtn, { borderColor: a.accent }]} onPress={() => onAskPulse(goodDays.pulseQuestion)}>
+              <Text style={[styles.goodDaysBtnText, { color: a.accent }]}>Ask Pulse about this pattern</Text>
+            </Pressable>
+          )}
+        </View>
+
+        <View style={styles.resonanceCard}>
+          <Text style={[styles.insightKicker, { color: a.accent }]}>RESONANCE</Text>
+          <Text style={styles.discoveryTitle}>{resonance.ready ? 'This day has a familiar shape' : 'The picture is still forming'}</Text>
+          <Text style={styles.insightText}>{resonance.thread}</Text>
+          {resonance.ready && <View style={styles.constellation}><RhythmConstellation log={log} matches={resonance.matches} tint={tint} /></View>}
+          {resonance.matches.length > 0 && (
+            <View style={styles.resonanceDates}>
+              {resonance.matches.map((entry) => (
+                <View key={entry.date} style={styles.resonanceDay}>
+                  <Text style={styles.resonanceDate}>{entry.date}</Text>
+                  <Text style={styles.resonanceSignal}>{entry.level}{entry.reason ? ` · ${entry.reason}` : ''}</Text>
+                </View>
+              ))}
+            </View>
+          )}
+          <Text style={styles.discoveryFine}>{resonance.trace} This is a reflection of what you recorded, not a forecast.</Text>
+          {resonance.pulseQuestion ? (
+            <Pressable style={[styles.goodDaysBtn, { borderColor: a.accent }]} onPress={() => onAskPulse(resonance.pulseQuestion)}>
+              <Text style={[styles.goodDaysBtnText, { color: a.accent }]}>Follow the Thread →</Text>
+            </Pressable>
+          ) : null}
+        </View>
+
         {/* Insight */}
         <View style={[styles.insightCard, { borderColor: `${a.accent}44` }]}>
           <Text style={[styles.insightKicker, { color: a.accent }]}>THE PATTERN</Text>
@@ -248,6 +296,18 @@ const styles = StyleSheet.create({
   discoveryCard: { backgroundColor: 'rgba(18,18,20,0.72)', borderColor: 'rgba(255,255,255,0.14)', borderWidth: 1, borderRadius: 18, padding: 18, marginTop: 24 },
   discoveryTitle: { color: T.text, fontFamily: F.display, fontSize: 17, marginTop: 7, marginBottom: 6 },
   discoveryFine: { color: T.muted, fontSize: 11, lineHeight: 16, marginTop: 10 },
+  goodDaysCard: { backgroundColor: 'rgba(18,18,20,0.72)', borderColor: 'rgba(255,255,255,0.14)', borderWidth: 1, borderRadius: 18, padding: 18, marginTop: 24 },
+  factorRow: { flexDirection: 'row', justifyContent: 'space-between', gap: 12, marginTop: 10 },
+  factorName: { color: T.text, fontSize: 13, textTransform: 'capitalize' },
+  factorValue: { color: T.muted, fontFamily: F.mono, fontSize: 11, textAlign: 'right' },
+  goodDaysBtn: { borderWidth: 1, borderRadius: 18, paddingVertical: 12, alignItems: 'center', marginTop: 14 },
+  goodDaysBtnText: { fontSize: 13, fontWeight: '700' },
+  resonanceCard: { backgroundColor: 'rgba(18,18,20,0.72)', borderColor: 'rgba(255,255,255,0.14)', borderWidth: 1, borderRadius: 18, padding: 18, marginTop: 24 },
+  constellation: { marginTop: 12, backgroundColor: 'rgba(255,255,255,0.025)', borderRadius: 14, overflow: 'hidden' },
+  resonanceDates: { gap: 7, marginTop: 12 },
+  resonanceDay: { flexDirection: 'row', justifyContent: 'space-between', gap: 12, borderTopWidth: 1, borderTopColor: T.hairline, paddingTop: 8 },
+  resonanceDate: { color: T.muted, fontFamily: F.mono, fontSize: 11 },
+  resonanceSignal: { color: T.text, fontSize: 12, textTransform: 'capitalize' },
   insightCard: {
     backgroundColor: 'rgba(18,18,20,0.55)',
     borderWidth: 1,
