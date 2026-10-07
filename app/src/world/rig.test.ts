@@ -11,6 +11,7 @@ import {
   ridgeline,
   STATIONS,
   sunElevation,
+  sunsetGlow,
   TILE_LENGTH,
 } from './rig';
 
@@ -113,5 +114,14 @@ describe('mood motion', () => {
     expect(hopHeight(HOP_SECONDS * 0.3)).toBeCloseTo(0.6, 1);
     expect(hopHeight(HOP_SECONDS * 0.8)).toBeCloseTo(0.2, 1);
     expect(hopHeight(HOP_SECONDS)).toBe(0);
+  });
+});
+
+describe('sunsetGlow', () => {
+  it('peaks at sunset, fades by night and midday, and skips sunrise', () => {
+    expect(sunsetGlow(19.2, sunElevation(19.2))).toBeGreaterThan(0.8);
+    expect(sunsetGlow(23.5, sunElevation(23.5))).toBeLessThan(0.05);
+    expect(sunsetGlow(13, sunElevation(13))).toBeLessThan(0.05);
+    expect(sunsetGlow(6.2, sunElevation(6.2))).toBe(0);
   });
 });

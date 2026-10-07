@@ -162,3 +162,12 @@ export function hopHeight(since: number): number {
   // Two hops: a big one, then a small one.
   return p < 0.6 ? Math.sin((p / 0.6) * Math.PI) * 0.6 : Math.sin(((p - 0.6) / 0.4) * Math.PI) * 0.2;
 }
+
+// Strength (0–1) of the deep-pink sunset glow: evenings only, peaking just
+// after the sun touches the horizon and fading into night. Sunrise keeps the
+// sky's natural gold.
+export function sunsetGlow(hour: number, elevation: number): number {
+  const h = ((hour % 24) + 24) % 24;
+  if (h < 12) return 0;
+  return Math.exp(-(((elevation + 1) / 5.5) ** 2));
+}

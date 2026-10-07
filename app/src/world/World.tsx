@@ -25,6 +25,7 @@ import {
   ridgeline,
   STATIONS,
   sunElevation,
+  sunsetGlow,
   TILE_LENGTH,
   WorldMode,
 } from './rig';
@@ -74,6 +75,8 @@ interface Params {
   // Sun elevation (degrees) and daylight 0..1, from the local clock.
   elevation: number;
   day: number;
+  // Deep-pink sunset glow, 0..1 (evenings only).
+  dusk: number;
   fog: THREE.Color;
 }
 
@@ -112,11 +115,13 @@ function Rig({ live, params }: { live: React.MutableRefObject<Live>; params: Rea
     if (Math.random() < 0.002) hour.current = localHour();
     p.elevation = damp(p.elevation, sunElevation(hour.current), 0.5 * k, dt);
     p.day = daylight(p.elevation);
+    p.dusk = sunsetGlow(hour.current, p.elevation);
     timeColor(p.fog, PALETTE.fog, p.day);
+    p.fog.lerp(DUSK.fog, 0.75 * p.dusk);
     if (scene.fog) (scene.fog as THREE.Fog).color.copy(p.fog);
     // Darker exposure as the day brightens keeps the sky from washing out
     // behind white text.
-    gl.toneMappingExposure = 0.5 - 0.36 * p.day;
+    gl.toneMappingExposure = 0.5 - 0.36 * p.day - 0.16 * p.dusk;
 
     p.travel = damp(p.travel, still ? 0 : s.travel, 1.2 * k, dt);
     p.glow = damp(p.glow, s.glow, 2 * k, dt);
@@ -176,7 +181,7 @@ function Sky({ params }: { params: React.MutableRefObject<Params> }) {
       moonLight.current.intensity = 0.35 * (1 - p.day);
     }
     if (hemi.current) {
-      timeColor(hemi.current.color, PALETTE.sky, p.day);
+      timeColor(hemi.current.color, PALETTE.sky, p.day).lerp(DUSK.light, 0.6 * p.dusk);
       hemi.current.intensity = 0.6 + 0.8 * p.day;
     }
   });
@@ -188,6 +193,45 @@ function Sky({ params }: { params: React.MutableRefObject<Params> }) {
       <directionalLight ref={sun} color="#ffd2a1" />
       <directionalLight ref={moonLight} color="#a9bcff" />
     </>
+  );
+}
+
+// Evening colours: a deep magenta horizon fading to plum, with pink haze.
+const DUSK = {
+  horizon: new THREE.Color('#a3104e'),
+  mid: new THREE.Color('#3e0a2c'),
+  fog: new THREE.Color('#3d1631'),
+  light: new THREE.Color('#b0507e'),
+};
+
+// A deep-pink sunset laid over the physically based sky in the evening.
+// Per-vertex alpha keeps it strongest at the horizon and clear overhead.
+function SunsetGlow({ params }: { params: React.MutableRefObject<Params> }) {
+  const mat = useRef<THREE.MeshBasicMaterial>(null);
+  const geometry = useMemo(() => {
+    const g = new THREE.SphereGeometry(1200, 48, 24);
+    const pos = g.attributes.position as THREE.BufferAttribute;
+    const colors = new Float32Array(pos.count * 4);
+    const c = new THREE.Color();
+    for (let i = 0; i < pos.count; i++) {
+      const h = Math.max(0, pos.getY(i) / 1200);
+      // Brightest toward the sunset (straight ahead), dimmer behind.
+      const ahead = 0.6 + 0.4 * Math.max(0, -pos.getZ(i) / 1200);
+      c.copy(DUSK.horizon).lerp(DUSK.mid, Math.min(1, h * 2.2));
+      const alpha = Math.min(1, Math.exp(-h * 1.6) * 1.1) * ahead;
+      colors.set([c.r, c.g, c.b, pos.getY(i) < -40 ? 0 : alpha], i * 4);
+    }
+    g.setAttribute('color', new THREE.BufferAttribute(colors, 4));
+    return g;
+  }, []);
+  useEffect(() => () => geometry.dispose(), [geometry]);
+  useFrame(() => {
+    if (mat.current) mat.current.opacity = 0.95 * params.current.dusk;
+  });
+  return (
+    <mesh geometry={geometry}>
+      <meshBasicMaterial ref={mat} vertexColors side={THREE.BackSide} transparent depthWrite={false} fog={false} toneMapped={false} />
+    </mesh>
   );
 }
 
@@ -569,6 +613,7 @@ function Scene({
     color: live.current.tint.clone(),
     elevation: sunElevation(localHour()),
     day: daylight(sunElevation(localHour())),
+    dusk: sunsetGlow(localHour(), sunElevation(localHour())),
     fog: new THREE.Color(BG),
   });
   return (
@@ -576,6 +621,7 @@ function Scene({
       <fog attach="fog" args={[BG, 25, 420]} />
       <Rig live={live} params={params} />
       <Sky params={params} />
+      <SunsetGlow params={params} />
       <NightSky params={params} />
       <Stars params={params} />
       <Moon params={params} />
