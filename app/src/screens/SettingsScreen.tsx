@@ -14,6 +14,8 @@ import { useAuth } from '../logic/auth';
 import { F, T } from '../theme';
 import { RhythmResult } from '../logic/score';
 import { ARCHETYPES } from '../data/archetypes';
+import { load as loadLog } from '../logic/pulselog';
+import { exportCsv } from '../logic/export';
 import {
   canSchedule,
   disable as disableNotifs,
@@ -34,6 +36,7 @@ export default function SettingsScreen({
   onToggleMute,
   onSetVolume,
   onSignIn,
+  onDeleted,
   onClose,
 }: {
   result: RhythmResult | null;
@@ -42,6 +45,7 @@ export default function SettingsScreen({
   onToggleMute: () => void;
   onSetVolume: (v: number) => void;
   onSignIn: () => void;
+  onDeleted: () => void;
   onClose: () => void;
 }) {
   const { user, signOut, supabaseEnabled, deleteData } = useAuth();
@@ -51,11 +55,29 @@ export default function SettingsScreen({
   const [notifBusy, setNotifBusy] = useState(false);
   const [confirm, setConfirm] = useState<null | 'data' | 'account'>(null);
   const [delBusy, setDelBusy] = useState(false);
+  const [exportNote, setExportNote] = useState<string | null>(null);
+
+  const runExport = async () => {
+    const log = await loadLog();
+    if (!log.length) {
+      setExportNote('No check-ins yet — log a few days, then export.');
+      return;
+    }
+    const r = await exportCsv(log, result);
+    setExportNote(
+      r === 'downloaded'
+        ? `Downloaded ${log.length} check-in${log.length === 1 ? '' : 's'} as CSV.`
+        : r === 'shared'
+          ? 'Export ready.'
+          : 'Export isn’t available here.'
+    );
+  };
 
   const runDelete = async (account: boolean) => {
     setDelBusy(true);
     try {
       await deleteData(account);
+      onDeleted();
     } finally {
       setDelBusy(false);
       setConfirm(null);
@@ -99,7 +121,7 @@ export default function SettingsScreen({
           <Text style={styles.back}>‹ Back</Text>
         </Pressable>
         <Text style={styles.headerTitle}>Settings</Text>
-        <View style={{ width: 48 }} />
+        <View style={{ width: 64 }} />
       </View>
 
       <ScrollView contentContainerStyle={styles.body}>
@@ -199,6 +221,17 @@ export default function SettingsScreen({
 
         {/* DATA & PRIVACY */}
         <Text style={styles.section}>DATA & PRIVACY</Text>
+        <View style={[styles.card, { marginBottom: 12 }]}>
+          <Text style={styles.rowTitle}>Export my data</Text>
+          <Text style={styles.rowSub}>
+            Every check-in as a CSV you own — open it in any spreadsheet or share it with someone you
+            trust. Free, always.
+          </Text>
+          <Pressable style={[styles.btn, styles.btnGhost]} onPress={runExport}>
+            <Text style={styles.btnGhostText}>Export CSV</Text>
+          </Pressable>
+          {exportNote && <Text style={styles.note}>{exportNote}</Text>}
+        </View>
         <View style={styles.card}>
           <Text style={styles.rowTitle}>Delete my data</Text>
           <Text style={styles.rowSub}>
@@ -276,7 +309,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 18,
     paddingBottom: 8,
   },
-  back: { color: 'rgba(255,255,255,0.85)', fontSize: 16, fontWeight: '600', width: 48 },
+  back: { color: 'rgba(255,255,255,0.85)', fontSize: 16, fontWeight: '600', width: 64 },
   headerTitle: { color: '#fff', fontSize: 18, fontFamily: F.display },
   body: { paddingHorizontal: 22, paddingBottom: 44 },
   section: {

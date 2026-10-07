@@ -25,6 +25,7 @@ import SettingsScreen from './src/screens/SettingsScreen';
 import CheckInScreen from './src/screens/CheckInScreen';
 import TrendsScreen from './src/screens/TrendsScreen';
 import SignalCardScreen from './src/screens/SignalCardScreen';
+import ResetScreen from './src/screens/ResetScreen';
 import FadeIn from './src/components/FadeIn';
 import { Option } from './src/data/quiz';
 import { QUIZ } from './src/data/quiz';
@@ -32,14 +33,18 @@ import { ARCHETYPES } from './src/data/archetypes';
 import { RhythmResult, scoreQuiz } from './src/logic/score';
 import { AuthProvider, useAuth } from './src/logic/auth';
 import { pushResult } from './src/logic/sync';
+import { loadProfile, saveProfile } from './src/logic/profile';
+import type { Level } from './src/logic/pulselog';
 import { useFonts, SpaceGrotesk_700Bold } from '@expo-google-fonts/space-grotesk';
 import { JetBrainsMono_500Medium } from '@expo-google-fonts/jetbrains-mono';
 import { T } from './src/theme';
 
-type Stage = 'landing' | 'quiz' | 'reading' | 'reveal' | 'plan' | 'pulse';
+type Stage = 'boot' | 'landing' | 'quiz' | 'reading' | 'reveal' | 'plan' | 'pulse';
 
 function Flow() {
-  const [stage, setStage] = useState<Stage>('landing');
+  // 'boot' holds a blank frame while the saved profile is read, so returning
+  // users never see the landing page flash before their dashboard.
+  const [stage, setStage] = useState<Stage>('boot');
   const [result, setResult] = useState<RhythmResult | null>(null);
   // Kept around so the plan + Pulse can ground content in the user's answers.
   const [answers, setAnswers] = useState<Option[]>([]);
@@ -54,10 +59,31 @@ function Flow() {
   const [showToday, setShowToday] = useState(false);
   const [showTrends, setShowTrends] = useState(false);
   const [showCard, setShowCard] = useState(false);
+  // undefined = closed; null = open, default to today's check-in level.
+  const [resetLevel, setResetLevel] = useState<Level | null | undefined>(undefined);
   // App-wide rainforest ambience + persistent mute/volume (remembered across visits).
   const [muted, setMuted] = useState(false);
   const [volume, setVolume] = useState(0.6);
   const { completeOnboarding } = useAuth();
+
+  // Returning users: restore their rhythm and open straight onto Today.
+  useEffect(() => {
+    let active = true;
+    loadProfile().then((saved) => {
+      if (!active) return;
+      if (saved) {
+        setResult(saved.result);
+        setAnswers(saved.answers);
+        setStage('plan');
+        setShowToday(true);
+      } else {
+        setStage('landing');
+      }
+    });
+    return () => {
+      active = false;
+    };
+  }, []);
 
   useEffect(() => {
     let active = true;
@@ -118,6 +144,7 @@ function Flow() {
     setAnswers(picked);
     setResult(r);
     setStage('reading');
+    saveProfile(r, picked).catch(() => {});
     // The quiz is the onboarding — mark it done so returning users can be routed
     // straight to their plan/dashboard.
     completeOnboarding().catch(() => {});
@@ -137,6 +164,16 @@ function Flow() {
     setResult(null);
     setAnswers([]);
     setStage('landing');
+  };
+
+  // After "delete my data": drop in-memory state and close every overlay.
+  const wipe = () => {
+    reset();
+    setShowToday(false);
+    setShowCheckIn(false);
+    setShowTrends(false);
+    setShowCard(false);
+    setResetLevel(undefined);
   };
 
   return (
@@ -221,6 +258,7 @@ function Flow() {
             setShowSettings(false);
             setShowSignIn(true);
           }}
+          onDeleted={wipe}
           onClose={() => setShowSettings(false)}
         />
       )}
@@ -237,6 +275,7 @@ function Flow() {
             setShowToday(false);
             setShowTrends(true);
           }}
+          onReset={() => setResetLevel(null)}
         />
       )}
       {showCheckIn && result && (
@@ -250,6 +289,10 @@ function Flow() {
           onExplain={(seed) => {
             setShowCheckIn(false);
             openPulse(seed);
+          }}
+          onReset={(level) => {
+            setShowCheckIn(false);
+            setResetLevel(level);
           }}
         />
       )}
@@ -273,6 +316,17 @@ function Flow() {
       )}
       {showCard && result && (
         <SignalCardScreen result={result} onClose={() => setShowCard(false)} />
+      )}
+      {resetLevel !== undefined && result && (
+        <ResetScreen
+          result={result}
+          level={resetLevel ?? undefined}
+          onClose={() => setResetLevel(undefined)}
+          onCheckIn={() => {
+            setResetLevel(undefined);
+            setShowCheckIn(true);
+          }}
+        />
       )}
 
       {/* Persistent ambience mute — always reachable, all screens. */}

@@ -1,5 +1,5 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { Level, PulseEntry } from './pulselog';
+import { dateKey, Level, PulseEntry } from './pulselog';
 
 export type ExperimentId = 'morning-light' | 'earlier-wind-down' | 'afternoon-walk' | 'single-task';
 
@@ -52,6 +52,13 @@ export async function dismissLastExperiment(): Promise<void> {
   await AsyncStorage.removeItem(LAST_KEY);
 }
 
+// True once the experiment's full run of days has elapsed.
+export function isExperimentComplete(active: ActiveExperiment, now = new Date()): boolean {
+  const start = new Date(active.startedAt).getTime();
+  if (Number.isNaN(start)) return false;
+  return now.getTime() - start >= active.days * 86400000;
+}
+
 export function experimentDay(active: ActiveExperiment, now = new Date()): number {
   const start = new Date(active.startedAt).getTime();
   return Math.max(1, Math.min(active.days, Math.floor((now.getTime() - start) / 86400000) + 1));
@@ -76,13 +83,14 @@ function dominantLevel(entries: PulseEntry[]): Level | null {
 
 export function experimentOutcome(active: ActiveExperiment, log: PulseEntry[]): ExperimentOutcome {
   const start = new Date(active.startedAt);
-  const startKey = start.toISOString().slice(0, 10);
+  // Local-day keys, matching how the pulselog stores dates.
+  const startKey = dateKey(start);
   const beforeStart = new Date(start);
   beforeStart.setDate(beforeStart.getDate() - active.days);
-  const beforeKey = beforeStart.toISOString().slice(0, 10);
+  const beforeKey = dateKey(beforeStart);
   const end = new Date(start);
   end.setDate(end.getDate() + active.days - 1);
-  const endKey = end.toISOString().slice(0, 10);
+  const endKey = dateKey(end);
 
   const beforeEntries = log.filter((entry) => entry.date >= beforeKey && entry.date < startKey);
   const duringEntries = log.filter((entry) => entry.date >= startKey && entry.date <= endKey);

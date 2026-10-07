@@ -95,7 +95,14 @@ export async function fetchStreak(): Promise<{ current: number; longest: number 
 // Wipe all on-device user data (keeps sound/volume prefs).
 export async function clearLocalData() {
     try {
-          await AsyncStorage.multiRemove(['circadia.pulselog', 'circadia.onboarded', 'circadia.user']);
+          await AsyncStorage.multiRemove([
+                'circadia.pulselog',
+                'circadia.onboarded',
+                'circadia.user',
+                'circadia.profile',
+                'circadia.activeExperiment',
+                'circadia.lastExperiment',
+          ]);
     } catch {
           /* best-effort */
     }

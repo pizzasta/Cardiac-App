@@ -103,7 +103,7 @@ export default function SignalCardScreen({
 }
 
 const styles = StyleSheet.create({
-  fill: { flex: 1, backgroundColor: T.bg },
+  fill: { ...StyleSheet.absoluteFillObject, backgroundColor: T.bg },
   header: {
     flexDirection: 'row',
     alignItems: 'center',

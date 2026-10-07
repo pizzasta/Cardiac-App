@@ -1,4 +1,4 @@
-import { experimentDay, experimentOutcome } from './experiments';
+import { experimentDay, experimentOutcome, isExperimentComplete } from './experiments';
 
 const active = {
     id: 'morning-light' as const,
@@ -36,5 +36,12 @@ describe('experimentOutcome', () => {
     expect(result.during).toBe('steady');
     expect(result.commonReason).toBe('sleep');
     expect(result.summary).toContain('not proof');
+  });
+});
+
+describe('isExperimentComplete', () => {
+  it('completes once the full run of days has elapsed', () => {
+    expect(isExperimentComplete(active, new Date('2026-10-05T12:00:00.000Z'))).toBe(false);
+    expect(isExperimentComplete(active, new Date('2026-10-06T12:00:00.000Z'))).toBe(true);
   });
 });

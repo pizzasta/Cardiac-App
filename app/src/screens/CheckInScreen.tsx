@@ -33,11 +33,13 @@ export default function CheckInScreen({
   onClose,
   onTrends,
   onExplain,
+  onReset,
 }: {
   result: RhythmResult;
   onClose: () => void;
   onTrends: () => void;
   onExplain: (seed: string) => void;
+  onReset: (level: Level) => void;
 }) {
   const a = ARCHETYPES[result.animal];
   const morning = new Date().getHours() < 14;
@@ -174,6 +176,13 @@ export default function CheckInScreen({
                 <Text style={[styles.explainText, { color: a.accent }]}>Why do I feel like this?  →</Text>
               </Pressable>
             )}
+            {saved && level !== 'steady' && (
+              <Pressable onPress={() => onReset(level)} hitSlop={8}>
+                <Text style={styles.resetLink}>
+                  {level === 'wired' ? 'Help it land' : 'Lift the signal'} — 60-sec reset  →
+                </Text>
+              </Pressable>
+            )}
           </>
         )}
       </ScrollView>
@@ -182,7 +191,7 @@ export default function CheckInScreen({
 }
 
 const styles = StyleSheet.create({
-  fill: { flex: 1, backgroundColor: T.bg },
+  fill: { ...StyleSheet.absoluteFillObject, backgroundColor: T.bg },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -239,4 +248,5 @@ const styles = StyleSheet.create({
   ctaText: { color: '#08080A', fontSize: 16, fontWeight: '800' },
   explainBtn: { borderWidth: 1, borderRadius: 24, paddingVertical: 14, alignItems: 'center', marginTop: 10 },
   explainText: { fontSize: 14, fontWeight: '700' },
+  resetLink: { color: 'rgba(255,255,255,0.7)', fontSize: 14, fontWeight: '600', textAlign: 'center', marginTop: 16 },
 });

@@ -12,71 +12,25 @@ import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useTopInset } from '../hooks';
 import { ARCHETYPES } from '../data/archetypes';
-import { PLANS, FlowItem } from '../data/plans';
+import { PLANS } from '../data/plans';
 import { RhythmResult } from '../logic/score';
 import { PulseEntry, load, getToday, currentStreak } from '../logic/pulselog';
 import { weeklyReport, WeeklyReport } from '../logic/weekly';
 import { F, T } from '../theme';
-import { ActiveExperiment, ExperimentOutcome, EXPERIMENTS, dismissLastExperiment, experimentDay, experimentOutcome, getActiveExperiment, getLastExperiment, startExperiment, stopExperiment } from '../logic/experiments';
-
-function parseFlowTime(label: string): { mins: number; explicitMeridiem: boolean } {
-  const match = /^(\d{1,2}):(\d{2})\s*(AM|PM)?$/i.exec(label.trim());
-  if (!match) return { mins: -1, explicitMeridiem: false };
-
-  let hour = parseInt(match[1], 10) % 12;
-  const minute = parseInt(match[2], 10);
-  const meridiem = match[3]?.toUpperCase();
-  if (meridiem === 'PM') hour += 12;
-
-  return { mins: hour * 60 + minute, explicitMeridiem: !!meridiem };
-}
-
-// The flow is authored in chronological order, while many labels omit AM/PM.
-// Convert those labels into an increasing timeline so 1:45 after 9:30 becomes
-// 13:45, and a final 12:00 after 9:00 can represent midnight (1440).
-function effectiveFlowMinutes(flow: FlowItem[]): number[] {
-  const out: number[] = [];
-  let previous = -1;
-
-  for (const item of flow) {
-    const parsed = parseFlowTime(item.time);
-    if (parsed.mins < 0) {
-      out.push(previous);
-      continue;
-    }
-
-    let value = parsed.mins;
-    if (!parsed.explicitMeridiem) {
-      while (value <= previous) value += 12 * 60;
-    }
-
-    out.push(value);
-    previous = value;
-  }
-
-  return out;
-}
-
-// The flow item whose time has most recently passed = where you are 'now'.
-// Very-late items that wrap past midnight remain selectable just after midnight;
-// otherwise, before the first daytime item we intentionally fall back to item 0.
-function currentFlowIndex(flow: FlowItem[], now = new Date()): number {
-  if (flow.length === 0) return -1;
-
-  const timeline = effectiveFlowMinutes(flow);
-  let nowMinutes = now.getHours() * 60 + now.getMinutes();
-
-  const hasWrappedLateNightItem = timeline.some((value) => value >= 24 * 60);
-  if (hasWrappedLateNightItem && nowMinutes < 4 * 60) {
-    nowMinutes += 24 * 60;
-  }
-
-  let idx = 0;
-  for (let i = 0; i < timeline.length; i++) {
-    if (timeline[i] >= 0 && timeline[i] <= nowMinutes) idx = i;
-  }
-  return idx;
-}
+import {
+  ActiveExperiment,
+  ExperimentOutcome,
+  EXPERIMENTS,
+  dismissLastExperiment,
+  experimentDay,
+  experimentOutcome,
+  getActiveExperiment,
+  getLastExperiment,
+  isExperimentComplete,
+  startExperiment,
+  stopExperiment,
+} from '../logic/experiments';
+import { currentFlowIndex, formatCountdown, nextShift } from '../logic/forecast';
 
 function greeting(now = new Date()): string {
   const h = now.getHours();
@@ -89,19 +43,30 @@ export default function TodayScreen({
   result,
   onCheckIn,
   onTrends,
+  onReset,
   onClose,
 }: {
   result: RhythmResult;
   onCheckIn: () => void;
   onTrends: () => void;
+  onReset: () => void;
   onClose: () => void;
 }) {
   const topInset = useTopInset();
   const arch = ARCHETYPES[result.animal];
   const plan = PLANS[result.animal];
   const flow = plan?.flow ?? [];
-  const nowIdx = currentFlowIndex(flow);
+  // Re-render each minute so "now" and the countdown stay current.
+  const [now, setNow] = useState(() => new Date());
+  useEffect(() => {
+    const id = setInterval(() => setNow(new Date()), 60000);
+    return () => clearInterval(id);
+  }, []);
+  const nowIdx = currentFlowIndex(flow, now);
   const nowItem = nowIdx >= 0 ? flow[nowIdx] : undefined;
+  const next = nextShift(flow, now);
+  // Before the day's first item, the card previews it rather than claiming it's "now".
+  const upcoming = !!next && next.index === nowIdx && !next.tomorrow;
 
   const [today, setToday] = useState<PulseEntry | undefined>(undefined);
   const [streak, setStreak] = useState(0);
@@ -119,8 +84,14 @@ export default function TodayScreen({
       setToday(getToday(log));
       setStreak(currentStreak(log));
       setReport(weeklyReport(log));
-      const active = await getActiveExperiment();
+      let active = await getActiveExperiment();
+      // A finished experiment wraps itself up and moves to the results card.
+      if (active && isExperimentComplete(active)) {
+        await stopExperiment();
+        active = null;
+      }
       const last = await getLastExperiment();
+      if (!alive) return;
       setExperiment(active);
       setLastExperiment(last);
       setOutcome(last ? experimentOutcome(last, log) : null);
@@ -143,17 +114,18 @@ export default function TodayScreen({
           end={{ x: 0, y: 1 }}
           style={styles.header}
         >
-          <Pressable onPress={onClose} hitSlop={12} style={styles.close}>
-            <Text style={styles.closeText}>Done</Text>
-          </Pressable>
           <Text style={styles.kicker}>
             {arch.emoji} {arch.name.toUpperCase()}
           </Text>
-          <Text style={styles.greeting}>{greeting()}.</Text>
+          <Text style={styles.greeting}>{greeting(now)}.</Text>
           <Text style={styles.headerCopy}>
             Your quiz suggests a stronger focus window around {result.peak} and a
             possible lower-energy window near {result.crash}. Your check-ins help refine the picture.
           </Text>
+          {/* Rendered last so it sits above the header text and stays tappable. */}
+          <Pressable onPress={onClose} hitSlop={12} style={styles.close}>
+            <Text style={styles.closeText}>Done</Text>
+          </Pressable>
         </LinearGradient>
 
         {/* Rhythm ribbon: today's suggested rhythm, with the now-marker. */}
@@ -185,12 +157,32 @@ export default function TodayScreen({
         {nowItem && (
           <View style={[styles.nowCard, { borderColor: arch.accent }]}>
             <Text style={[styles.nowLabel, { color: arch.accent }]}>
-              RIGHT NOW · {nowItem.time}
+              {upcoming && next
+                ? `UP NEXT · ${nowItem.time} · ${formatCountdown(next.minutesUntil).toUpperCase()}`
+                : `RIGHT NOW · ${nowItem.time}`}
             </Text>
             <Text style={styles.nowTitle}>{nowItem.title}</Text>
             <Text style={styles.nowNote}>{nowItem.note}</Text>
+            {next && next.index !== nowIdx && (
+              <Text style={styles.nextLine}>
+                <Text style={{ color: arch.accent }}>NEXT · </Text>
+                {next.item.title} {next.tomorrow ? 'tomorrow, ' : ''}
+                {formatCountdown(next.minutesUntil)}
+              </Text>
+            )}
           </View>
         )}
+
+        {/* Reset: secondary, state-matched — never competes with the check-in. */}
+        <Pressable onPress={onReset} style={styles.resetCard}>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.resetTitle}>60-second reset</Text>
+            <Text style={styles.resetSub}>
+              A breathing pace matched to {today ? `your ${today.level} check-in` : 'how you feel right now'}.
+            </Text>
+          </View>
+          <Text style={[styles.resetArrow, { color: arch.accent }]}>→</Text>
+        </Pressable>
 
         {/* Today's flow */}
         <Text style={styles.section}>TODAY’S FLOW</Text>
@@ -232,13 +224,45 @@ export default function TodayScreen({
         )}
 
         <Text style={styles.section}>RHYTHM EXPERIMENT</Text>
+        {!experiment && lastExperiment && outcome && (
+          <View style={[styles.experimentCard, { borderColor: `${arch.accent}55`, borderWidth: 1 }]}>
+            <Text style={[styles.experimentKicker, { color: arch.accent }]}>RESULTS · {lastExperiment.title.toUpperCase()}</Text>
+            <View style={styles.weekStats}>
+              <Stat value={outcome.before ?? '—'} label={`before (${outcome.beforeCount})`} />
+              <Stat value={outcome.during ?? '—'} label={`during (${outcome.duringCount})`} />
+            </View>
+            <Text style={styles.experimentText}>{outcome.summary}</Text>
+            {outcome.commonReason && (
+              <Text style={styles.experimentText}>Most-tagged reason during it: {outcome.commonReason}.</Text>
+            )}
+            <Pressable
+              onPress={async () => {
+                await dismissLastExperiment();
+                setLastExperiment(null);
+                setOutcome(null);
+              }}
+            >
+              <Text style={styles.experimentStop}>Clear results</Text>
+            </Pressable>
+          </View>
+        )}
         {experiment ? (
           <View style={styles.experimentCard}>
             <Text style={[styles.experimentKicker, { color: arch.accent }]}>DAY {experimentDay(experiment)} OF {experiment.days}</Text>
             <Text style={styles.experimentTitle}>{experiment.title}</Text>
             <Text style={styles.experimentText}>{experiment.prompt}</Text>
             <Text style={styles.experimentFine}>Notice what changes in your check-ins. Circadia treats this as a personal observation, not proof of cause.</Text>
-            <Pressable onPress={async () => { await stopExperiment(); setExperiment(null); }}><Text style={styles.experimentStop}>End experiment</Text></Pressable>
+            <Pressable
+              onPress={async () => {
+                const ended = experiment;
+                await stopExperiment();
+                setExperiment(null);
+                setLastExperiment(ended);
+                setOutcome(experimentOutcome(ended, await load()));
+              }}
+            >
+              <Text style={styles.experimentStop}>End experiment & see results</Text>
+            </Pressable>
           </View>
         ) : (
           <View style={styles.experimentChoices}>
@@ -278,7 +302,7 @@ function Stat({ value, label }: { value: string; label: string }) {
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: T.bg },
+  root: { ...StyleSheet.absoluteFillObject, backgroundColor: T.bg },
   content: { paddingHorizontal: 20, paddingBottom: 24 },
   header: { borderRadius: 20, padding: 20, marginBottom: 24 },
   close: { position: 'absolute', top: 16, right: 16 },
@@ -324,6 +348,19 @@ const styles = StyleSheet.create({
   nowLabel: { fontFamily: F.mono, fontSize: 11, letterSpacing: 1 },
   nowTitle: { color: T.text, fontFamily: F.display, fontSize: 18, marginTop: 6 },
   nowNote: { color: T.muted, fontSize: 14, lineHeight: 20, marginTop: 4 },
+  nextLine: { color: T.text, fontFamily: F.mono, fontSize: 12, marginTop: 12, opacity: 0.85 },
+  resetCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: T.hairline,
+    borderRadius: 16,
+    padding: 16,
+    marginBottom: 24,
+  },
+  resetTitle: { color: T.text, fontFamily: F.display, fontSize: 15 },
+  resetSub: { color: T.muted, fontSize: 13, lineHeight: 18, marginTop: 3 },
+  resetArrow: { fontSize: 20, marginLeft: 12 },
   flowRow: {
     flexDirection: 'row',
     paddingVertical: 12,
