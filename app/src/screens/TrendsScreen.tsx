@@ -270,6 +270,12 @@ const styles = StyleSheet.create({
   discoveryCard: { backgroundColor: 'rgba(18,18,20,0.72)', borderColor: 'rgba(255,255,255,0.14)', borderWidth: 1, borderRadius: 18, padding: 18, marginTop: 24 },
   discoveryTitle: { color: T.text, fontFamily: F.display, fontSize: 17, marginTop: 7, marginBottom: 6 },
   discoveryFine: { color: T.muted, fontSize: 11, lineHeight: 16, marginTop: 10 },
+  goodDaysCard: { backgroundColor: 'rgba(18,18,20,0.72)', borderColor: 'rgba(255,255,255,0.14)', borderWidth: 1, borderRadius: 18, padding: 18, marginTop: 24 },
+  factorRow: { flexDirection: 'row', justifyContent: 'space-between', gap: 12, marginTop: 10 },
+  factorName: { color: T.text, fontSize: 13, textTransform: 'capitalize' },
+  factorValue: { color: T.muted, fontFamily: F.mono, fontSize: 11, textAlign: 'right' },
+  goodDaysBtn: { borderWidth: 1, borderRadius: 18, paddingVertical: 12, alignItems: 'center', marginTop: 14 },
+  goodDaysBtnText: { fontSize: 13, fontWeight: '700' },
   insightCard: {
     backgroundColor: 'rgba(18,18,20,0.55)',
     borderWidth: 1,
