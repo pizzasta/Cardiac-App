@@ -4,9 +4,9 @@
 // starting, then paces each breath with a growing / shrinking orb. Framed as a
 // pause, never as treatment.
 import React, { useEffect, useRef, useState } from 'react';
-import { Animated, Easing, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
-import * as Haptics from 'expo-haptics';
-import { useTopInset } from '../hooks';
+import { Animated, Easing, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { useReducedMotion, useTopInset } from '../hooks';
+import { haptic } from '../logic/haptics';
 import { ARCHETYPES } from '../data/archetypes';
 import { RhythmResult } from '../logic/score';
 import { getToday, Level, LEVELS, load } from '../logic/pulselog';
@@ -17,6 +17,8 @@ import Scrim from '../components/Scrim';
 
 const MIN = 0.55;
 const MAX = 1;
+// With reduced motion the orb holds still at a middle size.
+const STILL = (MIN + MAX) / 2;
 
 type Stage = 'ready' | 'running' | 'done';
 
@@ -33,6 +35,7 @@ export default function ResetScreen({
 }) {
   const a = ARCHETYPES[result.animal];
   const topInset = useTopInset();
+  const reducedMotion = useReducedMotion();
   const [level, setLevel] = useState<Level>(initialLevel ?? 'steady');
   const [stage, setStage] = useState<Stage>('ready');
   const [elapsed, setElapsed] = useState(0);
@@ -73,7 +76,7 @@ export default function ResetScreen({
     const key = `${state.round}:${pattern.phases.indexOf(state.phase)}`;
     if (key === lastPhaseKey.current) return;
     lastPhaseKey.current = key;
-    if (state.phase.kind !== 'hold') {
+    if (!reducedMotion && state.phase.kind !== 'hold') {
       Animated.timing(scale, {
         toValue: state.phase.kind === 'in' ? MAX : MIN,
         duration: state.secsLeft * 1000,
@@ -83,22 +86,41 @@ export default function ResetScreen({
     }
     if (state.phase.kind === 'in') playSfx('breatheIn');
     else if (state.phase.kind === 'out') playSfx('breatheOut');
-    if (Platform.OS !== 'web') Haptics.selectionAsync().catch(() => {});
-  }, [stage, state, pattern, scale]);
+    haptic('select');
+  }, [stage, state, pattern, scale, reducedMotion]);
 
   useEffect(() => {
-    if (stage === 'done') playSfx('complete');
-    if (stage === 'done' && Platform.OS !== 'web') {
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
+    if (stage === 'done') {
+      playSfx('complete');
+      haptic('success');
     }
   }, [stage]);
 
+  // Reduced motion: park the orb at a fixed size and keep it there.
+  useEffect(() => {
+    if (!reducedMotion) return;
+    scale.stopAnimation();
+    scale.setValue(STILL);
+  }, [reducedMotion, scale]);
+
+  // Never leave a glide running after the screen closes.
+  useEffect(() => () => scale.stopAnimation(), [scale]);
+
   const begin = () => {
+    scale.stopAnimation();
     startedAt.current = Date.now();
     lastPhaseKey.current = '';
-    scale.setValue(MIN);
+    scale.setValue(reducedMotion ? STILL : MIN);
     setElapsed(0);
     setStage('running');
+  };
+
+  const stop = () => {
+    scale.stopAnimation();
+    scale.setValue(reducedMotion ? STILL : MIN);
+    lastPhaseKey.current = '';
+    setElapsed(0);
+    setStage('ready');
   };
 
   const remaining = Math.max(0, Math.ceil(totalSecs(pattern) - elapsed));
@@ -108,14 +130,19 @@ export default function ResetScreen({
       <Scrim shade="light" />
 
       <View style={[styles.header, { paddingTop: topInset }]}>
-        <Pressable onPress={onClose} hitSlop={12}>
+        <Pressable
+          onPress={onClose}
+          hitSlop={12}
+          accessibilityRole="button"
+          accessibilityLabel="Close"
+        >
           <Text style={styles.back}>‹ Close</Text>
         </Pressable>
         <Text style={styles.headerTitle}>1-minute reset</Text>
         <View style={{ width: 64 }} />
       </View>
 
-      <View style={styles.body}>
+      <ScrollView style={styles.scroll} contentContainerStyle={styles.body}>
         <Text style={styles.kicker}>{pattern.title.toUpperCase()}</Text>
 
         <View style={styles.stage}>
@@ -150,7 +177,13 @@ export default function ResetScreen({
                   <Pressable
                     key={l.id}
                     onPress={() => setLevel(l.id)}
-                    style={[styles.chip, active && { borderColor: a.accent, backgroundColor: `${a.accent}26` }]}
+                    hitSlop={8}
+                    accessibilityRole="button"
+                    accessibilityState={{ selected: active }}
+                    style={[
+                      styles.chip,
+                      active && { borderColor: a.accent, backgroundColor: `${a.accent}26` },
+                    ]}
                   >
                     <Text style={[styles.chipText, active && { color: '#fff' }]}>{l.label}</Text>
                   </Pressable>
@@ -168,7 +201,7 @@ export default function ResetScreen({
             <Text style={styles.progress}>
               Round {state.round} of {pattern.rounds} · {remaining}s left
             </Text>
-            <Pressable onPress={() => setStage('ready')} hitSlop={8}>
+            <Pressable onPress={stop} hitSlop={8} accessibilityRole="button">
               <Text style={styles.stop}>Stop</Text>
             </Pressable>
           </>
@@ -177,13 +210,13 @@ export default function ResetScreen({
         {stage === 'done' && (
           <>
             <Text style={styles.why}>
-              That’s a minute you gave back to yourself. Notice how you feel now. No need to
-              force a change.
+              That’s a minute you gave back to yourself. Notice how you feel now. No need to force a
+              change.
             </Text>
             <Pressable style={[styles.cta, { backgroundColor: a.accent }]} onPress={onCheckIn}>
               <Text style={styles.ctaText}>Check in now</Text>
             </Pressable>
-            <Pressable onPress={begin} hitSlop={8}>
+            <Pressable onPress={begin} hitSlop={8} accessibilityRole="button">
               <Text style={styles.stop}>Go again</Text>
             </Pressable>
           </>
@@ -192,7 +225,7 @@ export default function ResetScreen({
         <Text style={styles.fine}>
           A pause, not a treatment. Breathe gently and stop if you feel light-headed.
         </Text>
-      </View>
+      </ScrollView>
     </View>
   );
 }
@@ -210,16 +243,29 @@ const styles = StyleSheet.create({
   },
   back: { color: 'rgba(255,255,255,0.85)', fontSize: 16, fontWeight: '600', width: 64 },
   headerTitle: { color: '#fff', fontSize: 18, fontFamily: F.display },
-  body: { flex: 1, paddingHorizontal: 24, paddingBottom: 32, alignItems: 'center' },
+  scroll: { flex: 1 },
+  body: { flexGrow: 1, paddingHorizontal: 24, paddingBottom: 32, alignItems: 'center' },
   kicker: { color: T.muted, fontFamily: F.mono, fontSize: 12, letterSpacing: 1.5, marginTop: 12 },
-  stage: { width: ORB, height: ORB, alignItems: 'center', justifyContent: 'center', marginVertical: 28 },
+  stage: {
+    width: ORB,
+    height: ORB,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginVertical: 28,
+  },
   orb: { position: 'absolute', width: ORB, height: ORB, borderRadius: ORB / 2, borderWidth: 2 },
   orbLabel: { alignItems: 'center' },
   phase: { color: '#fff', fontFamily: F.display, fontSize: 22 },
   count: { color: 'rgba(255,255,255,0.8)', fontFamily: F.mono, fontSize: 18, marginTop: 6 },
   why: { color: 'rgba(255,255,255,0.8)', fontSize: 15, lineHeight: 22, textAlign: 'center' },
   matchLabel: { color: T.muted, fontFamily: F.mono, fontSize: 11, letterSpacing: 1, marginTop: 22 },
-  levels: { flexDirection: 'row', gap: 8, marginTop: 10 },
+  levels: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'center',
+    gap: 8,
+    marginTop: 10,
+  },
   chip: {
     borderColor: 'rgba(255,255,255,0.16)',
     borderWidth: 1,
@@ -228,9 +274,22 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
   },
   chipText: { color: 'rgba(255,255,255,0.75)', fontSize: 14, fontWeight: '600' },
-  cta: { borderRadius: 26, paddingVertical: 16, alignSelf: 'stretch', alignItems: 'center', marginTop: 24 },
+  cta: {
+    borderRadius: 26,
+    paddingVertical: 16,
+    alignSelf: 'stretch',
+    alignItems: 'center',
+    marginTop: 24,
+  },
   ctaText: { color: '#08080A', fontSize: 16, fontWeight: '800' },
   progress: { color: T.muted, fontFamily: F.mono, fontSize: 12 },
   stop: { color: T.muted, fontFamily: F.mono, fontSize: 13, marginTop: 18 },
-  fine: { color: T.muted, fontSize: 11, lineHeight: 16, textAlign: 'center', marginTop: 'auto', opacity: 0.8 },
+  fine: {
+    color: T.muted,
+    fontSize: 11,
+    lineHeight: 16,
+    textAlign: 'center',
+    marginTop: 'auto',
+    opacity: 0.8,
+  },
 });

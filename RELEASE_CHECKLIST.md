@@ -7,7 +7,9 @@
 - [ ] Deploy the Supabase `pulse` Edge Function and set `ANTHROPIC_API_KEY` as a server secret.
 - [ ] Set `EXPO_PUBLIC_PULSE_FN` for production. Do **not** set `EXPO_PUBLIC_ANTHROPIC_API_KEY` in a release build.
 - [ ] Run CI successfully on the exact release commit: type-check, lint, Jest tests, web export, iOS export.
-- [ ] Add app icon, adaptive icon foreground and splash image to `app/app.json` (only background colours are set today).
+- [x] App icon, adaptive icon, splash, favicon and notification icon in `app/assets` (regenerate with `npm run gen:brand`), plus build numbers, privacy manifest and `eas.json` build profiles.
+- [ ] Google sign-in is hidden on iOS until Sign in with Apple is added (App Store guideline 4.8). Add `expo-apple-authentication` with Supabase Apple OAuth to offer both.
+- [ ] Make sure the support inbox in `app/src/data/legal.ts` is real: Settings > Contact support and "Report response" in Ask Circadia both email it.
 - [ ] Bump `version` in `app/app.json` and set `ios.buildNumber` / `android.versionCode` for each store upload.
 - [ ] Test sign-up, sign-in, sign-out, cloud sync, local-only use, returning-user restore, CSV export, delete data, and delete account on physical iOS and Android devices.
 - [ ] Verify account deletion removes the auth user and associated rows.

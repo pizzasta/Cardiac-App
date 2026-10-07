@@ -1,7 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import {
   Animated,
-  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -9,7 +8,7 @@ import {
   View,
 } from 'react-native';
 import { useTopInset } from '../hooks';
-import * as Haptics from 'expo-haptics';
+import { haptic } from '../logic/haptics';
 import { ARCHETYPES } from '../data/archetypes';
 import { RhythmResult } from '../logic/score';
 import {
@@ -82,9 +81,7 @@ export default function CheckInScreen({
     setHop((h) => h + 1);
     onSaved?.(level);
     playSfx('success');
-    if (Platform.OS !== 'web') {
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-    }
+    haptic('success');
     Animated.sequence([
       Animated.timing(beat, { toValue: 1, duration: 150, useNativeDriver: true }),
       Animated.timing(beat, { toValue: 0, duration: 280, useNativeDriver: true }),
@@ -100,11 +97,11 @@ export default function CheckInScreen({
       <Scrim shade="medium" />
 
       <View style={[styles.header, { paddingTop: topInset }]}>
-        <Pressable onPress={onClose} hitSlop={12}>
+        <Pressable onPress={onClose} hitSlop={12} accessibilityRole="button">
           <Text style={styles.back}>‹ Close</Text>
         </Pressable>
         <Text style={styles.headerTitle}>Check-in</Text>
-        <Pressable onPress={onTrends} hitSlop={12} style={styles.trendsBtn}>
+        <Pressable onPress={onTrends} hitSlop={12} style={styles.trendsBtn} accessibilityRole="button">
           <Text style={[styles.trendsText, { color: a.accent }]}>Trends</Text>
         </Pressable>
       </View>
@@ -162,6 +159,9 @@ export default function CheckInScreen({
                     key={r}
                     style={[styles.chip, active && { borderColor: a.accent, backgroundColor: `${a.accent}26` }]}
                     onPress={() => setReason(active ? undefined : r)}
+                    hitSlop={6}
+                    accessibilityRole="button"
+                    accessibilityState={{ selected: active }}
                   >
                     <Text style={[styles.chipText, active && { color: '#fff' }]}>{r}</Text>
                   </Pressable>

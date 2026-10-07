@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
+  Linking,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -10,6 +11,7 @@ import {
   View,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
+import Constants from 'expo-constants';
 import { useTopInset } from '../hooks';
 import { useAuth } from '../logic/auth';
 import { F, T } from '../theme';
@@ -19,6 +21,9 @@ import { load as loadLog } from '../logic/pulselog';
 import { exportCsv } from '../logic/export';
 import { hasAiConsent, setAiConsent } from '../logic/consent';
 import { playSfx, setSfxEnabled, sfxEnabled } from '../logic/sfx';
+import { haptic, hapticsEnabled, setHapticsEnabled } from '../logic/haptics';
+import { LEGAL } from '../data/legal';
+import { DISCLAIMER_FULL } from '../data/disclaimer';
 import {
   canSchedule,
   disable as disableNotifs,
@@ -40,6 +45,7 @@ export default function SettingsScreen({
   onSetVolume,
   onSignIn,
   onDeleted,
+  onRetake,
   onLegal,
   onClose,
 }: {
@@ -50,6 +56,8 @@ export default function SettingsScreen({
   onSetVolume: (v: number) => void;
   onSignIn: () => void;
   onDeleted: () => void;
+  // Present once the quiz has been taken.
+  onRetake?: () => void;
   onLegal: () => void;
   onClose: () => void;
 }) {
@@ -63,6 +71,9 @@ export default function SettingsScreen({
   const [exportNote, setExportNote] = useState<string | null>(null);
   const [uiSounds, setUiSounds] = useState(sfxEnabled());
   const [aiAllowed, setAiAllowed] = useState(false);
+  const [haptics, setHaptics] = useState(hapticsEnabled());
+  const [delError, setDelError] = useState<string | null>(null);
+  const [supportNote, setSupportNote] = useState<string | null>(null);
 
   useEffect(() => {
     hasAiConsent().then(setAiAllowed);
@@ -73,6 +84,20 @@ export default function SettingsScreen({
     setSfxEnabled(next);
     setUiSounds(next);
     if (next) playSfx('toggle');
+  };
+
+  const toggleHaptics = () => {
+    const next = !haptics;
+    setHapticsEnabled(next);
+    setHaptics(next);
+    if (next) haptic('select');
+  };
+
+  const contactSupport = () => {
+    const subject = encodeURIComponent('Circadia support');
+    Linking.openURL(`mailto:${LEGAL.contactEmail}?subject=${subject}`).catch(() =>
+      setSupportNote(`Email us at ${LEGAL.contactEmail}`)
+    );
   };
 
   const toggleAi = () => {
@@ -100,13 +125,31 @@ export default function SettingsScreen({
 
   const runDelete = async (account: boolean) => {
     setDelBusy(true);
+    setDelError(null);
+    let ok = false;
     try {
-      await deleteData(account);
-      onDeleted();
-    } finally {
-      setDelBusy(false);
-      setConfirm(null);
-      onClose();
+      ok = await deleteData(account);
+    } catch {
+      ok = false;
+    }
+    setDelBusy(false);
+    if (!ok) {
+      // Nothing was removed locally, so the user can simply try again.
+      setDelError(
+        `We couldn’t reach the server, so nothing was deleted. Check your connection and try again, or email ${LEGAL.contactEmail}.`
+      );
+      return;
+    }
+    setConfirm(null);
+    onDeleted();
+    onClose();
+  };
+
+  const runSignOut = async () => {
+    try {
+      await signOut();
+    } catch {
+      Alert.alert('Couldn’t sign out', 'Check your connection and try again.');
     }
   };
 
@@ -142,7 +185,7 @@ export default function SettingsScreen({
       <LinearGradient colors={['#08080A', '#141016', '#08080A']} style={StyleSheet.absoluteFill} />
 
       <View style={[styles.header, { paddingTop: topInset }]}>
-        <Pressable onPress={onClose} hitSlop={12}>
+        <Pressable onPress={onClose} hitSlop={12} accessibilityRole="button" accessibilityLabel="Back">
           <Text style={styles.back}>‹ Back</Text>
         </Pressable>
         <Text style={styles.headerTitle}>Settings</Text>
@@ -162,7 +205,7 @@ export default function SettingsScreen({
                   ? `☁ Synced to cloud · via ${user.provider === 'google' ? 'Google' : 'email'}`
                   : '✓ Saved on this device'}
               </Text>
-              <Pressable style={[styles.btn, styles.btnGhost]} onPress={signOut}>
+              <Pressable style={[styles.btn, styles.btnGhost]} onPress={runSignOut} accessibilityRole="button">
                 <Text style={styles.btnGhostText}>Sign out</Text>
               </Pressable>
             </>
@@ -188,6 +231,9 @@ export default function SettingsScreen({
             <Pressable
               style={[styles.toggle, muted ? styles.toggleOff : { backgroundColor: accent }]}
               onPress={onToggleMute}
+              accessibilityRole="switch"
+              accessibilityLabel="Rainforest ambience"
+              accessibilityState={{ checked: !muted }}
             >
               <View style={[styles.knob, muted ? styles.knobOff : styles.knobOn]} />
             </Pressable>
@@ -216,12 +262,30 @@ export default function SettingsScreen({
             <Pressable
               style={[styles.toggle, uiSounds ? { backgroundColor: accent } : styles.toggleOff]}
               onPress={toggleUiSounds}
+              accessibilityLabel="Interface sounds"
               accessibilityRole="switch"
               accessibilityState={{ checked: uiSounds }}
             >
               <View style={[styles.knob, uiSounds ? styles.knobOn : styles.knobOff]} />
             </Pressable>
           </View>
+          {Platform.OS !== 'web' && (
+            <View style={[styles.rowBetween, { marginTop: 20 }]}>
+              <View style={{ flex: 1, paddingRight: 12 }}>
+                <Text style={styles.rowTitle}>Haptics</Text>
+                <Text style={styles.rowSub}>Gentle vibrations when you answer, check in and breathe.</Text>
+              </View>
+              <Pressable
+                style={[styles.toggle, haptics ? { backgroundColor: accent } : styles.toggleOff]}
+                onPress={toggleHaptics}
+                accessibilityRole="switch"
+                accessibilityLabel="Haptics"
+                accessibilityState={{ checked: haptics }}
+              >
+                <View style={[styles.knob, haptics ? styles.knobOn : styles.knobOff]} />
+              </Pressable>
+            </View>
+          )}
           <Text style={styles.note}>
             {Platform.OS === 'web'
               ? 'Your browser may need a tap before sound can start.'
@@ -247,6 +311,9 @@ export default function SettingsScreen({
               style={[styles.toggle, notifsOn ? { backgroundColor: accent } : styles.toggleOff, !result && { opacity: 0.4 }]}
               onPress={toggleNotifs}
               disabled={!result || notifBusy}
+              accessibilityRole="switch"
+              accessibilityLabel="Daily rhythm nudges"
+              accessibilityState={{ checked: notifsOn, disabled: !result || notifBusy }}
             >
               {notifBusy ? (
                 <ActivityIndicator color={notifsOn ? '#08080A' : '#fff'} size="small" />
@@ -275,6 +342,7 @@ export default function SettingsScreen({
             <Pressable
               style={[styles.toggle, aiAllowed ? { backgroundColor: accent } : styles.toggleOff]}
               onPress={toggleAi}
+              accessibilityLabel="AI answers"
               accessibilityRole="switch"
               accessibilityState={{ checked: aiAllowed }}
             >
@@ -353,17 +421,47 @@ export default function SettingsScreen({
                 </Pressable>
               </View>
             ) : (
-              <Pressable onPress={() => setConfirm('account')} hitSlop={8}>
+              <Pressable onPress={() => setConfirm('account')} hitSlop={12} accessibilityRole="button">
                 <Text style={styles.deleteAccount}>Delete my account permanently</Text>
               </Pressable>
             ))}
+          {delError && <Text style={[styles.note, { color: T.accent2 }]}>{delError}</Text>}
         </View>
+        {/* YOUR RHYTHM */}
+        {onRetake && (
+          <>
+            <Text style={styles.section}>YOUR RHYTHM</Text>
+            <Pressable style={styles.card} onPress={onRetake} accessibilityRole="button">
+              <Text style={styles.rowTitle}>Retake the quiz  ›</Text>
+              <Text style={styles.rowSub}>
+                Things change. Your new result replaces the old one; your check-ins stay.
+              </Text>
+            </Pressable>
+          </>
+        )}
+
         {/* LEGAL */}
         <Text style={styles.section}>LEGAL & SUPPORT</Text>
-        <Pressable style={styles.card} onPress={onLegal}>
-          <Text style={styles.rowTitle}>Privacy Policy, Terms & Support  ›</Text>
-          <Text style={styles.rowSub}>How your data is used, your rights, and how to reach us.</Text>
+        <Pressable style={[styles.card, { marginBottom: 12 }]} onPress={contactSupport} accessibilityRole="button">
+          <Text style={styles.rowTitle}>Contact support  ›</Text>
+          <Text style={styles.rowSub}>Questions, bugs or feedback: {LEGAL.contactEmail}</Text>
+          {supportNote && <Text style={styles.note}>{supportNote}</Text>}
         </Pressable>
+        <Pressable style={[styles.card, { marginBottom: 12 }]} onPress={onLegal} accessibilityRole="button">
+          <Text style={styles.rowTitle}>Privacy Policy & Terms  ›</Text>
+          <Text style={styles.rowSub}>How your data is used, your rights, and how to delete your account.</Text>
+        </Pressable>
+        <View style={styles.card}>
+          <Text style={styles.rowTitle}>Not medical advice</Text>
+          <Text style={styles.rowSub}>{DISCLAIMER_FULL}</Text>
+          <Text style={styles.note}>
+            In an emergency, contact your local emergency services. In the US you can call or text 988.
+          </Text>
+        </View>
+
+        <Text style={styles.version}>
+          {LEGAL.appName} {Constants.expoConfig?.version ?? ''}
+        </Text>
       </ScrollView>
     </View>
   );
@@ -430,5 +528,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   segmentText: { color: '#fff', fontSize: 14, fontWeight: '700' },
+  version: {
+    color: 'rgba(255,255,255,0.4)',
+    fontSize: 12,
+    fontFamily: F.mono,
+    textAlign: 'center',
+    marginTop: 26,
+  },
   note: { color: 'rgba(255,255,255,0.5)', fontSize: 12, lineHeight: 17, marginTop: 12 },
 });

@@ -1,85 +1,157 @@
 import React, { useRef, useState } from 'react';
 import {
   Animated,
-  Platform,
   Pressable,
+  ScrollView,
   StyleSheet,
   Text,
   View,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import * as Haptics from 'expo-haptics';
 import { Option, QUIZ } from '../data/quiz';
 import { playSfx } from '../logic/sfx';
+import { haptic } from '../logic/haptics';
+import { useBottomInset, useTopInset } from '../hooks';
 
 export default function QuizScreen({
   onComplete,
+  onExit,
 }: {
   onComplete: (answers: Option[]) => void;
+  onExit?: () => void;
 }) {
   const [index, setIndex] = useState(0);
   const answers = useRef<Option[]>([]);
   const fade = useRef(new Animated.Value(1)).current;
+  // Ignores taps while a question transition is running, so a double tap
+  // can't skip a question or complete the quiz twice.
+  const busy = useRef(false);
+  const done = useRef(false);
+  const topInset = useTopInset();
+  const bottomInset = useBottomInset(40);
 
   const question = QUIZ[index];
   const progress = (index + 1) / QUIZ.length;
 
-  const select = (opt: Option) => {
-    playSfx('select');
-    if (Platform.OS !== 'web') {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    }
-    answers.current[index] = opt;
+  const fadeIn = () => {
+    Animated.timing(fade, {
+      toValue: 1,
+      duration: 220,
+      useNativeDriver: true,
+    }).start(() => {
+      busy.current = false;
+    });
+  };
 
-    // Selecting advances — no "Next" button.
+  const select = (opt: Option) => {
+    if (busy.current || done.current) return;
+    busy.current = true;
+    playSfx('select');
+    haptic('tap');
+    const at = index;
+    answers.current[at] = opt;
+
+    // Selecting advances, no "Next" button.
     Animated.timing(fade, {
       toValue: 0,
       duration: 160,
       useNativeDriver: true,
-    }).start(() => {
-      if (index + 1 >= QUIZ.length) {
-        onComplete(answers.current);
+    }).start(({ finished }) => {
+      if (!finished) {
+        fade.setValue(1);
+        busy.current = false;
         return;
       }
-      setIndex((i) => i + 1);
-      Animated.timing(fade, {
-        toValue: 1,
-        duration: 220,
-        useNativeDriver: true,
-      }).start();
+      if (at + 1 >= QUIZ.length) {
+        done.current = true;
+        onComplete(answers.current.slice(0, QUIZ.length));
+        return;
+      }
+      setIndex(at + 1);
+      fadeIn();
+    });
+  };
+
+  const back = () => {
+    if (busy.current || done.current) return;
+    if (index === 0) {
+      if (onExit) {
+        haptic('select');
+        onExit();
+      }
+      return;
+    }
+    busy.current = true;
+    haptic('select');
+    const prev = index - 1;
+    // Drop the answer being revisited; it gets chosen again.
+    answers.current.length = prev;
+    Animated.timing(fade, {
+      toValue: 0,
+      duration: 120,
+      useNativeDriver: true,
+    }).start(({ finished }) => {
+      if (finished) setIndex(prev);
+      else fade.setValue(1);
+      fadeIn();
     });
   };
 
   return (
-    <LinearGradient colors={['rgba(6,6,10,0.1)', 'rgba(6,6,10,0.35)', 'rgba(6,6,10,0.8)']} style={styles.fill}>
-      <View style={styles.progressTrack}>
-        <View style={[styles.progressFill, { width: `${progress * 100}%` }]} />
-      </View>
-      <Text style={styles.count}>
-        {index + 1} / {QUIZ.length}
-      </Text>
-
-      <Animated.View style={[styles.body, { opacity: fade }]}>
-        <Text style={styles.prompt}>{question.prompt}</Text>
-
-        <View style={styles.options}>
-          {question.options.map((opt) => (
-            <Pressable
-              key={opt.label}
-              style={({ pressed }) => [styles.option, pressed && styles.optionPressed]}
-              onPress={() => select(opt)}
-            >
-              <Text style={styles.optionText}>{opt.label}</Text>
-            </Pressable>
-          ))}
+    <LinearGradient
+      colors={['rgba(6,6,10,0.1)', 'rgba(6,6,10,0.35)', 'rgba(6,6,10,0.8)']}
+      style={styles.fill}
+    >
+      <ScrollView
+        contentContainerStyle={[
+          styles.scroll,
+          { paddingTop: topInset + 16, paddingBottom: bottomInset },
+        ]}
+        showsVerticalScrollIndicator={false}
+      >
+        <View style={styles.progressTrack}>
+          <View style={[styles.progressFill, { width: `${progress * 100}%` }]} />
         </View>
-      </Animated.View>
+        <View style={styles.metaRow}>
+          <Text style={styles.count}>
+            {index + 1} / {QUIZ.length}
+          </Text>
+          {index > 0 || onExit ? (
+            <Pressable
+              onPress={back}
+              hitSlop={12}
+              accessibilityRole="button"
+              accessibilityLabel={index > 0 ? 'Back to the previous question' : 'Leave the quiz'}
+            >
+              <Text style={styles.back}>‹ Back</Text>
+            </Pressable>
+          ) : null}
+        </View>
+
+        <Animated.View style={[styles.body, { opacity: fade }]}>
+          <Text style={styles.prompt}>{question.prompt}</Text>
+
+          <View style={styles.options}>
+            {question.options.map((opt) => (
+              <Pressable
+                key={opt.label}
+                accessibilityRole="button"
+                style={({ pressed }) => [styles.option, pressed && styles.optionPressed]}
+                onPress={() => select(opt)}
+              >
+                <Text style={styles.optionText}>{opt.label}</Text>
+              </Pressable>
+            ))}
+          </View>
+        </Animated.View>
+      </ScrollView>
     </LinearGradient>
   );
 }
 
 const styles = StyleSheet.create({
-  fill: { flex: 1, paddingHorizontal: 24, paddingTop: 72, paddingBottom: 40 },
+  fill: { flex: 1 },
+  scroll: { flexGrow: 1, paddingHorizontal: 24 },
   progressTrack: {
     height: 5,
     borderRadius: 3,
@@ -87,14 +159,20 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   progressFill: { height: 5, borderRadius: 3, backgroundColor: '#FF2E7E' },
+  metaRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginTop: 12,
+  },
   count: {
     color: 'rgba(255,255,255,0.55)',
-    marginTop: 12,
     fontSize: 13,
     fontWeight: '600',
     letterSpacing: 1,
   },
-  body: { flex: 1, justifyContent: 'center' },
+  back: { color: 'rgba(255,255,255,0.8)', fontSize: 14, fontWeight: '600' },
+  body: { flex: 1, justifyContent: 'center', paddingTop: 24 },
   prompt: {
     color: '#fff',
     fontSize: 30,

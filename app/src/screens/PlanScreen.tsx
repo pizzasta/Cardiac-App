@@ -105,11 +105,11 @@ export default function PlanScreen({
       <Scrim shade="medium" />
 
       <View style={[styles.header, { paddingTop: topInset }]}>
-        <Pressable onPress={onBack} hitSlop={12}>
+        <Pressable onPress={onBack} hitSlop={12} accessibilityRole="button" accessibilityLabel="Back">
           <Text style={styles.back}>‹ Back</Text>
         </Pressable>
         <Text style={styles.headerTitle}>Your rhythm plan</Text>
-        <Pressable onPress={onSettings} hitSlop={12} style={styles.gear}>
+        <Pressable onPress={onSettings} hitSlop={12} style={styles.gear} accessibilityRole="button" accessibilityLabel="Settings">
           <Text style={styles.gearIcon}>⚙︎</Text>
         </Pressable>
       </View>
@@ -135,10 +135,10 @@ export default function PlanScreen({
           <Text style={[styles.pulseArrow, { color: a.accent }]}>→</Text>
         </PressableScale>
         <View style={styles.pulseLinks}>
-          <Pressable onPress={onTrends} hitSlop={8}>
+          <Pressable onPress={onTrends} hitSlop={8} accessibilityRole="button">
             <Text style={[styles.pulseLink, { color: a.accent }]}>See your trends</Text>
           </Pressable>
-          <Pressable onPress={onShareCard} hitSlop={8}>
+          <Pressable onPress={onShareCard} hitSlop={8} accessibilityRole="button">
             <Text style={[styles.pulseLink, { color: a.accent }]}>Share your rhythm card ↗</Text>
           </Pressable>
         </View>
@@ -174,6 +174,9 @@ export default function PlanScreen({
               style={[styles.toggle, notifsOn ? { backgroundColor: a.accent } : styles.toggleOff]}
               onPress={toggleNotifs}
               disabled={notifBusy}
+              accessibilityRole="switch"
+              accessibilityLabel="Rhythm reminders"
+              accessibilityState={{ checked: notifsOn, disabled: notifBusy }}
             >
               {notifBusy ? (
                 <ActivityIndicator color={notifsOn ? '#08080A' : '#fff'} size="small" />
@@ -362,7 +365,7 @@ const styles = StyleSheet.create({
   pulseTitle: { color: '#fff', fontSize: 16, fontWeight: '700' },
   pulseSub: { color: 'rgba(255,255,255,0.7)', fontSize: 13, lineHeight: 19, marginTop: 3 },
   pulseArrow: { fontSize: 22, fontWeight: '800' },
-  pulseLinks: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 14 },
+  pulseLinks: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', columnGap: 16, rowGap: 10, marginTop: 14 },
   pulseLink: { fontSize: 14, fontWeight: '700' },
   sleepCard: {
     backgroundColor: 'rgba(18,18,20,0.5)',

@@ -110,20 +110,24 @@ export async function clearLocalData() {
 }
 
 // Delete the signed-in user's cloud rows (RLS lets users delete their own).
-export async function deleteCloudData() {
+// Returns false if any step failed, so the caller can tell the user.
+export async function deleteCloudData(): Promise<boolean> {
     try {
-          if (!supabase) return;
+          if (!supabase) return true;
           const uid = await currentUserId();
-          if (!uid) return;
-          await supabase.from('onboarding_answers').delete().eq('user_id', uid);
-          await supabase.from('check_ins').delete().eq('user_id', uid);
-          await supabase.from('results').delete().eq('user_id', uid);
-          await supabase
-            .from('profiles')
-            .update({ onboarding_complete: false, current_archetype_id: null })
-            .eq('id', uid);
+          if (!uid) return true;
+          const steps = [
+            await supabase.from('onboarding_answers').delete().eq('user_id', uid),
+            await supabase.from('check_ins').delete().eq('user_id', uid),
+            await supabase.from('results').delete().eq('user_id', uid),
+            await supabase
+              .from('profiles')
+              .update({ onboarding_complete: false, current_archetype_id: null })
+              .eq('id', uid),
+          ];
+          return steps.every((r) => !r.error);
     } catch {
-          /* best-effort */
+          return false;
     }
 }
 

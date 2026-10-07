@@ -2,7 +2,6 @@ import React, { useEffect, useRef } from 'react';
 import {
   Animated,
   Easing,
-  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -10,13 +9,14 @@ import {
   useWindowDimensions,
   View,
 } from 'react-native';
-import * as Haptics from 'expo-haptics';
 import { ARCHETYPES, TINTS } from '../data/archetypes';
 import { RhythmResult } from '../logic/score';
 import { DISCLAIMER_SHORT } from '../data/disclaimer';
 import { F } from '../theme';
 import AnimalEmblem from '../world/AnimalEmblem';
 import { playSfx } from '../logic/sfx';
+import { haptic } from '../logic/haptics';
+import { useReducedMotion } from '../hooks';
 import Scrim from '../components/Scrim';
 import PressableScale from '../components/PressableScale';
 import { blendFor, displayName } from '../data/blends';
@@ -42,8 +42,15 @@ export default function RevealScreen({
   // single heartbeat — one thump with a pink glow bloom.
   const enter = useRef(new Animated.Value(0)).current;
   const beat = useRef(new Animated.Value(0)).current;
+  const reduced = useReducedMotion();
 
   useEffect(() => {
+    playSfx('reveal');
+    const buzz = setTimeout(() => haptic('success'), 160);
+    if (reduced) {
+      enter.setValue(1);
+      return () => clearTimeout(buzz);
+    }
     Animated.spring(enter, {
       toValue: 1,
       friction: 7,
@@ -56,12 +63,8 @@ export default function RevealScreen({
       Animated.timing(beat, { toValue: 1, duration: 150, easing: Easing.out(Easing.quad), useNativeDriver: true }),
       Animated.timing(beat, { toValue: 0, duration: 260, easing: Easing.inOut(Easing.ease), useNativeDriver: true }),
     ]).start();
-
-    playSfx('reveal');
-    if (Platform.OS !== 'web') {
-      setTimeout(() => Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success), 160);
-    }
-  }, [enter, beat]);
+    return () => clearTimeout(buzz);
+  }, [enter, beat, reduced]);
 
   const lift = enter.interpolate({ inputRange: [0, 1], outputRange: [24, 0] });
   const beatScale = beat.interpolate({ inputRange: [0, 1], outputRange: [1, 1.07] });
@@ -102,6 +105,7 @@ export default function RevealScreen({
                 emoji={a.emoji}
                 bg={a.gradient[1]}
                 distance={3.3}
+                emojiSize={Math.round(size * 0.45)}
                 style={StyleSheet.absoluteFill}
               />
             </View>
@@ -160,7 +164,7 @@ export default function RevealScreen({
           <Pressable style={[styles.shareBtn, { borderColor: `${a.accent}66` }]} onPress={onShare}>
             <Text style={[styles.shareText, { color: a.accent }]}>Share this  ↗</Text>
           </Pressable>
-          <Pressable onPress={onRetake} hitSlop={12}>
+          <Pressable onPress={onRetake} hitSlop={12} accessibilityRole="button">
             <Text style={styles.retake}>Retake the quiz</Text>
           </Pressable>
           <Text style={styles.disclaimer}>{DISCLAIMER_SHORT}</Text>

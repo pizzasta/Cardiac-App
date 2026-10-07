@@ -9,6 +9,13 @@ export function useTopInset(base = 44): number {
   return Math.max(insets.top + 8, base);
 }
 
+// Bottom padding that clears the home indicator, with a floor for devices
+// without one.
+export function useBottomInset(base = 16): number {
+  const insets = useSafeAreaInsets();
+  return Math.max(insets.bottom + 8, base);
+}
+
 // True when the OS asks for reduced motion; the 3D world and entrance
 // animations go still.
 export function useReducedMotion(): boolean {
