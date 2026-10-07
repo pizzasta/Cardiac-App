@@ -211,9 +211,12 @@ export default function TrendsScreen({
         </View>
 
         <View style={styles.resonanceCard}>
-          <Text style={[styles.insightKicker, { color: a.accent }]}>RESONANCE</Text>
-          <Text style={styles.discoveryTitle}>{resonance.ready ? 'This day has a familiar shape' : 'The picture is still forming'}</Text>
+          <Text style={[styles.insightKicker, { color: a.accent }]}>DÉJÀ VU</Text>
+          <Text style={styles.discoveryTitle}>{resonance.ready && resonance.matches.length > 0 ? 'Okay… we’ve been here before.' : resonance.ready ? 'No déjà vu today' : 'The picture is still forming'}</Text>
           <Text style={styles.insightText}>{resonance.thread}</Text>
+          {resonance.matches.length > 0 && (
+            <Text style={styles.dejaIntro}>Here’s the closest match from your own check-in history.</Text>
+          )}
           {resonance.ready && <View style={styles.constellation}><RhythmConstellation log={log} matches={resonance.matches} tint={tint} /></View>}
           {resonance.matches.length > 0 && (
             <View style={styles.resonanceDates}>
@@ -228,7 +231,7 @@ export default function TrendsScreen({
           <Text style={styles.discoveryFine}>{resonance.trace}</Text>
           {resonance.matches.length > 0 && (
             <View style={styles.nextThreadBox}>
-              <Text style={styles.nextThreadLabel}>SEE WHAT SHIFTED</Text>
+              <Text style={styles.nextThreadLabel}>WHAT HAPPENED NEXT</Text>
               <Text style={styles.nextThreadText}>{resonance.nextThread}</Text>
             </View>
           )}
@@ -310,6 +313,7 @@ const styles = StyleSheet.create({
   goodDaysBtn: { borderWidth: 1, borderRadius: 18, paddingVertical: 12, alignItems: 'center', marginTop: 14 },
   goodDaysBtnText: { fontSize: 13, fontWeight: '700' },
   resonanceCard: { backgroundColor: 'rgba(18,18,20,0.72)', borderColor: 'rgba(255,255,255,0.14)', borderWidth: 1, borderRadius: 18, padding: 18, marginTop: 24 },
+  dejaIntro: { color: T.muted, fontSize: 12, lineHeight: 18, marginTop: 8 },
   constellation: { marginTop: 12, backgroundColor: 'rgba(255,255,255,0.025)', borderRadius: 14, overflow: 'hidden' },
   nextThreadBox: { marginTop: 12, padding: 12, borderRadius: 12, backgroundColor: 'rgba(255,255,255,0.04)' },
   nextThreadLabel: { color: T.muted, fontFamily: F.mono, fontSize: 10, letterSpacing: 1 },
