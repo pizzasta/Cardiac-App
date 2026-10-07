@@ -74,7 +74,7 @@ async function scheduleCheckIn(animal: AnimalId): Promise<void> {
   await Notifications.scheduleNotificationAsync({
     identifier: CHECKIN_ID,
     content: {
-      title: 'How’s your signal?',
+      title: 'Quick check-in?',
       body: '10-second check-in — notice how your energy feels right now.',
     },
     trigger: {

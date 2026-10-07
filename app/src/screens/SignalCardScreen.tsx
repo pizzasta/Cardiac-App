@@ -50,7 +50,7 @@ export default function SignalCardScreen({
         <Pressable onPress={onClose} hitSlop={12}>
           <Text style={styles.back}>‹ Close</Text>
         </Pressable>
-        <Text style={styles.headerTitle}>Signal Card</Text>
+        <Text style={styles.headerTitle}>Rhythm card</Text>
         <View style={{ width: 64 }} />
       </View>
 
@@ -89,7 +89,7 @@ export default function SignalCardScreen({
       <View style={styles.footer}>
         <Pressable style={[styles.cta, { backgroundColor: tint }]} onPress={onShare}>
           <Text style={styles.ctaText}>
-            {status === 'copied' ? 'Copied to clipboard ✓' : status === 'shared' ? 'Shared ✓' : 'Share my Signal'}
+            {status === 'copied' ? 'Copied to clipboard ✓' : status === 'shared' ? 'Shared ✓' : 'Share my card'}
           </Text>
         </Pressable>
         <Text style={styles.hint}>

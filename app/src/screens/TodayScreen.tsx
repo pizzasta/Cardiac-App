@@ -107,7 +107,7 @@ export default function TodayScreen({
         contentContainerStyle={[styles.content, { paddingTop: topInset + 12 }]}
         showsVerticalScrollIndicator={false}
       >
-        {/* Pulse header */}
+        {/* Header */}
         <LinearGradient
           colors={arch.gradient}
           start={{ x: 0, y: 0 }}
@@ -176,7 +176,7 @@ export default function TodayScreen({
         {/* Reset: secondary, state-matched — never competes with the check-in. */}
         <Pressable onPress={onReset} style={styles.resetCard}>
           <View style={{ flex: 1 }}>
-            <Text style={styles.resetTitle}>60-second reset</Text>
+            <Text style={styles.resetTitle}>1-minute reset</Text>
             <Text style={styles.resetSub}>
               A breathing pace matched to {today ? `your ${today.level} check-in` : 'how you feel right now'}.
             </Text>

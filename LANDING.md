@@ -21,22 +21,22 @@ We'll read how your energy actually moves — when you peak, when you crash, how
 ## Features
 - **Your rhythm animal** — Eight questions decode how your nervous system runs.
 - **A plan that fits your wiring** — Your real peak, crash, and wind-down, turned into a daily flow.
-- **Pulse, your AI companion** — Ask it anything; it knows your patterns.
+- **Days like today** — See past days that looked like this one, and what came after.
 - **Sleep on your schedule** — A wind-down and wake window tuned to your chronotype.
-- **Nudges that land** — Reminders timed to your rhythm, not the clock.
+- **A one-minute reset** — A breathing pace matched to how you feel right now.
 - **Backed by the science** — Every recommendation traces to real circadian research.
 
 ## Why people stay
 It gets more accurate the longer you use it.
-- It learns you — switching elsewhere means losing that.
-- It's specific: "you crash at 2:14pm" beats "drink more water."
-- It catches the dip before you do.
-- It sounds like a person you'd actually listen to.
-- Your rhythm changes, and so does your plan.
+- Your history builds up — every check-in makes your patterns clearer.
+- It's specific to you, not generic "drink more water" advice.
+- It shows what's coming in your day, so a dip is less of a surprise.
+- Missing a day never resets you to zero.
+- Your data stays yours — export it any time, free.
 
 ## Curiosity lines
 "What's your rhythm animal?" · "Most people are living on the wrong schedule." · "This isn't a personality test. It's a mirror." · "Your energy isn't random. It has a pattern — here's yours."
 
 ## Page structure
-Hero → hook line → how it works (3 steps) → reveal preview (6 animals) → features → Pulse spotlight → why people stay → science strip → final CTA → footer.
+Hero → hook line → how it works (3 steps) → reveal preview (6 animals) → features → Days like today spotlight → why people stay → science strip → final CTA → footer.
 Rule: every section ends with the same primary CTA (one tap to the quiz).

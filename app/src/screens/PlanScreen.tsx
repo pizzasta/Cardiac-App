@@ -229,7 +229,7 @@ export default function PlanScreen({
         </View>
 
         <Text style={styles.section}>TIPS FOR A {a.name.toUpperCase()}</Text>
-        <Text style={styles.tipsHint}>Tap a tip to go deeper with Pulse.</Text>
+        <Text style={styles.tipsHint}>Tap a tip to ask a follow-up question.</Text>
         {plan.tips.map((t, i) => (
           <Pressable
             key={i}
@@ -242,7 +242,7 @@ export default function PlanScreen({
           >
             <View style={styles.tipHead}>
               <Text style={[styles.tipLabel, { color: a.accent }]}>{t.label}</Text>
-              <Text style={[styles.tipGo, { color: a.accent }]}>Ask Pulse ›</Text>
+              <Text style={[styles.tipGo, { color: a.accent }]}>Ask ›</Text>
             </View>
             <Text style={styles.tipText}>{t.text}</Text>
           </Pressable>
@@ -266,7 +266,7 @@ export default function PlanScreen({
         </Protected>
 
         <Pressable style={[styles.cta, { backgroundColor: a.accent }]} onPress={() => onPulse()}>
-          <Text style={styles.ctaText}>Talk to Pulse  →</Text>
+          <Text style={styles.ctaText}>Ask a question  →</Text>
         </Pressable>
 
         <Pressable

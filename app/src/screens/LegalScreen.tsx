@@ -81,9 +81,9 @@ export default function LegalScreen({ onClose }: { onClose: () => void }) {
           </Text>
         </Section>
 
-        <Section title="Pulse (the AI companion)">
+        <Section title="Ask Circadia (AI-generated answers)">
           <Text style={styles.p}>
-            Pulse’s responses are AI-generated. They can be wrong or incomplete and are not
+            Answers in Ask Circadia are AI-generated. They can be wrong or incomplete and are not
             professional, medical, or mental-health advice. Use your own judgment, and check anything
             important with a qualified professional.
           </Text>

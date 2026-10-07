@@ -107,7 +107,7 @@ export default function ResetScreen({
         <Pressable onPress={onClose} hitSlop={12}>
           <Text style={styles.back}>‹ Close</Text>
         </Pressable>
-        <Text style={styles.headerTitle}>60-sec Reset</Text>
+        <Text style={styles.headerTitle}>1-minute reset</Text>
         <View style={{ width: 64 }} />
       </View>
 
@@ -138,7 +138,7 @@ export default function ResetScreen({
         {stage === 'ready' && (
           <>
             <Text style={styles.why}>{pattern.why}</Text>
-            <Text style={styles.matchLabel}>MATCHED TO YOUR SIGNAL</Text>
+            <Text style={styles.matchLabel}>MATCHED TO HOW YOU FEEL</Text>
             <View style={styles.levels}>
               {LEVELS.map((l) => {
                 const active = l.id === level;
@@ -173,7 +173,7 @@ export default function ResetScreen({
         {stage === 'done' && (
           <>
             <Text style={styles.why}>
-              That’s a minute you gave back to yourself. Notice how your signal reads now — no need to
+              That’s a minute you gave back to yourself. Notice how you feel now — no need to
               force a change.
             </Text>
             <Pressable style={[styles.cta, { backgroundColor: a.accent }]} onPress={onCheckIn}>

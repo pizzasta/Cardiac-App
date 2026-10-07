@@ -26,6 +26,7 @@ import {
 } from '../logic/pulselog';
 import { refreshSmartNudge } from '../logic/notifications';
 import PulseLine from '../components/PulseLine';
+import SimilarDaysCard from '../components/SimilarDaysCard';
 import { F, T } from '../theme';
 
 export default function CheckInScreen({
@@ -48,12 +49,14 @@ export default function CheckInScreen({
   const [level, setLevel] = useState<Level | null>(null);
   const [reason, setReason] = useState<string | undefined>(undefined);
   const [saved, setSaved] = useState(false);
+  const [log, setLog] = useState<PulseEntry[]>([]);
 
   const beat = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
-    load().then((log) => {
-      const t = getToday(log);
+    load().then((entries) => {
+      setLog(entries);
+      const t = getToday(entries);
       setToday(t);
       if (t) {
         setLevel(t.level);
@@ -65,7 +68,7 @@ export default function CheckInScreen({
 
   const save = async () => {
     if (!level) return;
-    await logToday(level, reason);
+    setLog(await logToday(level, reason));
     // Re-time the smart nudge to the emerging pattern (native; no-op on web).
     refreshSmartNudge(result.animal).catch(() => {});
     setSaved(true);
@@ -90,7 +93,7 @@ export default function CheckInScreen({
         <Pressable onPress={onClose} hitSlop={12}>
           <Text style={styles.back}>‹ Close</Text>
         </Pressable>
-        <Text style={styles.headerTitle}>Daily Pulse</Text>
+        <Text style={styles.headerTitle}>Check-in</Text>
         <Pressable onPress={onTrends} hitSlop={12} style={styles.trendsBtn}>
           <Text style={[styles.trendsText, { color: a.accent }]}>Trends</Text>
         </Pressable>
@@ -98,7 +101,7 @@ export default function CheckInScreen({
 
       <ScrollView contentContainerStyle={styles.body} showsVerticalScrollIndicator={false}>
         <Text style={styles.kicker}>{morning ? 'MORNING FORECAST' : 'EVENING REFLECTION'}</Text>
-        <Text style={styles.question}>Where’s your signal{morning ? '' : ' been'}?</Text>
+        <Text style={styles.question}>How’s your energy{morning ? '' : ' been today'}?</Text>
         <Text style={styles.sub}>10 seconds. No streak to protect — just an honest read.</Text>
 
         <View style={styles.levels}>
@@ -163,26 +166,24 @@ export default function CheckInScreen({
         {level && (
           <>
             <Pressable style={[styles.cta, { backgroundColor: a.accent }]} onPress={saved ? onTrends : save}>
-              <Text style={styles.ctaText}>{saved ? 'See your trends  →' : today ? 'Update today' : 'Log my signal'}</Text>
+              <Text style={styles.ctaText}>{saved ? 'See your trends  →' : today ? 'Update today' : 'Save check-in'}</Text>
             </Pressable>
             {saved && (
               <Pressable
                 style={[styles.explainBtn, { borderColor: `${a.accent}66` }]}
-                onPress={async () => {
-                  const log = await load();
-                  onExplain(buildSignalQuestion(log, level, reason));
-                }}
+                onPress={() => onExplain(buildSignalQuestion(log, level, reason))}
               >
-                <Text style={[styles.explainText, { color: a.accent }]}>Why do I feel like this?  →</Text>
+                <Text style={[styles.explainText, { color: a.accent }]}>Ask about today  →</Text>
               </Pressable>
             )}
             {saved && level !== 'steady' && (
               <Pressable onPress={() => onReset(level)} hitSlop={8}>
                 <Text style={styles.resetLink}>
-                  {level === 'wired' ? 'Help it land' : 'Lift the signal'} — 60-sec reset  →
+                  {level === 'wired' ? 'Settle down' : 'Lift your energy'} — 1-minute reset  →
                 </Text>
               </Pressable>
             )}
+            {saved && <SimilarDaysCard log={log} accent={a.accent} />}
           </>
         )}
       </ScrollView>

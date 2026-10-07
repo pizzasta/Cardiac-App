@@ -24,18 +24,18 @@ const STEPS = [
 const FEATURES = [
   { t: 'Your rhythm animal', s: 'Eight questions decode how your nervous system runs.' },
   { t: 'A plan that fits your wiring', s: 'Your real peak, crash, and wind-down — as a daily flow.' },
-  { t: 'Pulse, your AI companion', s: 'Ask it anything. It knows your patterns.' },
+  { t: 'Days like today', s: 'See past days that looked like this one — and what came after.' },
   { t: 'Sleep on your schedule', s: 'A wind-down and wake window tuned to your chronotype.' },
-  { t: 'Nudges that land', s: 'Reminders timed to your rhythm, not the clock.' },
+  { t: 'A one-minute reset', s: 'A breathing pace matched to how you feel right now.' },
   { t: 'Backed by the science', s: 'Every recommendation traces to real research.' },
 ];
 
 const STAY = [
-  'It learns you — switching elsewhere means losing that.',
-  'It’s specific: “you crash at 2:14pm” beats “drink more water.”',
-  'It catches the dip before you do.',
-  'It sounds like a person you’d actually listen to.',
-  'Your rhythm changes, and so does your plan.',
+  'Your history builds up — every check-in makes your patterns clearer.',
+  'It’s specific to you, not generic “drink more water” advice.',
+  'It shows what’s coming in your day, so a dip is less of a surprise.',
+  'Missing a day never resets you to zero.',
+  'Your data stays yours — export it any time, free.',
 ];
 
 export default function LandingScreen({
@@ -139,16 +139,16 @@ export default function LandingScreen({
           ))}
         </Section>
 
-        {/* PULSE SPOTLIGHT */}
-        <Section label="MEET PULSE">
-          <Text style={styles.h2}>An AI that actually knows you.</Text>
+        {/* DAYS LIKE TODAY SPOTLIGHT */}
+        <Section label="DAYS LIKE TODAY">
+          <Text style={styles.h2}>Your own history, not a guess.</Text>
           <View style={[styles.bubble, styles.userBubble]}>
-            <Text style={styles.userText}>when should I work out today?</Text>
+            <Text style={styles.userText}>I feel off today.</Text>
           </View>
           <View style={[styles.bubble, styles.pulseBubble]}>
             <Text style={styles.pulseText}>
-              Not this morning — you’re still catching up on sleep. Around 5pm your energy lifts and
-              movement will help you sleep tonight. Skip it if today felt like too much; that’s valid too.
+              3 similar days found. You also checked in as Flat on these days, and Sleep was selected on 2
+              of the 3. Your next recorded check-in was Steady on 2 of those 3 occasions.
             </Text>
           </View>
         </Section>

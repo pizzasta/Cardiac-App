@@ -131,7 +131,7 @@ export default function PulseScreen({
           <Pressable onPress={onBack} hitSlop={12}>
             <Text style={styles.back}>‹ Back</Text>
           </Pressable>
-          <Text style={styles.headerTitle}>{a.emoji}  Pulse</Text>
+          <Text style={styles.headerTitle}>{a.emoji}  Ask Circadia</Text>
           <Pressable onPress={toggleSpeak} hitSlop={12} style={styles.speaker}>
             <Text style={[styles.speakerIcon, speak && { color: a.accent }]}>
               {speak ? '🔊' : '🔇'}
@@ -160,7 +160,7 @@ export default function PulseScreen({
               {t.role === 'assistant' && (
                 <View style={styles.evidenceActions}>
                   <Pressable onPress={() => setWhyOpen(whyOpen === i ? null : i)}>
-                    <Text style={[styles.evidenceLink, { color: a.accent }]}>Why Pulse said this</Text>
+                    <Text style={[styles.evidenceLink, { color: a.accent }]}>Why this answer</Text>
                   </Pressable>
                   <Pressable onPress={() => setReported((r) => r.includes(i) ? r : [...r, i])}>
                     <Text style={styles.reportLink}>{reported.includes(i) ? 'Reported ✓' : 'Report response'}</Text>
@@ -171,7 +171,7 @@ export default function PulseScreen({
                 <View style={styles.evidenceCard}>
                   <Text style={styles.evidenceTitle}>WHAT PULSE USED</Text>
                   <Text style={styles.evidenceText}>Your Circadia quiz profile, the question you asked, and the conversation shown here.</Text>
-                  <Text style={styles.evidenceFine}>Pulse should not treat an association as a cause, diagnose a condition, or invent personal facts that are not in this context.</Text>
+                  <Text style={styles.evidenceFine}>Answers should not treat an association as a cause, diagnose a condition, or invent personal facts that are not in this context.</Text>
                 </View>
               )}
             </View>
@@ -228,7 +228,7 @@ export default function PulseScreen({
             value={input}
             onChangeText={setInput}
             placeholder={
-              listening ? 'Listening…' : hasAI() ? 'Ask Pulse…' : 'Add an API key to chat'
+              listening ? 'Listening…' : hasAI() ? 'Ask a question…' : 'Add an API key to chat'
             }
             placeholderTextColor="rgba(255,255,255,0.45)"
             editable={hasAI() && !listening}
