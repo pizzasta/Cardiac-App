@@ -56,6 +56,7 @@ export default function AnimalEmblem({
   mood = null,
   hop = 0,
   sparks = true,
+  distance = 3.5,
   style,
 }: {
   animal: AnimalId;
@@ -65,6 +66,8 @@ export default function AnimalEmblem({
   mood?: Mood | null;
   hop?: number;
   sparks?: boolean;
+  // Camera distance from the animal; smaller fills more of the frame.
+  distance?: number;
   style?: StyleProp<ViewStyle>;
 }) {
   const still = useReducedMotion();
@@ -79,7 +82,7 @@ export default function AnimalEmblem({
         <Canvas
           style={StyleSheet.absoluteFill as any}
           gl={{ alpha: !bg } as any}
-          camera={{ position: [0, 0.25, 3.5], fov: 50 }}
+          camera={{ position: [0, 0.25, distance], fov: 50 }}
         >
           {bg ? <color attach="background" args={[bg]} /> : null}
           <ambientLight intensity={0.7} />
