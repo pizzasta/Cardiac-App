@@ -20,6 +20,7 @@ import { useAuth } from '../logic/auth';
 import { fetchStreak, fetchWeeksTracked, pullCheckIns, subscribeCheckIns } from '../logic/sync';
 import { F, T } from '../theme';
 import { readResonance } from '../logic/resonance';
+import RhythmConstellation from '../components/RhythmConstellation';
 
 const DAYS = 14;
 const VW = 320;
@@ -213,6 +214,7 @@ export default function TrendsScreen({
           <Text style={[styles.insightKicker, { color: a.accent }]}>RESONANCE</Text>
           <Text style={styles.discoveryTitle}>{resonance.ready ? 'This day has a familiar shape' : 'The picture is still forming'}</Text>
           <Text style={styles.insightText}>{resonance.thread}</Text>
+          {resonance.ready && <View style={styles.constellation}><RhythmConstellation log={log} matches={resonance.matches} tint={tint} /></View>}
           {resonance.matches.length > 0 && (
             <View style={styles.resonanceDates}>
               {resonance.matches.map((entry) => (
@@ -301,6 +303,7 @@ const styles = StyleSheet.create({
   goodDaysBtn: { borderWidth: 1, borderRadius: 18, paddingVertical: 12, alignItems: 'center', marginTop: 14 },
   goodDaysBtnText: { fontSize: 13, fontWeight: '700' },
   resonanceCard: { backgroundColor: 'rgba(18,18,20,0.72)', borderColor: 'rgba(255,255,255,0.14)', borderWidth: 1, borderRadius: 18, padding: 18, marginTop: 24 },
+  constellation: { marginTop: 12, backgroundColor: 'rgba(255,255,255,0.025)', borderRadius: 14, overflow: 'hidden' },
   resonanceDates: { gap: 7, marginTop: 12 },
   resonanceDay: { flexDirection: 'row', justifyContent: 'space-between', gap: 12, borderTopWidth: 1, borderTopColor: T.hairline, paddingTop: 8 },
   resonanceDate: { color: T.muted, fontFamily: F.mono, fontSize: 11 },
