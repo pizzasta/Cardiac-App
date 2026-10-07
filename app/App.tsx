@@ -247,6 +247,10 @@ function Flow() {
             setShowCheckIn(false);
             setShowTrends(true);
           }}
+          onExplain={(seed) => {
+            setShowCheckIn(false);
+            openPulse(seed);
+          }}
         />
       )}
       {showTrends && result && (

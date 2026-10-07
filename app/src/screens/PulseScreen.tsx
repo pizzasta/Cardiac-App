@@ -166,6 +166,24 @@ export default function PulseScreen({
           )}
 
           {turns.length === 0 && reading && (
+            <View style={styles.quickWrap}>
+              <Text style={[styles.quickLabel, { color: a.accent }]}>ASK MY RHYTHM</Text>
+              <View style={styles.quickRow}>
+                {[
+                  'Why might my energy feel off today?',
+                  'When might be a good time for focused work today?',
+                  'What pattern should I pay attention to this week?',
+                  'Based on my rhythm, what is one gentle reset I could try?',
+                ].map((q) => (
+                  <Pressable key={q} style={styles.quickChip} onPress={() => send(q)}>
+                    <Text style={styles.quickText}>{q}</Text>
+                  </Pressable>
+                ))}
+              </View>
+            </View>
+          )}
+
+          {turns.length === 0 && reading && (
             <Text style={styles.hint}>
               {voiceSupported
                 ? 'Tap the mic and talk, or type. Tap the reading to hear it.'
@@ -249,6 +267,11 @@ const styles = StyleSheet.create({
   userText: { color: '#08080A', fontSize: 15, fontWeight: '600', lineHeight: 21 },
   pulseText: { color: '#fff', fontSize: 15, lineHeight: 22 },
   hint: { color: 'rgba(255,255,255,0.55)', fontSize: 13, textAlign: 'center', marginTop: 8, lineHeight: 19 },
+  quickWrap: { marginBottom: 16 },
+  quickLabel: { fontFamily: F.mono, fontSize: 11, letterSpacing: 1, marginBottom: 10 },
+  quickRow: { gap: 8 },
+  quickChip: { backgroundColor: 'rgba(255,255,255,0.08)', borderColor: 'rgba(255,255,255,0.14)', borderWidth: 1, borderRadius: 14, paddingVertical: 11, paddingHorizontal: 13 },
+  quickText: { color: '#fff', fontSize: 13, lineHeight: 18 },
   inputRow: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 16, paddingBottom: 8, paddingTop: 6 },
   disclaimer: {
     color: 'rgba(255,255,255,0.4)',

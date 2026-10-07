@@ -38,7 +38,7 @@ export const PLANS: Record<AnimalId, RhythmPlan> = {
     },
     flow: [
       { time: '9:30', title: 'Hardest task here', note: "You're sharpest late morning — spend it on the thing that needs real thinking." },
-      { time: '1:45', title: 'Crash incoming', note: 'Water + 5 min off the screen now. Not coffee — it deepens the spiral.' },
+      { time: '1:45', title: 'Possible energy dip', note: 'Water + 5 min off the screen now. Consider water and a short screen break before deciding what you need next.' },
       { time: '4:00', title: 'Light, low-stakes work', note: 'Admin, replies, tidying. Nothing that needs willpower.' },
       { time: '9:30', title: 'Wind-down, screens down', note: 'A light sleeper needs a real runway. Dim everything, soundscape on.' },
     ],
@@ -81,7 +81,7 @@ export const PLANS: Record<AnimalId, RhythmPlan> = {
       { time: '10:30', title: 'Real rest', note: 'Deep, boring routine wins. Same wind-down, same time.' },
     ],
     tips: [
-      { label: 'Burnout', text: 'Your crashes are slow-burn. Protect one afternoon a week before it stacks.' },
+      { label: 'Pacing', text: 'If fatigue tends to build gradually, protect some lower-demand time before your week fills up.' },
       { label: 'Recovery', text: 'You refill on deep rest and routine — not novelty. Don’t over-schedule recovery.' },
       { label: 'Movement', text: 'A short midday walk keeps the steady engine from sliding into fog.' },
     ],
@@ -106,7 +106,7 @@ export const PLANS: Record<AnimalId, RhythmPlan> = {
     ],
   },
   fox: {
-    intro: 'Hyper-alert and always scanning. Your peak is early — and your hardest skill is permission to stop.',
+    intro: 'Observant and often planning ahead. Your peak is early — and your hardest skill is permission to stop.',
     sleep: {
       bedtime: '10:00 PM',
       wake: '6:00 AM',
@@ -115,7 +115,7 @@ export const PLANS: Record<AnimalId, RhythmPlan> = {
     flow: [
       { time: '8:00', title: 'Deep work, first thing', note: 'You’re sharpest early. Use it before the scanning takes over.' },
       { time: '12:00', title: 'Plan, then release', note: 'Set the day’s plan, then stop re-checking it. Trust the version you made.' },
-      { time: '5:00', title: 'Movement to discharge', note: 'Burn off the alertness physically so it doesn’t follow you to bed.' },
+      { time: '5:00', title: 'Movement break', note: 'A little movement may help create a transition between the day and your evening.' },
       { time: '9:00', title: 'Permission to stop', note: 'Everything that needed you today, you did. You’re allowed to stop scanning.' },
     ],
     tips: [
@@ -140,7 +140,7 @@ export const PLANS: Record<AnimalId, RhythmPlan> = {
     tips: [
       { label: 'Energy', text: 'You don’t run out loudly — you run out all at once. Catch it early with check-ins.' },
       { label: 'Recovery', text: 'Decompression and low-demand company refill you. Total isolation can overcorrect.' },
-      { label: 'Boundaries', text: 'Masking through exhaustion is the failure mode. A short “I need 10” protects the week.' },
+      { label: 'Boundaries', text: 'Pushing through exhaustion can make it harder to notice what you need. A short “I need 10” protects the week.' },
     ],
   },
 };

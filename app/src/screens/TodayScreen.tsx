@@ -17,6 +17,7 @@ import { RhythmResult } from '../logic/score';
 import { PulseEntry, load, getToday, currentStreak } from '../logic/pulselog';
 import { weeklyReport, WeeklyReport } from '../logic/weekly';
 import { F, T } from '../theme';
+import { ActiveExperiment, EXPERIMENTS, experimentDay, getActiveExperiment, startExperiment, stopExperiment } from '../logic/experiments';
 
 // Minutes since midnight for a 'HH:MM' label; -1 if unparseable.
 function toMinutes(hhmm: string): number {
@@ -65,6 +66,7 @@ export default function TodayScreen({
   const [today, setToday] = useState<PulseEntry | undefined>(undefined);
   const [streak, setStreak] = useState(0);
   const [report, setReport] = useState<WeeklyReport | null>(null);
+  const [experiment, setExperiment] = useState<ActiveExperiment | null>(null);
 
   // Refresh local stats whenever the screen mounts.
   useEffect(() => {
@@ -75,6 +77,7 @@ export default function TodayScreen({
       setToday(getToday(log));
       setStreak(currentStreak(log));
       setReport(weeklyReport(log));
+      setExperiment(await getActiveExperiment());
     })();
     return () => {
       alive = false;
@@ -180,6 +183,26 @@ export default function TodayScreen({
             </View>
             <Text style={styles.weekMore}>See your patterns →</Text>
           </Pressable>
+        )}
+
+        <Text style={styles.section}>RHYTHM EXPERIMENT</Text>
+        {experiment ? (
+          <View style={styles.experimentCard}>
+            <Text style={[styles.experimentKicker, { color: arch.accent }]}>DAY {experimentDay(experiment)} OF {experiment.days}</Text>
+            <Text style={styles.experimentTitle}>{experiment.title}</Text>
+            <Text style={styles.experimentText}>{experiment.prompt}</Text>
+            <Text style={styles.experimentFine}>Notice what changes in your check-ins. Circadia treats this as a personal observation, not proof of cause.</Text>
+            <Pressable onPress={async () => { await stopExperiment(); setExperiment(null); }}><Text style={styles.experimentStop}>End experiment</Text></Pressable>
+          </View>
+        ) : (
+          <View style={styles.experimentChoices}>
+            {EXPERIMENTS.slice(0, 3).map((item) => (
+              <Pressable key={item.id} style={styles.experimentChoice} onPress={async () => setExperiment(await startExperiment(item))}>
+                <Text style={styles.experimentTitle}>{item.title}</Text>
+                <Text style={styles.experimentText}>{item.days}-day observation →</Text>
+              </Pressable>
+            ))}
+          </View>
         )}
 
         {/* Tonight: forward-looking recovery card. */}
@@ -298,6 +321,14 @@ const styles = StyleSheet.create({
   stat: { flex: 1 },
   statValue: { color: T.text, fontFamily: F.display, fontSize: 22 },
   statLabel: { color: T.muted, fontFamily: F.mono, fontSize: 10, marginTop: 2 },
+  experimentCard: { backgroundColor: T.surface, borderRadius: 16, padding: 16, marginBottom: 24 },
+  experimentKicker: { fontFamily: F.mono, fontSize: 10, letterSpacing: 1 },
+  experimentTitle: { color: T.text, fontFamily: F.display, fontSize: 16, marginTop: 5 },
+  experimentText: { color: T.muted, fontSize: 13, lineHeight: 19, marginTop: 5 },
+  experimentFine: { color: T.muted, fontSize: 11, lineHeight: 16, marginTop: 12, opacity: 0.8 },
+  experimentStop: { color: T.muted, fontFamily: F.mono, fontSize: 11, marginTop: 14 },
+  experimentChoices: { gap: 8, marginBottom: 24 },
+  experimentChoice: { backgroundColor: T.surface, borderRadius: 14, padding: 14 },
   tonight: { marginTop: 8 },
   tonightLine: { color: T.text, fontSize: 15, lineHeight: 21 },
   tonightNote: { color: T.muted, fontSize: 13, lineHeight: 19, marginTop: 6 },

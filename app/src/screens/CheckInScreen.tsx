@@ -22,6 +22,7 @@ import {
   PulseEntry,
   readFor,
   REASONS,
+  buildSignalQuestion,
 } from '../logic/pulselog';
 import { refreshSmartNudge } from '../logic/notifications';
 import PulseLine from '../components/PulseLine';
@@ -31,10 +32,12 @@ export default function CheckInScreen({
   result,
   onClose,
   onTrends,
+  onExplain,
 }: {
   result: RhythmResult;
   onClose: () => void;
   onTrends: () => void;
+  onExplain: (seed: string) => void;
 }) {
   const a = ARCHETYPES[result.animal];
   const morning = new Date().getHours() < 14;
@@ -156,9 +159,22 @@ export default function CheckInScreen({
         )}
 
         {level && (
-          <Pressable style={[styles.cta, { backgroundColor: a.accent }]} onPress={saved ? onTrends : save}>
-            <Text style={styles.ctaText}>{saved ? 'See your trends  →' : today ? 'Update today' : 'Log my signal'}</Text>
-          </Pressable>
+          <>
+            <Pressable style={[styles.cta, { backgroundColor: a.accent }]} onPress={saved ? onTrends : save}>
+              <Text style={styles.ctaText}>{saved ? 'See your trends  →' : today ? 'Update today' : 'Log my signal'}</Text>
+            </Pressable>
+            {saved && (
+              <Pressable
+                style={[styles.explainBtn, { borderColor: `${a.accent}66` }]}
+                onPress={async () => {
+                  const log = await load();
+                  onExplain(buildSignalQuestion(log, level, reason));
+                }}
+              >
+                <Text style={[styles.explainText, { color: a.accent }]}>Why do I feel like this?  →</Text>
+              </Pressable>
+            )}
+          </>
         )}
       </ScrollView>
     </View>
@@ -221,4 +237,6 @@ const styles = StyleSheet.create({
   tomorrow: { color: 'rgba(255,255,255,0.55)', fontSize: 13, lineHeight: 19, marginTop: 16, fontStyle: 'italic' },
   cta: { borderRadius: 26, paddingVertical: 16, alignItems: 'center', marginTop: 26 },
   ctaText: { color: '#08080A', fontSize: 16, fontWeight: '800' },
+  explainBtn: { borderWidth: 1, borderRadius: 24, paddingVertical: 14, alignItems: 'center', marginTop: 10 },
+  explainText: { fontSize: 14, fontWeight: '700' },
 });

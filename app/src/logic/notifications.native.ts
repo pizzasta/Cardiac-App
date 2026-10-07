@@ -67,7 +67,7 @@ export async function enable(animal: AnimalId): Promise<boolean> {
 
 // Schedule (or replace) the single adaptive check-in nudge.
 async function scheduleCheckIn(animal: AnimalId): Promise<void> {
-  const base = REMINDERS[animal][0]; // crash window = sensible cold-start time
+  const base = REMINDERS[animal][0]; // first profile reminder = sensible cold-start time
   const log = await loadLog();
   const t = suggestCheckInTime(log, { hour: base.hour, minute: base.minute });
   await Notifications.cancelScheduledNotificationAsync(CHECKIN_ID).catch(() => {});
@@ -75,7 +75,7 @@ async function scheduleCheckIn(animal: AnimalId): Promise<void> {
     identifier: CHECKIN_ID,
     content: {
       title: 'How’s your signal?',
-      body: '10-second check-in — catch your rhythm before it dips.',
+      body: '10-second check-in — notice how your energy feels right now.',
     },
     trigger: {
       hour: t.hour,

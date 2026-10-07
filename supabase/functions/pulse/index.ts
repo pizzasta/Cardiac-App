@@ -52,7 +52,7 @@ const EVIDENCE = `EVIDENCE YOU CAN DRAW ON (only state what's supported; don't i
 const BOUNDARIES = `BOUNDARIES:
 - You are not a doctor or therapist. Don't diagnose, name conditions, or give medical, psychiatric, or medication advice.
 - If they describe something clinical or concerning (persistent insomnia, panic, deep lows, self-harm), say plainly and calmly that it's worth talking to a qualified professional — brief, no alarm — then offer what you genuinely can help with.
-- If asked for medical or diagnostic certainty, decline gently and point them to a professional.`;
+- Treat the rhythm animal as an app-generated reflection, never a diagnosis, validated chronotype, or biological measurement.\n- Never claim Circadia can predict a crash, burnout, disease, hormone level, or nervous-system state. Use tentative language such as “you may notice” or “your answers suggest.”\n- If asked for medical or diagnostic certainty, decline gently and point them to a professional.`;
 
 const READING_PROMPT =
   "Give me my first read. In 3-4 sentences: what my rhythm means day-to-day, and the one thing to protect this week. Don't restate the animal name back to me.";
@@ -64,9 +64,9 @@ function buildSystem(p: any): string {
   const profile = Array.isArray(p.profileLines)
     ? p.profileLines.map((l: string) => `- ${l}`).join('\n')
     : '';
-  return `You are Pulse, the AI companion inside Circadia, a wellness app that reads people's nervous-system rhythms.
+  return `You are Pulse, the AI companion inside Circadia, a wellness app that helps people reflect on daily energy, sleep-routine, and focus patterns.
 
-The user just took the onboarding quiz. Their rhythm animal is the ${a.name ?? 'unknown'} (${a.oneLiner ?? ''}). From their actual answers: peak focus ${c.peak ?? '—'}, crash risk around ${c.crash ?? '—'}, recharges through ${c.recharge ?? '—'}.
+The user just took the onboarding quiz. Their rhythm animal is the ${a.name ?? 'unknown'} (${a.oneLiner ?? ''}). From their actual answers: their reported focus window is ${c.peak ?? '—'}, a possible lower-energy window is ${c.crash ?? '—'}, and they say they recharge through ${c.recharge ?? '—'}.
 
 Their raw answers:
 ${profile}
@@ -143,32 +143,38 @@ Deno.serve(async (req: Request) => {
     if (!(await withinRateLimit(req, String(body.kind ?? 'chat'))))
       return json({ error: 'rate_limited' }, 429);
 
-    let system: string;
+    if (body.kind !== 'reading' && body.kind !== 'chat') {
+      return json({ error: 'invalid request kind' }, 400);
+    }
+
+    const system = buildSystem(body);
     let messages: { role: string; content: string }[];
     let maxTokens = 400;
 
-    if (body.kind) {
-      system = buildSystem(body);
-      if (body.kind === 'reading') {
-        messages = [{ role: 'user', content: READING_PROMPT }];
-        maxTokens = 500;
-      } else {
-        const history = Array.isArray(body.history)
-          ? body.history.map((t: { role: string; text: string }) => ({ role: t.role, content: t.text }))
-          : [];
-        messages = [...history, { role: 'user', content: String(body.question ?? '') }];
-      }
+    if (body.kind === 'reading') {
+      messages = [{ role: 'user', content: READING_PROMPT }];
+      maxTokens = 500;
     } else {
-      // Legacy passthrough (e.g. existing Cloudflare-worker clients).
-      system = String(body.system ?? '');
-      messages = body.messages ?? [];
-      maxTokens = body.max_tokens ?? 400;
+      const history = Array.isArray(body.history)
+        ? body.history
+            .filter((t: { role?: string; text?: string }) =>
+              (t.role === 'user' || t.role === 'assistant') && typeof t.text === 'string'
+            )
+            .slice(-12)
+            .map((t: { role: string; text: string }) => ({
+              role: t.role,
+              content: t.text.slice(0, 4000),
+            }))
+        : [];
+      const question = typeof body.question === 'string' ? body.question.trim().slice(0, 4000) : '';
+      if (!question) return json({ error: 'question required' }, 400);
+      messages = [...history, { role: 'user', content: question }];
     }
 
     const r = await fetch(ANTHROPIC_URL, {
       method: 'POST',
       headers: { 'x-api-key': key, 'anthropic-version': '2023-06-01', 'content-type': 'application/json' },
-      body: JSON.stringify({ model: body.model ?? MODEL, max_tokens: maxTokens, system, messages }),
+      body: JSON.stringify({ model: MODEL, max_tokens: maxTokens, system, messages }),
     });
     if (!r.ok) return json({ error: `anthropic ${r.status}` }, 502);
 

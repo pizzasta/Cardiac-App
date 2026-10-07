@@ -58,7 +58,7 @@ export const ARCHETYPES: Record<AnimalId, Archetype> = {
     id: 'bear',
     name: 'Bear',
     emoji: '🐻',
-    oneLiner: 'Steady and reliable, burnout-prone',
+    oneLiner: 'Steady energy, but may keep pushing past a needed reset',
     reading:
       'You’re the one who keeps going — which is exactly why you crash slowly and hard. Protected rest isn’t a reward for you, it’s maintenance.',
     gradient: ['#08080A', '#141016', '#1C0C16'],
@@ -72,9 +72,9 @@ export const ARCHETYPES: Record<AnimalId, Archetype> = {
     id: 'hummingbird',
     name: 'Hummingbird',
     emoji: '🐦',
-    oneLiner: 'Fast, anxious, always multitasking',
+    oneLiner: 'Fast-moving, often juggling several things at once',
     reading:
-      'Your mind moves faster than the day does, which is why it spins out. You don’t need to slow down everywhere — just land on one thing at a time.',
+      'Your mind tends to move quickly, which can make it harder to settle on one thing. You don’t need to slow down everywhere — just land on one thing at a time.',
     gradient: ['#08080A', '#141016', '#1C0C16'],
     accent: '#FF2E7E',
     strength:
@@ -86,9 +86,9 @@ export const ARCHETYPES: Record<AnimalId, Archetype> = {
     id: 'fox',
     name: 'Fox',
     emoji: '🦊',
-    oneLiner: 'Hyper-alert planner, always scanning',
+    oneLiner: 'Observant planner who tends to scan ahead',
     reading:
-      'You see problems before they arrive — useful, until you can’t switch it off. Your hardest skill isn’t planning, it’s permission to stop scanning.',
+      'You tend to notice potential problems early — useful, though it can make switching off harder. Your hardest skill isn’t planning, it’s permission to stop scanning.',
     gradient: ['#08080A', '#141016', '#1C0C16'],
     accent: '#FF2E7E',
     strength:
@@ -100,9 +100,9 @@ export const ARCHETYPES: Record<AnimalId, Archetype> = {
     id: 'octopus',
     name: 'Octopus',
     emoji: '🐙',
-    oneLiner: 'Emotionally absorbent, social masker',
+    oneLiner: 'Highly attuned to people and surroundings',
     reading:
-      'You read the room so well you forget to check your own state. You don’t run out of energy loudly — you run out quietly, then all at once.',
+      'You may notice other people’s needs before checking in with your own. You don’t run out of energy loudly — you run out quietly, then all at once.',
     gradient: ['#08080A', '#141016', '#1C0C16'],
     accent: '#FF2E7E',
     strength:

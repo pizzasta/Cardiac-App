@@ -8,7 +8,7 @@ import { DISCLAIMER_FULL } from '../data/disclaimer';
 // not-medical-advice footprint — have it reviewed by counsel before a real
 // launch and fill in the real entity, contact, and data specifics.
 
-const UPDATED = 'June 2026';
+const UPDATED = 'October 2026';
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
@@ -101,7 +101,7 @@ export default function LegalScreen({ onClose }: { onClose: () => void }) {
         </Section>
 
         <Text style={styles.footer}>
-          This is an early draft and may change as Circadia evolves.
+          Please review this policy before using Circadia. Material privacy changes will be reflected here.
         </Text>
       </ScrollView>
     </View>
