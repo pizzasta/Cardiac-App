@@ -1,14 +1,14 @@
 import { experimentDay, experimentOutcome } from './experiments';
 
-describe('experimentDay', () => {
-  const active = {
+const active = {
     id: 'morning-light' as const,
     title: 'Morning light',
     prompt: 'Test',
     days: 5,
     startedAt: '2026-10-01T12:00:00.000Z',
-  };
+};
 
+describe('experimentDay', () => {
   it('starts on day one', () => {
     expect(experimentDay(active, new Date('2026-10-01T18:00:00.000Z'))).toBe(1);
   });
