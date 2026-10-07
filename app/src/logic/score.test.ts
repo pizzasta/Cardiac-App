@@ -166,3 +166,16 @@ describe('scoreQuiz: runner-up and reasons', () => {
     expect(sawRunnerUp).toBe(true);
   });
 });
+
+describe('scoreQuiz: tie-break on signature answers', () => {
+  it('prefers the animal with more 3-point answers when totals tie', () => {
+    const opt = (scores: Record<string, number>) => ({ label: 'x', scores }) as Option;
+    // Bear 3 (one signature answer) ties Wolf 2+1 (none); Wolf would win on priority alone.
+    const r = scoreQuiz([opt({ bear: 3 }), opt({ wolf: 2 }), opt({ wolf: 1 })]);
+    expect(r.animal).toBe('bear');
+  });
+
+  it('covers all 12 questions', () => {
+    expect(TOTAL_QUESTIONS).toBe(12);
+  });
+});

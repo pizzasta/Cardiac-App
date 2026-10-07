@@ -8,18 +8,18 @@ Voice: smart, calm, a little mysterious. Human, not corporate, not clinical, not
 Alternates: "Your body has a rhythm. Circadia reads it." · "Know your nervous system. Work with it, not against it." · "The operating system for your nervous system."
 
 ## Subheadline
-A 60-second read of how your energy, stress, and sleep actually work — then a daily plan built around it.
+A 90-second read of how your energy, stress, and sleep actually work — then a daily plan built around it.
 
 ## CTAs
 Primary: **Find your rhythm** · "What's your rhythm animal?" · "Read my rhythm"
 Secondary: "See how it works" · "No signup — just curiosity"
 
 ## Onboarding intro
-Eight questions. Sixty seconds. No accounts, no fluff.
+Twelve questions. About 90 seconds. No accounts, no fluff.
 We'll read how your energy actually moves — when you peak, when you crash, how you recover — and match you to your rhythm animal. Then your plan writes itself.
 
 ## Features
-- **Your rhythm animal** — Eight questions decode how your nervous system runs.
+- **Your rhythm animal** — Twelve questions decode how your nervous system runs.
 - **A plan that fits your wiring** — Your real peak, crash, and wind-down, turned into a daily flow.
 - **Days like today** — See past days that looked like this one, and what came after.
 - **Sleep on your schedule** — A wind-down and wake window tuned to your chronotype.

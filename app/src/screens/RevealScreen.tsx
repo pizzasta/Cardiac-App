@@ -18,6 +18,7 @@ import AnimalEmblem from '../world/AnimalEmblem';
 import { playSfx } from '../logic/sfx';
 import Scrim from '../components/Scrim';
 import PressableScale from '../components/PressableScale';
+import { blendFor, displayName } from '../data/blends';
 
 export default function RevealScreen({
   result,
@@ -31,6 +32,7 @@ export default function RevealScreen({
   onShare: () => void;
 }) {
   const a = ARCHETYPES[result.animal];
+  const blend = blendFor(result);
 
   // Entrance: the content lifts and fades in, then the animal arrives on a
   // single heartbeat — one thump with a pink glow bloom.
@@ -86,13 +88,14 @@ export default function RevealScreen({
             </View>
           </Animated.View>
 
-          <Text style={styles.name}>{a.name}</Text>
-          {result.runnerUp && (
+          <Text style={styles.name}>{displayName(result)}</Text>
+          {blend && (
             <Text style={[styles.streak, { color: a.accent }]}>
-              with a {ARCHETYPES[result.runnerUp].name} streak {ARCHETYPES[result.runnerUp].emoji}
+              {a.name} with a {ARCHETYPES[blend.streak].name} streak {ARCHETYPES[blend.streak].emoji}
             </Text>
           )}
           <Text style={styles.oneLiner}>{a.oneLiner}</Text>
+          {blend && <Text style={styles.blendLine}>{blend.line}</Text>}
           <Text style={styles.reading}>{a.reading}</Text>
 
           {!!result.reasons?.length && (
@@ -209,6 +212,7 @@ const styles = StyleSheet.create({
   },
   traitLabel: { fontSize: 11, fontFamily: F.mono, letterSpacing: 1, marginBottom: 4 },
   traitText: { color: '#fff', fontSize: 14, lineHeight: 20 },
+  blendLine: { color: 'rgba(255,255,255,0.8)', fontSize: 14, lineHeight: 20, textAlign: 'center', marginTop: 8 },
   streak: { fontSize: 15, fontWeight: '700', textAlign: 'center', marginTop: 2, marginBottom: 6 },
   whyCard: { borderColor: 'rgba(255,255,255,0.18)', marginTop: 18, marginBottom: 2 },
   whyRow: { marginTop: 8 },

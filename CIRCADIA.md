@@ -63,7 +63,7 @@ Goal: under 90 seconds to the reveal. The reveal is the dopamine hit; everything
 ### Step 0 — The hook screen (pre-quiz)
 Full-bleed animated gradient, single line: **"What's your rhythm animal?"** One button: *Find out (60 sec)*. No signup yet. Friction kills virality — the reveal comes before the account.
 
-### Step 1 — The quiz (8 questions, swipeable cards)
+### Step 1 — The quiz (12 questions, swipeable cards)
 Each question is one card, large type, 2–4 tappable answers, soft haptic on select, gradient shifts subtly with each answer. No "Next" button — selecting advances.
 
 1. **Sleep** — "When does your brain actually shut off at night?" (Easily / Takes forever / Wired late / Crash hard then wake up)
@@ -74,6 +74,12 @@ Each question is one card, large type, 2–4 tappable answers, soft haptic on se
 6. **The crash** — "Your energy dips hardest around…" (Mid-morning / 2–4pm / Evening / It's random)
 7. **Overwhelm** — "Too much at once and you…" (Multitask harder / Freeze / Mask it and push through / Need to disappear)
 8. **Recovery** — "You actually recover by…" (Alone & quiet / Movement / People you trust / Total novelty)
+9. **Free day** — "A free day with no plans. You…" (Sleep in and drift / Up early with a plan / Fill it with people / Start five things, finish one)
+10. **Noise** — "A loud, busy room after a long day feels…" (Unbearable / Like a second wind / Fine if I know people there / Something to manage)
+11. **Decisions** — "Before a big decision you…" (Map every option / Think about who it affects / Go with your gut, fast / Sleep on it, slowly)
+12. **Bedtime** — "Left to yourself, you'd fall asleep around…" (Before 10pm / 10pm to midnight / After midnight / It changes a lot)
+
+A close second animal names a blend, e.g. "Steady Dolphin" (a Dolphin with a Bear streak); see `app/src/data/blends.ts`.
 
 ### Step 2 — The "reading" moment (3–4 sec)
 A loading beat that builds anticipation without feeling fake. Pulse animation, copy cycling:

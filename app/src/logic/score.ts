@@ -13,11 +13,13 @@ export interface RhythmResult {
   reasons?: string[];
 }
 
-// Show the runner-up when it finished within this many points of the winner.
-const RUNNER_UP_GAP = 2;
+// Show the runner-up (and name the blend) when it finished within this many
+// points of the winner. With 12 questions about three in four people get a
+// blend; the rest have a clear, pure result.
+export const RUNNER_UP_GAP = 3;
 
-// Tie-break priority: more distinctive archetypes win ties so results
-// don't collapse to the "safe" middle.
+// Final tie-break, after total points and "signature" (3-point) answers:
+// more distinctive archetypes win so results don't collapse to the middle.
 const PRIORITY: AnimalId[] = [
   'dolphin',
   'octopus',
@@ -44,6 +46,10 @@ export function scoreQuiz(answers: (Option | null)[]): RhythmResult {
     octopus: 0,
   };
 
+  // Signature answers: the 3-point picks that most define an animal. They
+  // break ties on total points.
+  const signature: Record<AnimalId, number> = { ...totals };
+
   const chips = { ...FALLBACK };
 
   answers.forEach((opt) => {
@@ -54,6 +60,7 @@ export function scoreQuiz(answers: (Option | null)[]): RhythmResult {
       (Object.entries(scores) as [AnimalId, number][]).forEach(
         ([animal, pts]) => {
           totals[animal] += pts;
+          if (pts >= 3) signature[animal] += 1;
         }
       );
     }
@@ -70,16 +77,13 @@ export function scoreQuiz(answers: (Option | null)[]): RhythmResult {
     }
   });
 
-  let winner: AnimalId = PRIORITY[0];
-  let best = -1;
-  PRIORITY.forEach((animal) => {
-    if (totals[animal] > best) {
-      best = totals[animal];
-      winner = animal;
-    }
-  });
-
-  const second = PRIORITY.filter((a) => a !== winner).reduce((b, a) => (totals[a] > totals[b] ? a : b));
+  // Rank by total, then signature answers, then priority (PRIORITY order is
+  // preserved by the stable sort).
+  const ranked = [...PRIORITY].sort(
+    (a, b) => totals[b] - totals[a] || signature[b] - signature[a]
+  );
+  const winner = ranked[0];
+  const second = ranked[1];
   const runnerUp =
     totals[second] > 0 && totals[winner] - totals[second] <= RUNNER_UP_GAP ? second : undefined;
 

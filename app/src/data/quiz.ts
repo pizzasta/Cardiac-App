@@ -87,17 +87,57 @@ export const QUIZ: Question[] = [
       { label: 'Multitask harder', scores: { hummingbird: 3, fox: 1 } },
       { label: 'Freeze', scores: { bear: 2, octopus: 1 } },
       { label: 'Mask it and push through', scores: { octopus: 3, fox: 1 } },
-      { label: 'Need to disappear', scores: { dolphin: 2, octopus: 1 } },
+      { label: 'Need to disappear', scores: { dolphin: 3, octopus: 1 } },
     ],
   },
   {
     id: 'recovery',
     prompt: 'You actually recover by…',
     options: [
-      { label: 'Alone & quiet', scores: { dolphin: 2, fox: 1 }, tag: { kind: 'recharge', value: 'solitude' } },
+      { label: 'Alone & quiet', scores: { dolphin: 3, fox: 1 }, tag: { kind: 'recharge', value: 'solitude' } },
       { label: 'Movement', scores: { wolf: 2, bear: 1 }, tag: { kind: 'recharge', value: 'movement' } },
       { label: 'People you trust', scores: { octopus: 2, bear: 1 }, tag: { kind: 'recharge', value: 'close people' } },
       { label: 'Total novelty', scores: { wolf: 3, hummingbird: 1 }, tag: { kind: 'recharge', value: 'novelty' } },
+    ],
+  },
+  {
+    id: 'freeday',
+    prompt: 'A free day with no plans. You…',
+    options: [
+      { label: 'Sleep in and drift', scores: { bear: 2, wolf: 1 } },
+      { label: 'Up early with a plan', scores: { fox: 3 } },
+      { label: 'Fill it with people', scores: { octopus: 2, wolf: 1 } },
+      { label: 'Start five things, finish one', scores: { hummingbird: 3 } },
+    ],
+  },
+  {
+    id: 'noise',
+    prompt: 'A loud, busy room after a long day feels…',
+    options: [
+      { label: 'Unbearable', scores: { dolphin: 3 } },
+      { label: 'Like a second wind', scores: { hummingbird: 2, wolf: 1 } },
+      { label: 'Fine if I know people there', scores: { octopus: 3 } },
+      { label: 'Something to manage', scores: { fox: 2, bear: 1 } },
+    ],
+  },
+  {
+    id: 'decisions',
+    prompt: 'Before a big decision you…',
+    options: [
+      { label: 'Map every option', scores: { fox: 3 } },
+      { label: 'Think about who it affects', scores: { octopus: 3 } },
+      { label: 'Go with your gut, fast', scores: { hummingbird: 2, wolf: 1 } },
+      { label: 'Sleep on it, slowly', scores: { dolphin: 2, bear: 1 } },
+    ],
+  },
+  {
+    id: 'bedtime',
+    prompt: 'Left to yourself, you’d fall asleep around…',
+    options: [
+      { label: 'Before 10pm', scores: { fox: 2, bear: 1 } },
+      { label: '10pm to midnight', scores: { bear: 2, octopus: 1 } },
+      { label: 'After midnight', scores: { wolf: 3 } },
+      { label: 'It changes a lot', scores: { hummingbird: 3, dolphin: 1 } },
     ],
   },
 ];
