@@ -8,7 +8,6 @@ import {
   Text,
   View,
 } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
 import { useTopInset } from '../hooks';
 import { ARCHETYPES } from '../data/archetypes';
 import { PLANS } from '../data/plans';
@@ -19,8 +18,9 @@ import { RhythmResult } from '../logic/score';
 import { canSchedule, disable as disableNotifs, enable as enableNotifs, isEnabled } from '../logic/notifications';
 import { load as loadLog, suggestCheckInTime } from '../logic/pulselog';
 import Protected from '../components/Protected';
-import Atmosphere from '../components/Atmosphere';
 import { F } from '../theme';
+import Scrim from '../components/Scrim';
+import PressableScale from '../components/PressableScale';
 
 function fmtTime(hour: number, minute: number): string {
   const ampm = hour < 12 ? 'AM' : 'PM';
@@ -98,11 +98,7 @@ export default function PlanScreen({
   const topInset = useTopInset();
   return (
     <View style={styles.fill}>
-      <Atmosphere style={StyleSheet.absoluteFill} accent={a.accent} />
-      <LinearGradient
-        colors={[`${a.gradient[0]}cc`, 'rgba(8,8,10,0.78)', 'rgba(8,8,10,0.92)']}
-        style={StyleSheet.absoluteFill}
-      />
+      <Scrim shade="medium" />
 
       <View style={[styles.header, { paddingTop: topInset }]}>
         <Pressable onPress={onBack} hitSlop={12}>
@@ -126,20 +122,20 @@ export default function PlanScreen({
           <Chip label="Recharge" value={result.recharge} accent={a.accent} />
         </View>
 
-        <Text style={styles.section}>DAILY PULSE</Text>
-        <Pressable style={[styles.pulseCard, { borderColor: `${a.accent}55` }]} onPress={onCheckIn}>
+        <Text style={styles.section}>CHECK-IN</Text>
+        <PressableScale style={[styles.pulseCard, { borderColor: `${a.accent}55` }]} onPress={onCheckIn}>
           <View style={{ flex: 1 }}>
             <Text style={styles.pulseTitle}>Check in — 10 seconds</Text>
-            <Text style={styles.pulseSub}>Log today’s signal. No streak to protect, just an honest read.</Text>
+            <Text style={styles.pulseSub}>Log how your energy feels today. No streak to protect, just an honest read.</Text>
           </View>
           <Text style={[styles.pulseArrow, { color: a.accent }]}>→</Text>
-        </Pressable>
+        </PressableScale>
         <View style={styles.pulseLinks}>
           <Pressable onPress={onTrends} hitSlop={8}>
             <Text style={[styles.pulseLink, { color: a.accent }]}>See your trends</Text>
           </Pressable>
           <Pressable onPress={onShareCard} hitSlop={8}>
-            <Text style={[styles.pulseLink, { color: a.accent }]}>Share your Signal Card ↗</Text>
+            <Text style={[styles.pulseLink, { color: a.accent }]}>Share your rhythm card ↗</Text>
           </Pressable>
         </View>
 
@@ -295,7 +291,7 @@ function Chip({ label, value, accent }: { label: string; value: string; accent: 
 }
 
 const styles = StyleSheet.create({
-  fill: { flex: 1, backgroundColor: '#08080A' },
+  fill: { flex: 1, backgroundColor: 'transparent' },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -304,9 +300,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 18,
     paddingBottom: 8,
   },
-  back: { color: 'rgba(255,255,255,0.85)', fontSize: 16, fontWeight: '600', width: 48 },
+  back: { color: 'rgba(255,255,255,0.85)', fontSize: 16, fontWeight: '600', width: 64 },
   headerTitle: { color: '#fff', fontSize: 18, fontFamily: F.display },
-  gear: { width: 48, alignItems: 'flex-end' },
+  gear: { width: 64, alignItems: 'flex-end' },
   gearIcon: { color: 'rgba(255,255,255,0.85)', fontSize: 20 },
   body: { paddingHorizontal: 22, paddingBottom: 40 },
   animal: { color: '#fff', fontSize: 30, fontFamily: F.display, marginTop: 8 },

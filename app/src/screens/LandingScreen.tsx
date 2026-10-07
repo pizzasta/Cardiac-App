@@ -8,11 +8,11 @@ import {
   View,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import Atmosphere from '../components/Atmosphere';
 import { ARCHETYPES } from '../data/archetypes';
 import { DISCLAIMER_SHORT } from '../data/disclaimer';
 import { T, F } from '../theme';
 import { playSfx } from '../logic/sfx';
+import PressableScale from '../components/PressableScale';
 
 const ACCENT = T.accent;
 
@@ -56,7 +56,7 @@ export default function LandingScreen({
   const animals = Object.values(ARCHETYPES);
 
   const Cta = ({ label = 'Find your rhythm' }: { label?: string }) => (
-    <Pressable
+    <PressableScale
       style={styles.cta}
       onPress={() => {
         playSfx('tap');
@@ -64,7 +64,7 @@ export default function LandingScreen({
       }}
     >
       <Text style={styles.ctaText}>{label}  →</Text>
-    </Pressable>
+    </PressableScale>
   );
 
   return (
@@ -72,9 +72,8 @@ export default function LandingScreen({
       <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
         {/* HERO */}
         <View style={[styles.hero, { minHeight: Math.max(560, height) }]}>
-          <Atmosphere style={StyleSheet.absoluteFill} accent={ACCENT} />
           <LinearGradient
-            colors={['rgba(8,8,10,0.15)', 'rgba(8,8,10,0.55)', 'rgba(8,8,10,0.95)']}
+            colors={['rgba(6,6,10,0)', 'rgba(6,6,10,0.25)', 'rgba(6,6,10,0.85)']}
             style={StyleSheet.absoluteFill}
           />
 
@@ -214,7 +213,7 @@ function Section({ label, children }: { label?: string; children: React.ReactNod
 }
 
 const styles = StyleSheet.create({
-  fill: { flex: 1, backgroundColor: '#08080A' },
+  fill: { flex: 1, backgroundColor: 'transparent' },
   scroll: { paddingBottom: 40 },
 
   hero: { paddingHorizontal: 28, justifyContent: 'flex-end', paddingBottom: 56 },

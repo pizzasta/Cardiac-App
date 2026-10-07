@@ -20,6 +20,7 @@ Store-submission steps live in [RELEASE_CHECKLIST.md](RELEASE_CHECKLIST.md). Com
 - **Data portability** — Settings → Export my data downloads (web) or shares (native) every check-in as CSV.
 - **Legal pages** — Privacy Policy, Terms, account deletion and support are written once in `app/src/data/legal.ts`, shown in-app, and generated to `app/public/*/index.html` (`npm run gen:legal`; CI fails on drift). They publish with the web build.
 - **Consent** — explicit consent before account creation (health-related data) and before the first Ask Circadia request (third-party AI), revocable in Settings.
+- **3D world** — one persistent React Three Fiber scene (`app/src/world/`) behind every screen on web and native: waveform terrain, fireflies, a heartbeat ripple and your animal on the horizon, with a camera station per screen (`rig.ts`). Respects reduce-motion, pauses in the background, and falls back to the flat backdrop without WebGL.
 - **Sound** — interface sounds and rainforest ambience come from one set of recipes in `app/src/logic/sfx/recipes.ts`: synthesized live on web, rendered to `app/assets/sounds/*.wav` for iOS/Android (`npm run gen:sounds`).
 - **Error handling** — `App.tsx` wraps the tree in an `ErrorBoundary`; all AI/sync calls have user-friendly fallbacks.
 - **Platform splitting** — `.native.ts` / `.ts` pairs for `capture`, `sound`, `notifications`, `voice`.

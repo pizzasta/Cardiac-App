@@ -8,7 +8,8 @@ import { pickStatement, STATEMENTS } from '../data/statements';
 import { shareText } from '../logic/share';
 import { canCaptureImage, captureAndShare } from '../logic/capture';
 import PulseLine from '../components/PulseLine';
-import { F, T } from '../theme';
+import { F } from '../theme';
+import Scrim from '../components/Scrim';
 
 export default function SignalCardScreen({
   result,
@@ -44,7 +45,7 @@ export default function SignalCardScreen({
   const topInset = useTopInset();
   return (
     <View style={styles.fill}>
-      <LinearGradient colors={T.bgGradient} style={StyleSheet.absoluteFill} />
+      <Scrim shade="medium" />
 
       <View style={[styles.header, { paddingTop: topInset }]}>
         <Pressable onPress={onClose} hitSlop={12}>
@@ -103,7 +104,7 @@ export default function SignalCardScreen({
 }
 
 const styles = StyleSheet.create({
-  fill: { ...StyleSheet.absoluteFillObject, backgroundColor: T.bg },
+  fill: { ...StyleSheet.absoluteFillObject, backgroundColor: 'transparent' },
   header: {
     flexDirection: 'row',
     alignItems: 'center',

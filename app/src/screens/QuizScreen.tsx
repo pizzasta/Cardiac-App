@@ -51,7 +51,7 @@ export default function QuizScreen({
   };
 
   return (
-    <LinearGradient colors={['#08080A', '#121016', '#08080A']} style={styles.fill}>
+    <LinearGradient colors={['rgba(6,6,10,0.1)', 'rgba(6,6,10,0.35)', 'rgba(6,6,10,0.8)']} style={styles.fill}>
       <View style={styles.progressTrack}>
         <View style={[styles.progressFill, { width: `${progress * 100}%` }]} />
       </View>

@@ -9,14 +9,15 @@ import {
   Text,
   View,
 } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
 import { ARCHETYPES } from '../data/archetypes';
 import { RhythmResult } from '../logic/score';
 import { DISCLAIMER_SHORT } from '../data/disclaimer';
 import { F } from '../theme';
-import AnimalEmblem from '../three/AnimalEmblem';
+import AnimalEmblem from '../world/AnimalEmblem';
 import { playSfx } from '../logic/sfx';
+import Scrim from '../components/Scrim';
+import PressableScale from '../components/PressableScale';
 
 export default function RevealScreen({
   result,
@@ -62,11 +63,7 @@ export default function RevealScreen({
 
   return (
     <View style={styles.fill}>
-      <LinearGradient colors={a.gradient} style={StyleSheet.absoluteFill} />
-      <LinearGradient
-        colors={['rgba(8,8,10,0.2)', 'rgba(8,8,10,0.55)']}
-        style={StyleSheet.absoluteFill}
-      />
+      <Scrim shade="light" />
 
       <ScrollView contentContainerStyle={styles.body} showsVerticalScrollIndicator={false}>
         <Animated.View style={{ opacity: enter, transform: [{ translateY: lift }] }}>
@@ -110,9 +107,9 @@ export default function RevealScreen({
             <Chip label="Recharge" value={result.recharge} accent={a.accent} />
           </View>
 
-          <Pressable style={styles.cta} onPress={onContinue}>
+          <PressableScale style={styles.cta} onPress={onContinue}>
             <Text style={styles.ctaText}>See my rhythm  →</Text>
-          </Pressable>
+          </PressableScale>
           <Pressable style={[styles.shareBtn, { borderColor: `${a.accent}66` }]} onPress={onShare}>
             <Text style={[styles.shareText, { color: a.accent }]}>Share this  ↗</Text>
           </Pressable>
@@ -136,7 +133,7 @@ function Chip({ label, value, accent }: { label: string; value: string; accent: 
 }
 
 const styles = StyleSheet.create({
-  fill: { flex: 1, backgroundColor: '#08080A' },
+  fill: { flex: 1, backgroundColor: 'transparent' },
   body: { paddingHorizontal: 24, paddingTop: 70, paddingBottom: 44, alignItems: 'center' },
   kicker: {
     color: 'rgba(255,255,255,0.7)',

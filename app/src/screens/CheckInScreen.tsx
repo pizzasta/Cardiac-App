@@ -8,7 +8,6 @@ import {
   Text,
   View,
 } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
 import { useTopInset } from '../hooks';
 import * as Haptics from 'expo-haptics';
 import { ARCHETYPES } from '../data/archetypes';
@@ -27,8 +26,10 @@ import {
 import { refreshSmartNudge } from '../logic/notifications';
 import PulseLine from '../components/PulseLine';
 import SimilarDaysCard from '../components/SimilarDaysCard';
-import { F, T } from '../theme';
+import { F } from '../theme';
 import { playSfx } from '../logic/sfx';
+import Scrim from '../components/Scrim';
+import PressableScale from '../components/PressableScale';
 
 export default function CheckInScreen({
   result,
@@ -89,7 +90,7 @@ export default function CheckInScreen({
   const topInset = useTopInset();
   return (
     <View style={styles.fill}>
-      <LinearGradient colors={T.bgGradient} style={StyleSheet.absoluteFill} />
+      <Scrim shade="medium" />
 
       <View style={[styles.header, { paddingTop: topInset }]}>
         <Pressable onPress={onClose} hitSlop={12}>
@@ -110,7 +111,7 @@ export default function CheckInScreen({
           {LEVELS.map((l) => {
             const active = level === l.id;
             return (
-              <Pressable
+              <PressableScale
                 key={l.id}
                 style={[
                   styles.levelCard,
@@ -127,7 +128,7 @@ export default function CheckInScreen({
                   <Text style={styles.levelLabel}>{l.label}</Text>
                   <Text style={styles.levelBlurb}>{l.blurb}</Text>
                 </View>
-              </Pressable>
+              </PressableScale>
             );
           })}
         </View>
@@ -168,9 +169,9 @@ export default function CheckInScreen({
 
         {level && (
           <>
-            <Pressable style={[styles.cta, { backgroundColor: a.accent }]} onPress={saved ? onTrends : save}>
+            <PressableScale style={[styles.cta, { backgroundColor: a.accent }]} onPress={saved ? onTrends : save}>
               <Text style={styles.ctaText}>{saved ? 'See your trends  →' : today ? 'Update today' : 'Save check-in'}</Text>
-            </Pressable>
+            </PressableScale>
             {saved && (
               <Pressable
                 style={[styles.explainBtn, { borderColor: `${a.accent}66` }]}
@@ -200,7 +201,7 @@ export default function CheckInScreen({
 }
 
 const styles = StyleSheet.create({
-  fill: { ...StyleSheet.absoluteFillObject, backgroundColor: T.bg },
+  fill: { ...StyleSheet.absoluteFillObject, backgroundColor: 'transparent' },
   header: {
     flexDirection: 'row',
     alignItems: 'center',

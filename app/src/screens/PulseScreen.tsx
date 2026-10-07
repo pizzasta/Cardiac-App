@@ -9,7 +9,6 @@ import {
   TextInput,
   View,
 } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
 import { useTopInset } from '../hooks';
 import * as Speech from 'expo-speech';
 import { ARCHETYPES } from '../data/archetypes';
@@ -18,10 +17,9 @@ import { RhythmResult } from '../logic/score';
 import { askPulse, ChatTurn, generateReading, hasAI } from '../logic/ai';
 import { listen, voiceSupported } from '../logic/voice';
 import { DISCLAIMER_SHORT } from '../data/disclaimer';
-import Atmosphere from '../components/Atmosphere';
-import ImmersiveScene from '../components/ImmersiveScene';
 import PulseLoader from '../components/PulseLoader';
 import { F } from '../theme';
+import Scrim from '../components/Scrim';
 
 export default function PulseScreen({
   result,
@@ -116,12 +114,7 @@ export default function PulseScreen({
   const topInset = useTopInset();
   return (
     <View style={styles.fill}>
-      <ImmersiveScene animal={result.animal} style={StyleSheet.absoluteFill} />
-      <Atmosphere style={StyleSheet.absoluteFill} accent={a.accent} />
-      <LinearGradient
-        colors={[`${a.gradient[0]}cc`, 'rgba(8,8,10,0.8)', 'rgba(8,8,10,0.94)']}
-        style={StyleSheet.absoluteFill}
-      />
+      <Scrim shade="strong" />
 
       <KeyboardAvoidingView
         style={styles.fill}
@@ -253,7 +246,7 @@ export default function PulseScreen({
 }
 
 const styles = StyleSheet.create({
-  fill: { flex: 1, backgroundColor: '#08080A' },
+  fill: { flex: 1, backgroundColor: 'transparent' },
   header: {
     flexDirection: 'row',
     alignItems: 'center',

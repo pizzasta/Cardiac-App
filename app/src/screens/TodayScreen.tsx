@@ -32,6 +32,9 @@ import {
 } from '../logic/experiments';
 import { currentFlowIndex, formatCountdown, nextShift } from '../logic/forecast';
 import { playSfx } from '../logic/sfx';
+import Scrim from '../components/Scrim';
+import Rise from '../components/Rise';
+import PressableScale from '../components/PressableScale';
 
 function greeting(now = new Date()): string {
   const h = now.getHours();
@@ -104,10 +107,12 @@ export default function TodayScreen({
 
   return (
     <View style={styles.root}>
+      <Scrim shade="medium" />
       <ScrollView
         contentContainerStyle={[styles.content, { paddingTop: topInset + 12 }]}
         showsVerticalScrollIndicator={false}
       >
+        <Rise>
         {/* Header */}
         <LinearGradient
           colors={arch.gradient}
@@ -129,6 +134,8 @@ export default function TodayScreen({
           </Pressable>
         </LinearGradient>
 
+        </Rise>
+        <Rise delay={90}>
         {/* Rhythm ribbon: today's suggested rhythm, with the now-marker. */}
         <Text style={styles.section}>TODAY’S RHYTHM</Text>
         <View style={styles.ribbon}>
@@ -154,6 +161,8 @@ export default function TodayScreen({
           ))}
         </View>
 
+        </Rise>
+        <Rise delay={180}>
         {/* Now card: the single most relevant action for this moment. */}
         {nowItem && (
           <View style={[styles.nowCard, { borderColor: arch.accent }]}>
@@ -174,8 +183,10 @@ export default function TodayScreen({
           </View>
         )}
 
+        </Rise>
+        <Rise delay={270}>
         {/* Reset: secondary, state-matched — never competes with the check-in. */}
-        <Pressable onPress={onReset} style={styles.resetCard}>
+        <PressableScale onPress={onReset} style={styles.resetCard}>
           <View style={{ flex: 1 }}>
             <Text style={styles.resetTitle}>1-minute reset</Text>
             <Text style={styles.resetSub}>
@@ -183,8 +194,9 @@ export default function TodayScreen({
             </Text>
           </View>
           <Text style={[styles.resetArrow, { color: arch.accent }]}>→</Text>
-        </Pressable>
+        </PressableScale>
 
+        </Rise>
         {/* Today's flow */}
         <Text style={styles.section}>TODAY’S FLOW</Text>
         {flow.map((item, i) => (
@@ -201,18 +213,18 @@ export default function TodayScreen({
         ))}
 
         {/* Check-in nudge: soft, optional, never guilt-trips. */}
-        <Pressable
+        <PressableScale
           onPress={onCheckIn}
           style={[styles.checkIn, { backgroundColor: arch.accent }]}
         >
           <Text style={styles.checkInText}>
             {today ? 'Update today’s check-in' : 'How’s your energy right now?'}
           </Text>
-        </Pressable>
+        </PressableScale>
 
         {/* Weekly reveal */}
         {report && (
-          <Pressable onPress={onTrends} style={styles.weekCard}>
+          <PressableScale onPress={onTrends} style={styles.weekCard}>
             <Text style={styles.weekLabel}>THIS WEEK</Text>
             <Text style={styles.weekHeadline}>{report.headline}</Text>
             <View style={styles.weekStats}>
@@ -221,7 +233,7 @@ export default function TodayScreen({
               <Stat value={String(streak)} label="day streak" />
             </View>
             <Text style={styles.weekMore}>See your patterns →</Text>
-          </Pressable>
+          </PressableScale>
         )}
 
         <Text style={styles.section}>RHYTHM EXPERIMENT</Text>
@@ -268,13 +280,13 @@ export default function TodayScreen({
         ) : (
           <View style={styles.experimentChoices}>
             {EXPERIMENTS.slice(0, 3).map((item) => (
-              <Pressable key={item.id} style={styles.experimentChoice} onPress={async () => {
+              <PressableScale key={item.id} style={styles.experimentChoice} onPress={async () => {
                 playSfx('select');
                 setExperiment(await startExperiment(item));
               }}>
                 <Text style={styles.experimentTitle}>{item.title}</Text>
                 <Text style={styles.experimentText}>{item.days}-day observation →</Text>
-              </Pressable>
+              </PressableScale>
             ))}
           </View>
         )}
@@ -306,7 +318,7 @@ function Stat({ value, label }: { value: string; label: string }) {
 }
 
 const styles = StyleSheet.create({
-  root: { ...StyleSheet.absoluteFillObject, backgroundColor: T.bg },
+  root: { ...StyleSheet.absoluteFillObject, backgroundColor: 'transparent' },
   content: { paddingHorizontal: 20, paddingBottom: 24 },
   header: { borderRadius: 20, padding: 20, marginBottom: 24 },
   close: { position: 'absolute', top: 16, right: 16 },

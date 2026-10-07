@@ -5,7 +5,6 @@
 // pause, never as treatment.
 import React, { useEffect, useRef, useState } from 'react';
 import { Animated, Easing, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
 import { useTopInset } from '../hooks';
 import { ARCHETYPES } from '../data/archetypes';
@@ -14,6 +13,7 @@ import { getToday, Level, LEVELS, load } from '../logic/pulselog';
 import { PHASE_LABEL, phaseAt, resetFor, totalSecs } from '../logic/reset';
 import { F, T } from '../theme';
 import { playSfx } from '../logic/sfx';
+import Scrim from '../components/Scrim';
 
 const MIN = 0.55;
 const MAX = 1;
@@ -105,7 +105,7 @@ export default function ResetScreen({
 
   return (
     <View style={styles.fill}>
-      <LinearGradient colors={T.bgGradient} style={StyleSheet.absoluteFill} />
+      <Scrim shade="light" />
 
       <View style={[styles.header, { paddingTop: topInset }]}>
         <Pressable onPress={onClose} hitSlop={12}>
@@ -200,7 +200,7 @@ export default function ResetScreen({
 const ORB = 220;
 
 const styles = StyleSheet.create({
-  fill: { ...StyleSheet.absoluteFillObject, backgroundColor: T.bg },
+  fill: { ...StyleSheet.absoluteFillObject, backgroundColor: 'transparent' },
   header: {
     flexDirection: 'row',
     alignItems: 'center',

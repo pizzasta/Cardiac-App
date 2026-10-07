@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
 import { useTopInset } from '../hooks';
 import Svg, { Circle, Polyline } from 'react-native-svg';
 import { ARCHETYPES, TINTS } from '../data/archetypes';
@@ -20,6 +19,7 @@ import { useAuth } from '../logic/auth';
 import { fetchStreak, fetchWeeksTracked, pullCheckIns, subscribeCheckIns } from '../logic/sync';
 import { F, T } from '../theme';
 import SimilarDaysCard from '../components/SimilarDaysCard';
+import Scrim from '../components/Scrim';
 
 const DAYS = 14;
 const VW = 320;
@@ -102,7 +102,7 @@ export default function TrendsScreen({
   const topInset = useTopInset();
   return (
     <View style={styles.fill}>
-      <LinearGradient colors={T.bgGradient} style={StyleSheet.absoluteFill} />
+      <Scrim shade="strong" />
 
       <View style={[styles.header, { paddingTop: topInset }]}>
         <Pressable onPress={onClose} hitSlop={12}>
@@ -220,7 +220,7 @@ export default function TrendsScreen({
 }
 
 const styles = StyleSheet.create({
-  fill: { ...StyleSheet.absoluteFillObject, backgroundColor: T.bg },
+  fill: { ...StyleSheet.absoluteFillObject, backgroundColor: 'transparent' },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
