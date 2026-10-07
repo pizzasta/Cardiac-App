@@ -176,8 +176,8 @@ export default function SettingsScreen({
                 {!result
                   ? 'Take the quiz to set reminders for your rhythm.'
                   : notifsOn
-                  ? 'On — reminders at your key moments.'
-                  : 'Crash-window and wind-down reminders.'}
+                  ? 'On — gentle reminders around your suggested rhythm windows. Check-in timing can adapt to your recent habit.'
+                  : 'Optional check-in, focus and wind-down reminders based on your rhythm profile.'}
               </Text>
             </View>
             <Pressable
