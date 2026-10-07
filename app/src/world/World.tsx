@@ -14,7 +14,7 @@ import * as THREE from 'three';
 import { Canvas, useFrame, useThree } from './fiber';
 import GLBoundary from './GLBoundary';
 import Animal from './animals';
-import { dotTexture } from './textures';
+import { dotTexture, glowTexture } from './textures';
 import { damp, heartbeat, Mood, STATIONS, terrainHeight, WorldMode } from './rig';
 import { AnimalId } from '../data/archetypes';
 import Atmosphere from '../components/Atmosphere';
@@ -92,11 +92,15 @@ function Rig({ live, params }: { live: React.MutableRefObject<Live>; params: Rea
   return null;
 }
 
-function Terrain({ params }: { params: React.MutableRefObject<Params> }) {
-  const wire = useRef<THREE.MeshBasicMaterial>(null);
-  const dots = useRef<THREE.PointsMaterial>(null);
+// Smooth, softly lit dunes with a few glowing contour lines across them: the
+// app's pulse line repeated into the distance. No grid.
+const CONTOUR_EVERY = NATIVE ? 4 : 5;
 
-  const { geometry, base } = useMemo(() => {
+function Terrain({ params }: { params: React.MutableRefObject<Params> }) {
+  const ground = useRef<THREE.MeshStandardMaterial>(null);
+  const lines = useRef<THREE.LineBasicMaterial>(null);
+
+  const { geometry, contours, base } = useMemo(() => {
     const g = new THREE.PlaneGeometry(TERRAIN.width, TERRAIN.depth, TERRAIN.cols, TERRAIN.rows);
     g.rotateX(-Math.PI / 2);
     g.translate(0, 0, -TERRAIN.depth / 2 + 6);
@@ -106,46 +110,64 @@ function Terrain({ params }: { params: React.MutableRefObject<Params> }) {
       xz[i * 2] = pos.getX(i);
       xz[i * 2 + 1] = pos.getZ(i);
     }
-    return { geometry: g, base: xz };
+    // Contour lines share the ground's vertices: every Nth row, left to right.
+    const idx: number[] = [];
+    const row = TERRAIN.cols + 1;
+    for (let r = 0; r <= TERRAIN.rows; r += CONTOUR_EVERY) {
+      for (let c = 0; c < TERRAIN.cols; c++) idx.push(r * row + c, r * row + c + 1);
+    }
+    const lg = new THREE.BufferGeometry();
+    lg.setAttribute('position', pos);
+    lg.setIndex(idx);
+    return { geometry: g, contours: lg, base: xz };
   }, []);
 
-  useEffect(() => () => geometry.dispose(), [geometry]);
+  useEffect(
+    () => () => {
+      geometry.dispose();
+      contours.dispose();
+    },
+    [geometry, contours]
+  );
   const frame = useRef(0);
+  const dark = useMemo(() => new THREE.Color(BG), []);
 
   useFrame(() => {
     const p = params.current;
     const pos = geometry.attributes.position as THREE.BufferAttribute;
     const reshape = frame.current++ % TERRAIN_EVERY === 0;
-    for (let i = 0; reshape && i < pos.count; i++) {
-      pos.setY(i, terrainHeight(base[i * 2], base[i * 2 + 1], p.t, p.scroll, p.amplitude, [TOTEM[0], TOTEM[2]]));
+    if (reshape) {
+      for (let i = 0; i < pos.count; i++) {
+        pos.setY(i, terrainHeight(base[i * 2], base[i * 2 + 1], p.t, p.scroll, p.amplitude, [TOTEM[0], TOTEM[2]]));
+      }
+      pos.needsUpdate = true;
+      geometry.computeVertexNormals();
     }
-    if (reshape) pos.needsUpdate = true;
-    if (wire.current) {
-      wire.current.color.copy(p.color);
-      wire.current.opacity = 0.14 * p.glow;
+    if (ground.current) {
+      ground.current.color.copy(dark).lerp(p.color, 0.14);
+      ground.current.emissive.copy(p.color).multiplyScalar(0.035 * p.glow);
     }
-    if (dots.current) {
-      dots.current.color.copy(p.color);
-      dots.current.opacity = 0.75 * p.glow;
+    if (lines.current) {
+      lines.current.color.copy(p.color);
+      lines.current.opacity = 0.45 * p.glow;
     }
   });
 
   return (
     <group>
       <mesh geometry={geometry}>
-        <meshBasicMaterial ref={wire} wireframe transparent depthWrite={false} />
-      </mesh>
-      <points geometry={geometry}>
-        <pointsMaterial
-          ref={dots}
-          size={0.09}
-          map={dotTexture()}
-          transparent
-          depthWrite={false}
-          blending={THREE.AdditiveBlending}
-          sizeAttenuation
+        <meshStandardMaterial
+          ref={ground}
+          roughness={0.55}
+          metalness={0.15}
+          polygonOffset
+          polygonOffsetFactor={1}
+          polygonOffsetUnits={1}
         />
-      </points>
+      </mesh>
+      <lineSegments geometry={contours}>
+        <lineBasicMaterial ref={lines} transparent depthWrite={false} blending={THREE.AdditiveBlending} />
+      </lineSegments>
     </group>
   );
 }
@@ -205,40 +227,116 @@ function Fireflies({ params }: { params: React.MutableRefObject<Params> }) {
   );
 }
 
-// Layered discs that read as a soft glow sitting on the horizon.
-function HorizonGlow({ params }: { params: React.MutableRefObject<Params> }) {
-  const mats = useRef<(THREE.MeshBasicMaterial | null)[]>([]);
-  const layers = [
-    { r: 5, o: 0.32 },
-    { r: 11, o: 0.12 },
-    { r: 20, o: 0.06 },
-  ];
+// A gradient sky dome: near-black overhead, a warm glow of your colour at the
+// horizon. Vertex colours, so it is smooth on every device.
+function Sky({ params }: { params: React.MutableRefObject<Params> }) {
+  const geometry = useMemo(() => {
+    const g = new THREE.SphereGeometry(90, 32, 20);
+    g.setAttribute('color', new THREE.BufferAttribute(new Float32Array(g.attributes.position.count * 3), 3));
+    return g;
+  }, []);
+  useEffect(() => () => geometry.dispose(), [geometry]);
+  const top = useMemo(() => new THREE.Color('#030306'), []);
+  const tmp = useMemo(() => new THREE.Color(), []);
+  const last = useRef('');
+
   useFrame(() => {
     const p = params.current;
-    const beat = 1 + 0.35 * heartbeat(p.t);
-    mats.current.forEach((m, i) => {
-      if (!m) return;
-      m.color.copy(p.color);
-      m.opacity = layers[i].o * p.glow * beat;
-    });
+    const key = p.color.getHexString() + p.glow.toFixed(2);
+    if (key === last.current) return; // only recolour when the tint changes
+    last.current = key;
+    const pos = geometry.attributes.position as THREE.BufferAttribute;
+    const col = geometry.attributes.color as THREE.BufferAttribute;
+    for (let i = 0; i < pos.count; i++) {
+      // 0 at the horizon, 1 straight up (below the horizon stays dark).
+      const h = Math.max(0, pos.getY(i) / 90);
+      const glow = Math.exp(-h * 9) * 0.32 * p.glow;
+      tmp.copy(top).lerp(p.color, glow);
+      col.setXYZ(i, tmp.r, tmp.g, tmp.b);
+    }
+    col.needsUpdate = true;
+  });
+
+  return (
+    <mesh geometry={geometry}>
+      <meshBasicMaterial vertexColors side={THREE.BackSide} fog={false} depthWrite={false} />
+    </mesh>
+  );
+}
+
+// A soft moon on the horizon with a wide halo, swelling with the heartbeat.
+function Moon({ params }: { params: React.MutableRefObject<Params> }) {
+  const core = useRef<THREE.SpriteMaterial>(null);
+  const halo = useRef<THREE.SpriteMaterial>(null);
+  const haloSprite = useRef<THREE.Sprite>(null);
+  const light = useRef<THREE.PointLight>(null);
+  const white = useMemo(() => new THREE.Color('#ffffff'), []);
+  useFrame(() => {
+    const p = params.current;
+    const beat = heartbeat(p.t);
+    if (core.current) {
+      core.current.color.copy(p.color).lerp(white, 0.55);
+      core.current.opacity = 0.9 * p.glow;
+    }
+    if (halo.current) {
+      halo.current.color.copy(p.color);
+      halo.current.opacity = (0.5 + 0.25 * beat) * p.glow;
+    }
+    if (haloSprite.current) haloSprite.current.scale.setScalar(34 + 4 * beat);
+    if (light.current) {
+      light.current.color.copy(p.color).lerp(white, 0.3);
+      light.current.intensity = (70 + 30 * beat) * p.glow;
+    }
   });
   return (
-    <group position={[0, 3.4, -46]}>
-      {layers.map((l, i) => (
-        <mesh key={l.r}>
-          <circleGeometry args={[l.r, 48]} />
-          <meshBasicMaterial
-            ref={(m) => {
-              mats.current[i] = m;
-            }}
-            transparent
-            depthWrite={false}
-            blending={THREE.AdditiveBlending}
-            fog={false}
-          />
-        </mesh>
-      ))}
+    <group position={[0, 5, -60]}>
+      {/* Lights the dune crests from the horizon, in your colour. */}
+      <pointLight ref={light} position={[0, 1, 20]} distance={80} decay={1.4} />
+      <sprite ref={haloSprite} scale={34}>
+        <spriteMaterial ref={halo} map={glowTexture()} transparent depthWrite={false} blending={THREE.AdditiveBlending} fog={false} />
+      </sprite>
+      <sprite scale={9}>
+        <spriteMaterial ref={core} map={glowTexture()} transparent depthWrite={false} blending={THREE.AdditiveBlending} fog={false} />
+      </sprite>
     </group>
+  );
+}
+
+// Faint stars across the upper sky, slowly twinkling.
+const STARS = NATIVE ? 160 : 320;
+function Stars({ params }: { params: React.MutableRefObject<Params> }) {
+  const mat = useRef<THREE.PointsMaterial>(null);
+  const geometry = useMemo(() => {
+    const pos = new Float32Array(STARS * 3);
+    for (let i = 0; i < STARS; i++) {
+      const az = Math.random() * Math.PI * 2;
+      const el = 0.12 + Math.random() * 1.3; // stay above the horizon glow
+      pos[i * 3] = Math.cos(az) * Math.cos(el) * 85;
+      pos[i * 3 + 1] = Math.sin(el) * 85;
+      pos[i * 3 + 2] = Math.sin(az) * Math.cos(el) * 85;
+    }
+    const g = new THREE.BufferGeometry();
+    g.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+    return g;
+  }, []);
+  useEffect(() => () => geometry.dispose(), [geometry]);
+  useFrame(() => {
+    if (mat.current) mat.current.opacity = (0.55 + 0.2 * Math.sin(params.current.t * 0.7)) * params.current.glow;
+  });
+  return (
+    <points geometry={geometry}>
+      <pointsMaterial
+        ref={mat}
+        size={0.5}
+        map={dotTexture()}
+        color="#ffffff"
+        transparent
+        depthWrite={false}
+        blending={THREE.AdditiveBlending}
+        fog={false}
+        sizeAttenuation
+      />
+    </points>
   );
 }
 
@@ -313,17 +411,19 @@ function Scene({
   animal,
   mood,
   hop,
+  mode,
   live,
 }: {
   animal: AnimalId | null;
   mood: Mood | null;
   hop: number;
+  mode: WorldMode;
   live: React.MutableRefObject<Live>;
 }) {
   // The totem is the hero only on open, scenic screens. It steps back for the
   // reveal (which has its own close-up emblem), the reset (the breathing orb is
   // the focus) and dense screens, where it would sit behind text.
-  const showTotem = ['landing', 'quiz', 'reading', 'home'].includes(live.current.mode);
+  const showTotem = ['landing', 'quiz', 'reading', 'home'].includes(mode);
   const params = useRef<Params>({
     travel: 0,
     amplitude: STATIONS[live.current.mode].amplitude,
@@ -335,11 +435,13 @@ function Scene({
   return (
     <>
       <color attach="background" args={[BG]} />
-      <fog attach="fog" args={[BG, 10, 50]} />
-      <ambientLight intensity={0.35} />
-      <directionalLight position={[3, 6, 4]} intensity={0.6} />
+      <fog attach="fog" args={[BG, 12, 58]} />
+      <hemisphereLight args={['#2a2440', '#050507', 0.55]} />
+      <directionalLight position={[0, 6, 12]} intensity={0.35} />
       <Rig live={live} params={params} />
-      <HorizonGlow params={params} />
+      <Sky params={params} />
+      <Stars params={params} />
+      <Moon params={params} />
       <Terrain params={params} />
       <Fireflies params={params} />
       <Totem
@@ -415,7 +517,7 @@ export default function World({
           gl={{ antialias: !NATIVE, powerPreference: 'low-power' } as any}
           camera={{ position: STATIONS[mode].camera, fov: 55, near: 0.1, far: 120 }}
         >
-          <Scene animal={animal} mood={mood} hop={hop} live={live} />
+          <Scene animal={animal} mood={mood} hop={hop} mode={mode} live={live} />
           {still && <Settle deps={[mode, tint, animal]} />}
         </Canvas>
       </GLBoundary>

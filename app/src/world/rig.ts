@@ -29,7 +29,7 @@ export const STATIONS: Record<WorldMode, Station> = {
   // Behind dense screens (Today, check-in, trends, Ask): lower and dimmer.
   focus: { camera: [0, 6.5, 7], lookAt: [0, 0, -3], travel: 0.25, amplitude: 0.6, glow: 0.5 },
   // The breathing reset: almost still.
-  reset: { camera: [0, 2, 7], lookAt: [0, 1.6, -12], travel: 0.08, amplitude: 0.5, glow: 0.9 },
+  reset: { camera: [0, 2, 7], lookAt: [0, 3.4, -12], travel: 0.08, amplitude: 0.5, glow: 0.8 },
 };
 
 // Seconds per heartbeat. Slow on purpose: the world should feel calm.
@@ -63,9 +63,9 @@ export function terrainHeight(
   const dunes = 0.35 * Math.sin(x * 0.35 + zz * 0.22) + 0.25 * Math.sin(x * 0.8 - zz * 0.31 + t * 0.2);
   // Valley floor flattens toward the centre so the camera has a path.
   const valley = Math.min(1, Math.abs(x) / 6);
-  // ECG ridge: a narrow spike along x≈0 that repeats down the z axis.
+  // Heartbeat swell: a low, soft ridge along x≈0 that repeats down the z axis.
   const beatZ = (((zz % 9) + 9) % 9) / 9;
-  const spike = Math.exp(-(((beatZ - 0.5) / 0.03) ** 2)) * Math.exp(-((x / 0.9) ** 2)) * 1.2;
+  const spike = Math.exp(-(((beatZ - 0.5) / 0.05) ** 2)) * Math.exp(-((x / 2.2) ** 2)) * 0.35;
   // Heartbeat ripple from the origin.
   const dx = x - origin[0];
   const dz = z - origin[1];
