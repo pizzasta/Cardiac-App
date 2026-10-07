@@ -15,11 +15,13 @@ describe('readResonance', () => {
     expect(result.matches.map((entry) => entry.date)).toEqual(['2026-10-03', '2026-10-01']);
     expect(result.thread).toContain('rhyme');
     expect(result.pulseQuestion).toContain('Matching recorded days');
+    expect(result.nextThread).toContain('next recorded check-in');
   });
 
   it('waits for enough history', () => {
     const result = readResonance([{ date: '2026-10-05', level: 'steady', ts: 1 }]);
     expect(result.ready).toBe(false);
     expect(result.matches).toHaveLength(0);
+    expect(result.nextThread).toContain('not enough follow-up');
   });
 });

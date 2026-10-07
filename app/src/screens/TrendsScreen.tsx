@@ -225,7 +225,14 @@ export default function TrendsScreen({
               ))}
             </View>
           )}
-          <Text style={styles.discoveryFine}>{resonance.trace} This is a reflection of what you recorded, not a forecast.</Text>
+          <Text style={styles.discoveryFine}>{resonance.trace}</Text>
+          {resonance.matches.length > 0 && (
+            <View style={styles.nextThreadBox}>
+              <Text style={styles.nextThreadLabel}>SEE WHAT SHIFTED</Text>
+              <Text style={styles.nextThreadText}>{resonance.nextThread}</Text>
+            </View>
+          )}
+          <Text style={styles.discoveryFine}>Historical observation only — not a forecast of what happens next.</Text>
           {resonance.pulseQuestion ? (
             <Pressable style={[styles.goodDaysBtn, { borderColor: a.accent }]} onPress={() => onAskPulse(resonance.pulseQuestion)}>
               <Text style={[styles.goodDaysBtnText, { color: a.accent }]}>Follow the Thread →</Text>
@@ -304,6 +311,9 @@ const styles = StyleSheet.create({
   goodDaysBtnText: { fontSize: 13, fontWeight: '700' },
   resonanceCard: { backgroundColor: 'rgba(18,18,20,0.72)', borderColor: 'rgba(255,255,255,0.14)', borderWidth: 1, borderRadius: 18, padding: 18, marginTop: 24 },
   constellation: { marginTop: 12, backgroundColor: 'rgba(255,255,255,0.025)', borderRadius: 14, overflow: 'hidden' },
+  nextThreadBox: { marginTop: 12, padding: 12, borderRadius: 12, backgroundColor: 'rgba(255,255,255,0.04)' },
+  nextThreadLabel: { color: T.muted, fontFamily: F.mono, fontSize: 10, letterSpacing: 1 },
+  nextThreadText: { color: T.text, fontSize: 13, lineHeight: 19, marginTop: 5 },
   resonanceDates: { gap: 7, marginTop: 12 },
   resonanceDay: { flexDirection: 'row', justifyContent: 'space-between', gap: 12, borderTopWidth: 1, borderTopColor: T.hairline, paddingTop: 8 },
   resonanceDate: { color: T.muted, fontFamily: F.mono, fontSize: 11 },
