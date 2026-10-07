@@ -9,27 +9,25 @@ export interface Station {
   lookAt: [number, number, number];
   // How fast the landscape scrolls toward the camera (world units / second).
   travel: number;
-  // Height of the terrain waves.
-  amplitude: number;
   // Overall brightness of the scene (0–1); lower behind text-heavy screens.
   glow: number;
 }
 
 export const STATIONS: Record<WorldMode, Station> = {
   // Wide, high view over the landscape with the horizon glow.
-  landing: { camera: [0, 3.2, 9], lookAt: [0, 0.8, -12], travel: 0.6, amplitude: 1, glow: 1 },
+  landing: { camera: [0, 3.2, 9], lookAt: [0, 0.8, -12], travel: 0.6, glow: 1 },
   // Low and moving: you're travelling through the world while answering.
-  quiz: { camera: [0, 1.7, 7], lookAt: [0, 0.9, -10], travel: 1.6, amplitude: 0.9, glow: 0.85 },
+  quiz: { camera: [0, 1.7, 7], lookAt: [0, 0.9, -10], travel: 1.6, glow: 0.85 },
   // The dive while your rhythm is read: fast and close to the ground.
-  reading: { camera: [0, 1.1, 5], lookAt: [0, 0.6, -14], travel: 7, amplitude: 1.4, glow: 1 },
+  reading: { camera: [0, 1.1, 5], lookAt: [0, 0.6, -14], travel: 7, glow: 1 },
   // Arrival: settled, looking up at your animal on the horizon.
-  reveal: { camera: [0, 1.4, 6], lookAt: [0, 2.2, -12], travel: 0.3, amplitude: 0.8, glow: 1 },
+  reveal: { camera: [0, 1.4, 6], lookAt: [0, 2.2, -12], travel: 0.3, glow: 1 },
   // Home base (plan): calm, gently drifting.
-  home: { camera: [0, 2.6, 8], lookAt: [0, 1, -12], travel: 0.4, amplitude: 0.75, glow: 0.8 },
+  home: { camera: [0, 2.6, 8], lookAt: [0, 1, -12], travel: 0.4, glow: 0.8 },
   // Behind dense screens (Today, check-in, trends, Ask): lower and dimmer.
-  focus: { camera: [0, 6.5, 7], lookAt: [0, 0, -3], travel: 0.25, amplitude: 0.6, glow: 0.5 },
+  focus: { camera: [0, 6.5, 7], lookAt: [0, 0, -3], travel: 0.25, glow: 0.5 },
   // The breathing reset: almost still.
-  reset: { camera: [0, 2, 7], lookAt: [0, 3.4, -12], travel: 0.08, amplitude: 0.5, glow: 0.8 },
+  reset: { camera: [0, 2, 7], lookAt: [0, 3.4, -12], travel: 0.08, glow: 0.8 },
 };
 
 // Seconds per heartbeat. Slow on purpose: the world should feel calm.
@@ -42,36 +40,80 @@ export function heartbeat(t: number, period = BEAT_SECONDS): number {
   return Math.min(1, pulse(0.06, 0.03) + 0.7 * pulse(0.16, 0.03));
 }
 
-// Radius of the ripple ring that rolls out from the horizon after each beat.
-export function rippleRadius(t: number, period = BEAT_SECONDS, maxRadius = 30): number {
-  const p = (((t % period) + period) % period) / period;
-  return p * maxRadius;
+// ---------------------------------------------------------------------------
+// Landscape
+
+// Length of one ground tile. Two identical tiles leapfrog toward the camera,
+// so the ground shape is periodic in z with this period.
+export const TILE_LENGTH = 60;
+
+// Ground height at (x, z): a gentle valley floor for the camera path with
+// soft rolling hills rising on either side. Periodic in z (TILE_LENGTH) so the
+// tiles join seamlessly; every z-frequency is a whole number of cycles per tile.
+export function groundHeight(x: number, z: number): number {
+  const w = (2 * Math.PI) / TILE_LENGTH;
+  const rolling =
+    0.55 * Math.sin(z * w * 2 + x * 0.21 + 0.4) +
+    0.35 * Math.sin(z * w * 3 - x * 0.37 + 1.7) +
+    0.22 * Math.sin(z * w * 5 + x * 0.53 + 2.9) +
+    0.12 * Math.sin(z * w * 9 - x * 0.91 + 0.8) +
+    0.06 * Math.sin(z * w * 14 + x * 1.37 + 4.1);
+  const side = Math.max(0, Math.abs(x) - 5);
+  // Flat-ish path near the centre, hills that grow toward the sides.
+  const valley = Math.min(1, Math.abs(x) / 7);
+  return rolling * (0.25 + 0.75 * valley) + Math.min(9, side * side * 0.06);
 }
 
-// Terrain height at (x, z). `scroll` moves the landscape toward the camera.
-// Rolling dunes, plus a sharp ECG-style ridge down the middle that echoes the
-// app's pulse line, plus the heartbeat ripple.
-export function terrainHeight(
-  x: number,
-  z: number,
-  t: number,
-  scroll: number,
-  amplitude = 1,
-  origin: [number, number] = [0, -14]
-): number {
-  const zz = z - scroll;
-  const dunes = 0.35 * Math.sin(x * 0.35 + zz * 0.22) + 0.25 * Math.sin(x * 0.8 - zz * 0.31 + t * 0.2);
-  // Valley floor flattens toward the centre so the camera has a path.
-  const valley = Math.min(1, Math.abs(x) / 6);
-  // Heartbeat swell: a low, soft ridge along x≈0 that repeats down the z axis.
-  const beatZ = (((zz % 9) + 9) % 9) / 9;
-  const spike = Math.exp(-(((beatZ - 0.5) / 0.05) ** 2)) * Math.exp(-((x / 2.2) ** 2)) * 0.35;
-  // Heartbeat ripple from the origin.
-  const dx = x - origin[0];
-  const dz = z - origin[1];
-  const d = Math.sqrt(dx * dx + dz * dz);
-  const ring = Math.exp(-(((d - rippleRadius(t)) / 1.2) ** 2)) * 0.35;
-  return amplitude * (dunes * (0.25 + 0.75 * valley) + spike + ring);
+// Deterministic 1D value noise in [0, 1).
+function hash(n: number): number {
+  const s = Math.sin(n * 127.1 + 311.7) * 43758.5453;
+  return s - Math.floor(s);
+}
+function noise1(x: number): number {
+  const i = Math.floor(x);
+  const f = x - i;
+  const u = f * f * (3 - 2 * f);
+  return hash(i) * (1 - u) + hash(i + 1) * u;
+}
+
+// A natural mountain skyline: fractal noise with sharpened (ridged) peaks.
+// Returns roughly 0–1 for horizontal position x; `seed` varies the range.
+export function ridgeline(x: number, seed = 0): number {
+  let h = 0;
+  let amp = 1;
+  let freq = 0.018;
+  for (let o = 0; o < 6; o++) {
+    const n = noise1(x * freq + seed * 17.3 + o * 3.1);
+    h += amp * (1 - Math.abs(n * 2 - 1));
+    amp *= 0.5;
+    freq *= 2.1;
+  }
+  return h / 1.96875;
+}
+
+// ---------------------------------------------------------------------------
+// Time of day: the sky follows the person's local clock.
+
+// Sun elevation in degrees for a local hour (0–24): sunrise near 6, sunset
+// near 19, below the horizon at night. Capped low so daytime stays a soft,
+// readable golden-hour sky rather than bright noon blue.
+export const MAX_SUN_ELEVATION = 9;
+export function sunElevation(hour: number): number {
+  const h = ((hour % 24) + 24) % 24;
+  const rise = 6;
+  const set = 19;
+  if (h >= rise && h <= set) {
+    return Math.sin((Math.PI * (h - rise)) / (set - rise)) * MAX_SUN_ELEVATION;
+  }
+  // Night: dip to -12 degrees in the small hours.
+  const sinceSet = h > set ? h - set : h + 24 - set;
+  const night = 24 - (set - rise);
+  return -Math.sin((Math.PI * sinceSet) / night) * 12;
+}
+
+// 0 at night, 1 in (capped) daylight; twilight in between.
+export function daylight(elevation: number): number {
+  return Math.max(0, Math.min(1, (elevation + 4) / (MAX_SUN_ELEVATION + 4)));
 }
 
 // Frame-rate–independent smoothing toward a target.
