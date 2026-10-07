@@ -27,6 +27,7 @@
 - [ ] Confirm Ask Circadia refuses diagnosis, medication advice, and medical certainty in adversarial/manual tests.
 - [ ] Confirm the AI consent screen appears before the first Ask Circadia request on a fresh install, and that turning it off in Settings stops requests.
 - [ ] Listen to interface sounds and ambience on a physical iPhone (silent switch on and off) and an Android phone.
+- [ ] Check the 3D world runs smoothly on an older iPhone and a mid-range Android phone (scrolling Today and Trends, the reading dive), and that "Reduce motion" makes it still.
 - [ ] Confirm notification copy does not present predicted crashes, burnout, or health states as facts.
 
 ## Recommended beta gate
