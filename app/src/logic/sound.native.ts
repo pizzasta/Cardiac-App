@@ -32,14 +32,26 @@ let clockTimer: ReturnType<typeof setInterval> | null = null;
 function track(id: LayerId): Track {
   let t = tracks.get(id);
   if (!t) {
-    const sound = ensureAudioMode()
+    const entry: Track = { sound: Promise.resolve(null), level: 0, fade: null };
+    entry.sound = ensureAudioMode()
       .then(() => Audio.Sound.createAsync(SOUND_FILES[id], { isLooping: true, volume: 0, shouldPlay: true }))
       .then(({ sound: s }) => s)
-      .catch(() => null);
-    t = { sound, level: 0, fade: null };
+      .catch(() => {
+        // Forget a failed load so the next apply() tries again.
+        if (tracks.get(id) === entry) tracks.delete(id);
+        return null;
+      });
+    t = entry;
     tracks.set(id, t);
   }
   return t;
+}
+
+// One-shot calls that are loading or playing, so muting can stop them.
+const activeCalls = new Set<Audio.Sound>();
+function stopCalls(): void {
+  for (const c of activeCalls) c.unloadAsync().catch(() => {});
+  activeCalls.clear();
 }
 
 // Step a track's volume to `to` over about 1.5 seconds; unload when silent.
@@ -87,8 +99,17 @@ function scheduleCall(): void {
       const level = call.level * (0.6 + Math.random() * 0.4) * modeMix(mode).gain * volume * MAX_VOLUME;
       Audio.Sound.createAsync(SOUND_FILES[`call-${call.id}`], { shouldPlay: true, volume: level })
         .then(({ sound }) => {
+          // Muted while it was loading: drop it.
+          if (!playing) {
+            sound.unloadAsync().catch(() => {});
+            return;
+          }
+          activeCalls.add(sound);
           sound.setOnPlaybackStatusUpdate((st) => {
-            if (st.isLoaded && st.didJustFinish) sound.unloadAsync().catch(() => {});
+            if (st.isLoaded && st.didJustFinish) {
+              activeCalls.delete(sound);
+              sound.unloadAsync().catch(() => {});
+            }
           });
         })
         .catch(() => {});
@@ -121,6 +142,7 @@ export async function stop(): Promise<void> {
   callTimer = null;
   if (clockTimer) clearInterval(clockTimer);
   clockTimer = null;
+  stopCalls();
   for (const id of [...tracks.keys()]) fadeTo(id, 0);
 }
 
