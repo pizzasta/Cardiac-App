@@ -78,9 +78,11 @@ export function useDeviceTilt(enabled: boolean): void {
     if (!enabled || Platform.OS === 'web') return;
     let base: { b: number; g: number } | null = null;
     let sub: { remove: () => void } | undefined;
+    // Cleanup can run before the sensor check resolves; don't subscribe then.
+    let cancelled = false;
     DeviceMotion.isAvailableAsync()
       .then((ok) => {
-        if (!ok) return;
+        if (!ok || cancelled) return;
         DeviceMotion.setUpdateInterval(33);
         sub = DeviceMotion.addListener(({ rotation }) => {
           if (!rotation) return;
@@ -97,6 +99,7 @@ export function useDeviceTilt(enabled: boolean): void {
       })
       .catch(() => {});
     return () => {
+      cancelled = true;
       sub?.remove();
       look.tiltYaw = 0;
       look.tiltPitch = 0;
