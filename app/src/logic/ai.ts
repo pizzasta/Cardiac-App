@@ -8,7 +8,98 @@ import { supabase } from './supabase';
 // Sentinel returned by the function path when the server rate-limit trips, so
 // callers can surface a friendly message instead of a generic error.
 const RATE_LIMITED = '__rate_limited__';
-const RATE_LIMIT_MSG = 'You’re going a little fast for me. Give it a few seconds and try again.';
+
+// User-facing copy for the chat's error states. Plain and neutral: never
+// mention keys, endpoints or other setup details.
+export const AI_UNAVAILABLE_MSG = 'Ask Circadia isn’t available right now.';
+export const AI_ERROR_MSG = 'That didn’t go through. Check your connection and try again.';
+export const AI_TIMEOUT_MSG = 'That took too long to answer. Try again in a moment.';
+export const AI_RATE_LIMIT_MSG = 'You’re asking a little fast. Give it a few seconds and try again.';
+
+// How long a single AI request may take before we give up.
+export const AI_TIMEOUT_MS = 25_000;
+
+export type AIErrorKind = 'unavailable' | 'timeout' | 'rate_limited' | 'network' | 'http' | 'empty';
+
+// Thrown by the request helpers so callers can render an honest error state
+// instead of a fabricated reply.
+export class AIError extends Error {
+  kind: AIErrorKind;
+  constructor(kind: AIErrorKind, message?: string) {
+    super(message ?? kind);
+    this.name = 'AIError';
+    this.kind = kind;
+  }
+}
+
+// The result of a chat question: either a real answer, or an error the screen
+// shows as an error bubble with a "Try again" button.
+export type AskResult =
+  | { ok: true; text: string }
+  | { ok: false; kind: AIErrorKind; message: string; retryable: boolean };
+
+function errorResult(kind: AIErrorKind): AskResult {
+  switch (kind) {
+    case 'unavailable':
+      return { ok: false, kind, message: AI_UNAVAILABLE_MSG, retryable: false };
+    case 'timeout':
+      return { ok: false, kind, message: AI_TIMEOUT_MSG, retryable: true };
+    case 'rate_limited':
+      return { ok: false, kind, message: AI_RATE_LIMIT_MSG, retryable: true };
+    default:
+      return { ok: false, kind, message: AI_ERROR_MSG, retryable: true };
+  }
+}
+
+function toAIError(e: unknown, signal?: AbortSignal): AIError {
+  if (e instanceof AIError) return e;
+  const name = (e as { name?: string } | null)?.name;
+  if (signal?.aborted || name === 'AbortError' || name === 'APIConnectionTimeoutError') {
+    return new AIError('timeout');
+  }
+  return new AIError('network', e instanceof Error ? e.message : String(e));
+}
+
+// Runs `fn` with an AbortSignal that fires after `ms`. Always clears the timer.
+export async function withTimeout<T>(fn: (signal: AbortSignal) => Promise<T>, ms = AI_TIMEOUT_MS): Promise<T> {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), ms);
+  try {
+    return await fn(controller.signal);
+  } catch (e) {
+    throw toAIError(e, controller.signal);
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+// Parse `{ text }` from a JSON response; empty or whitespace text is an error.
+async function readText(res: Response): Promise<string> {
+  const data = await res.json().catch(() => null);
+  const text = String((data as { text?: unknown } | null)?.text ?? '').trim();
+  if (!text) throw new AIError('empty');
+  return text;
+}
+
+// Builds a mailto: link that reports an AI answer to support, with the
+// question and (truncated) answer prefilled.
+export function buildReportMailto(email: string, question: string, answer: string, maxLen = 1500): string {
+  const clip = (s: string) => (s.length > maxLen ? `${s.slice(0, maxLen).trimEnd()}…` : s);
+  const subject = 'Report: Ask Circadia answer';
+  const body = [
+    'I’d like to report this answer from Ask Circadia.',
+    '',
+    'What I asked:',
+    clip(question || '(no question)'),
+    '',
+    'The answer I got:',
+    clip(answer),
+    '',
+    'What was wrong with it (optional):',
+    '',
+  ].join('\n');
+  return `mailto:${email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+}
 
 // ---------------------------------------------------------------------------
 // Pulse — Circadia's AI companion.
@@ -109,7 +200,11 @@ function profilePieces(result: RhythmResult, answers: Option[]) {
 
 // Preferred path: POST structured data to the Supabase Edge Function, which
 // owns the prompt and the key.
-async function callSupabaseFn(kind: 'reading' | 'chat', payload: Record<string, unknown>): Promise<string> {
+async function callSupabaseFn(
+  kind: 'reading' | 'chat',
+  payload: Record<string, unknown>,
+  signal?: AbortSignal
+): Promise<string> {
   // Send the signed-in user's token so rate limiting is per-user (falls back to
   // the anon key — then the server limits by IP).
   let token = SUPA_ANON ?? '';
@@ -129,39 +224,45 @@ async function callSupabaseFn(kind: 'reading' | 'chat', payload: Record<string, 
       apikey: SUPA_ANON ?? '',
     },
     body: JSON.stringify({ kind, ...payload }),
+    signal,
   });
   if (res.status === 429) return RATE_LIMITED;
-  if (!res.ok) throw new Error(`pulse-fn ${res.status}`);
-  const data = await res.json();
-  return String(data.text ?? '').trim();
+  if (!res.ok) throw new AIError('http', `pulse-fn ${res.status}`);
+  return readText(res);
 }
 
 // Production path: POST to the backend proxy, which holds the API key.
-async function callBackend(system: string, messages: Msg[], maxTokens: number): Promise<string> {
+async function callBackend(system: string, messages: Msg[], maxTokens: number, signal?: AbortSignal): Promise<string> {
   const res = await fetch(ENDPOINT as string, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ system, messages, max_tokens: maxTokens, model: MODEL }),
+    signal,
   });
-  if (!res.ok) throw new Error(`backend ${res.status}`);
-  const data = await res.json();
-  return String(data.text ?? '').trim();
+  if (res.status === 429) return RATE_LIMITED;
+  if (!res.ok) throw new AIError('http', `backend ${res.status}`);
+  return readText(res);
 }
 
 // Dev path: call Claude directly from the client.
-async function callClient(system: string, messages: Msg[], maxTokens: number): Promise<string> {
-  if (!client) throw new Error('no-api-key');
-  const res = await client.messages.create({ model: MODEL, max_tokens: maxTokens, system, messages });
-  return res.content
+async function callClient(system: string, messages: Msg[], maxTokens: number, signal?: AbortSignal): Promise<string> {
+  if (!client) throw new AIError('unavailable');
+  const res = await client.messages.create(
+    { model: MODEL, max_tokens: maxTokens, system, messages },
+    { signal, maxRetries: 0 }
+  );
+  const text = res.content
     .filter((b): b is Anthropic.TextBlock => b.type === 'text')
     .map((b) => b.text)
     .join('')
     .trim();
+  if (!text) throw new AIError('empty');
+  return text;
 }
 
-async function complete(system: string, messages: Msg[], maxTokens: number): Promise<string> {
-  if (ENDPOINT) return callBackend(system, messages, maxTokens);
-  return callClient(system, messages, maxTokens);
+async function complete(system: string, messages: Msg[], maxTokens: number, signal?: AbortSignal): Promise<string> {
+  if (ENDPOINT) return callBackend(system, messages, maxTokens, signal);
+  return callClient(system, messages, maxTokens, signal);
 }
 
 // The opening personalized reading shown when Pulse first loads.
@@ -173,61 +274,60 @@ export async function generateReading(
   if (!hasAI()) return ARCHETYPES[result.animal].reading;
   if (SUPA_FN) {
     try {
-      const text = await callSupabaseFn('reading', profilePieces(result, answers));
+      const text = await withTimeout((signal) => callSupabaseFn('reading', profilePieces(result, answers), signal));
       return text === RATE_LIMITED ? ARCHETYPES[result.animal].reading : text;
     } catch {
       return ARCHETYPES[result.animal].reading;
     }
   }
   try {
-    return await complete(
-      systemPrompt(result, answers),
-      [
-        {
-          role: 'user',
-          content:
-            "Give me my first read. In 3-4 sentences: what my rhythm means day-to-day, and the one thing to protect this week. Don't restate the animal name back to me.",
-        },
-      ],
-      500
+    const text = await withTimeout((signal) =>
+      complete(
+        systemPrompt(result, answers),
+        [
+          {
+            role: 'user',
+            content:
+              "Give me my first read. In 3-4 sentences: what my rhythm means day-to-day, and the one thing to protect this week. Don't restate the animal name back to me.",
+          },
+        ],
+        500,
+        signal
+      )
     );
+    return text === RATE_LIMITED ? ARCHETYPES[result.animal].reading : text;
   } catch {
     return ARCHETYPES[result.animal].reading;
   }
 }
 
-// A follow-up question in the Pulse chat.
+// A follow-up question in the chat. Never fabricates a reply: on timeout,
+// network/HTTP failure, rate limiting or an empty answer it returns an error
+// result the screen renders as an error bubble with "Try again".
 export async function askPulse(
   result: RhythmResult,
   answers: Option[],
   history: ChatTurn[],
   question: string
-): Promise<string> {
-  if (!hasAI()) {
-    return "I'm offline right now. Add an API key to talk to me. But going on your rhythm: protect your crash window, and don't make it the day's first hard thing.";
-  }
-  if (SUPA_FN) {
-    try {
-      const text = await callSupabaseFn('chat', {
-        ...profilePieces(result, answers),
-        history,
-        question,
-      });
-      return text === RATE_LIMITED ? RATE_LIMIT_MSG : text;
-    } catch {
-      return 'Something glitched on my end. Try that again in a moment.';
-    }
-  }
+): Promise<AskResult> {
+  if (!hasAI()) return errorResult('unavailable');
   try {
-    return await complete(
-      systemPrompt(result, answers),
-      [
-        ...history.map((t) => ({ role: t.role, content: t.text })),
-        { role: 'user' as const, content: question },
-      ],
-      400
+    const text = await withTimeout((signal) =>
+      SUPA_FN
+        ? callSupabaseFn('chat', { ...profilePieces(result, answers), history, question }, signal)
+        : complete(
+            systemPrompt(result, answers),
+            [
+              ...history.map((t) => ({ role: t.role, content: t.text })),
+              { role: 'user' as const, content: question },
+            ],
+            400,
+            signal
+          )
     );
-  } catch {
-    return "Something glitched on my end. Try that again in a moment.";
+    if (text === RATE_LIMITED) return errorResult('rate_limited');
+    return { ok: true, text };
+  } catch (e) {
+    return errorResult(e instanceof AIError ? e.kind : 'network');
   }
 }

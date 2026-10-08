@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import {
   KeyboardAvoidingView,
+  Linking,
   Platform,
   Pressable,
   ScrollView,
@@ -9,12 +10,13 @@ import {
   TextInput,
   View,
 } from 'react-native';
-import { useTopInset } from '../hooks';
+import { useBottomInset, useTopInset } from '../hooks';
 import * as Speech from 'expo-speech';
 import { ARCHETYPES } from '../data/archetypes';
 import { Option } from '../data/quiz';
 import { RhythmResult } from '../logic/score';
-import { askPulse, ChatTurn, generateReading, hasAI } from '../logic/ai';
+import { askPulse, buildReportMailto, ChatTurn, generateReading, hasAI } from '../logic/ai';
+import { LEGAL } from '../data/legal';
 import { listen, voiceSupported } from '../logic/voice';
 import { DISCLAIMER_SHORT } from '../data/disclaimer';
 import PulseLoader from '../components/PulseLoader';
@@ -42,6 +44,9 @@ export default function PulseScreen({
   const [listening, setListening] = useState(false);
   const [whyOpen, setWhyOpen] = useState<number | null>(null);
   const [reported, setReported] = useState<number[]>([]);
+  const [reportNote, setReportNote] = useState<string | null>(null);
+  // The last question failed to get an answer: shown as an error bubble.
+  const [failed, setFailed] = useState<{ question: string; message: string; retryable: boolean } | null>(null);
   const [speak, setSpeak] = useState(false);
   const speakRef = useRef(false);
   const stopListenRef = useRef<null | (() => void)>(null);
@@ -76,7 +81,26 @@ export default function PulseScreen({
     if (!next) Speech.stop();
   };
 
-  const send = async (override?: string) => {
+  // `base` is the conversation so far (without this question).
+  const ask = async (q: string, base: ChatTurn[]) => {
+    const next = [...base, { role: 'user' as const, text: q }];
+    setTurns(next);
+    setFailed(null);
+    setThinking(true);
+    try {
+      const reply = await askPulse(result, answers, base, q);
+      if (reply.ok) {
+        setTurns([...next, { role: 'assistant', text: reply.text }]);
+        say(reply.text);
+      } else {
+        setFailed({ question: q, message: reply.message, retryable: reply.retryable });
+      }
+    } finally {
+      setThinking(false);
+    }
+  };
+
+  const send = (override?: string) => {
     const q = (override ?? input).trim();
     if (!q || thinking) return;
     // Rate limit: ignore sends fired faster than ~1.2s apart (cost + abuse).
@@ -84,13 +108,20 @@ export default function PulseScreen({
     if (now - lastSentRef.current < 1200) return;
     lastSentRef.current = now;
     setInput('');
-    const next = [...turns, { role: 'user' as const, text: q }];
-    setTurns(next);
-    setThinking(true);
-    const reply = await askPulse(result, answers, turns, q);
-    setTurns([...next, { role: 'assistant', text: reply }]);
-    setThinking(false);
-    say(reply);
+    // An unanswered question is dropped from the history before moving on.
+    ask(q, failed ? turns.slice(0, -1) : turns);
+  };
+
+  const retry = () => {
+    if (!failed || thinking) return;
+    ask(failed.question, turns.slice(0, -1));
+  };
+
+  const report = (i: number) => {
+    const question = turns[i - 1]?.role === 'user' ? turns[i - 1].text : '';
+    Linking.openURL(buildReportMailto(LEGAL.contactEmail, question, turns[i].text))
+      .then(() => setReported((r) => (r.includes(i) ? r : [...r, i])))
+      .catch(() => setReportNote(`To report an answer, email ${LEGAL.contactEmail}.`));
   };
 
   const toggleMic = () => {
@@ -112,6 +143,8 @@ export default function PulseScreen({
   };
 
   const topInset = useTopInset();
+  const bottomInset = useBottomInset();
+  const sendDisabled = !input.trim() || thinking || !hasAI();
   return (
     <View style={styles.fill}>
       <Scrim shade="strong" />
@@ -121,11 +154,18 @@ export default function PulseScreen({
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       >
         <View style={[styles.header, { paddingTop: topInset }]}>
-          <Pressable onPress={onBack} hitSlop={12}>
+          <Pressable onPress={onBack} hitSlop={12} accessibilityRole="button" accessibilityLabel="Back">
             <Text style={styles.back}>‹ Back</Text>
           </Pressable>
           <Text style={styles.headerTitle}>{a.emoji}  Ask Circadia</Text>
-          <Pressable onPress={toggleSpeak} hitSlop={12} style={styles.speaker}>
+          <Pressable
+            onPress={toggleSpeak}
+            hitSlop={12}
+            style={styles.speaker}
+            accessibilityRole="switch"
+            accessibilityLabel="Read answers aloud"
+            accessibilityState={{ checked: speak }}
+          >
             <Text style={[styles.speakerIcon, speak && { color: a.accent }]}>
               {speak ? '🔊' : '🔇'}
             </Text>
@@ -152,23 +192,35 @@ export default function PulseScreen({
               <Text style={t.role === 'user' ? styles.userText : styles.pulseText}>{t.text}</Text>
               {t.role === 'assistant' && (
                 <View style={styles.evidenceActions}>
-                  <Pressable onPress={() => setWhyOpen(whyOpen === i ? null : i)}>
+                  <Pressable onPress={() => setWhyOpen(whyOpen === i ? null : i)} hitSlop={12} accessibilityRole="button">
                     <Text style={[styles.evidenceLink, { color: a.accent }]}>Why this answer</Text>
                   </Pressable>
-                  <Pressable onPress={() => setReported((r) => r.includes(i) ? r : [...r, i])}>
+                  <Pressable onPress={() => report(i)} hitSlop={12} accessibilityRole="button">
                     <Text style={styles.reportLink}>{reported.includes(i) ? 'Reported ✓' : 'Report response'}</Text>
                   </Pressable>
                 </View>
               )}
               {t.role === 'assistant' && whyOpen === i && (
                 <View style={styles.evidenceCard}>
-                  <Text style={styles.evidenceTitle}>WHAT PULSE USED</Text>
+                  <Text style={styles.evidenceTitle}>WHAT THIS ANSWER USED</Text>
                   <Text style={styles.evidenceText}>Your Circadia quiz profile, the question you asked, and the conversation shown here.</Text>
                   <Text style={styles.evidenceFine}>Answers should not treat an association as a cause, diagnose a condition, or invent personal facts that are not in this context.</Text>
                 </View>
               )}
             </View>
           ))}
+
+          {failed && !thinking && (
+            <View style={[styles.bubble, styles.pulseBubble, styles.errorBubble]}>
+              <Text style={styles.pulseText}>{failed.message}</Text>
+              {failed.retryable && (
+                <Pressable onPress={retry} hitSlop={12} accessibilityRole="button" style={styles.retryBtn}>
+                  <Text style={[styles.retryText, { color: a.accent }]}>Try again</Text>
+                </Pressable>
+              )}
+            </View>
+          )}
+          {reportNote && <Text style={styles.hint}>{reportNote}</Text>}
 
           {thinking && (
             <View style={[styles.bubble, styles.pulseBubble]}>
@@ -178,7 +230,7 @@ export default function PulseScreen({
 
           {turns.length === 0 && reading && (
             <View style={styles.quickWrap}>
-              <Text style={[styles.quickLabel, { color: a.accent }]}>PULSE REFLECTION</Text>
+              <Text style={[styles.quickLabel, { color: a.accent }]}>IDEAS TO ASK</Text>
               <View style={styles.quickRow}>
                 {[
                   'What changed in my rhythm this week?',
@@ -212,6 +264,8 @@ export default function PulseScreen({
                 listening && { backgroundColor: a.accent },
               ]}
               onPress={toggleMic}
+              accessibilityRole="button"
+              accessibilityLabel={listening ? 'Stop voice input' : 'Voice input'}
             >
               <Text style={[styles.micIcon, listening && { color: '#08080A' }]}>🎙</Text>
             </Pressable>
@@ -221,7 +275,7 @@ export default function PulseScreen({
             value={input}
             onChangeText={setInput}
             placeholder={
-              listening ? 'Listening…' : hasAI() ? 'Ask a question…' : 'Add an API key to chat'
+              listening ? 'Listening…' : hasAI() ? 'Ask a question…' : 'Not available right now'
             }
             placeholderTextColor="rgba(255,255,255,0.45)"
             editable={hasAI() && !listening}
@@ -229,17 +283,17 @@ export default function PulseScreen({
             returnKeyType="send"
           />
           <Pressable
-            style={[
-              styles.sendBtn,
-              { backgroundColor: a.accent },
-              (!input.trim() || thinking) && styles.sendDisabled,
-            ]}
+            style={[styles.sendBtn, { backgroundColor: a.accent }, sendDisabled && styles.sendDisabled]}
             onPress={() => send()}
+            disabled={sendDisabled}
+            accessibilityRole="button"
+            accessibilityLabel="Send"
+            accessibilityState={{ disabled: sendDisabled }}
           >
             <Text style={styles.sendText}>↑</Text>
           </Pressable>
         </View>
-        <Text style={styles.disclaimer}>{DISCLAIMER_SHORT}</Text>
+        <Text style={[styles.disclaimer, { paddingBottom: bottomInset }]}>{DISCLAIMER_SHORT}</Text>
       </KeyboardAvoidingView>
     </View>
   );
@@ -277,6 +331,9 @@ const styles = StyleSheet.create({
   pulseBubble: { alignSelf: 'flex-start', backgroundColor: 'rgba(255,255,255,0.10)', borderColor: 'rgba(255,255,255,0.14)', borderWidth: 1 },
   userText: { color: '#08080A', fontSize: 15, fontWeight: '600', lineHeight: 21 },
   pulseText: { color: '#fff', fontSize: 15, lineHeight: 22 },
+  errorBubble: { borderColor: 'rgba(255,59,92,0.45)' },
+  retryBtn: { marginTop: 8, alignSelf: 'flex-start' },
+  retryText: { fontSize: 14, fontWeight: '700' },
   hint: { color: 'rgba(255,255,255,0.55)', fontSize: 13, textAlign: 'center', marginTop: 8, lineHeight: 19 },
   quickWrap: { marginBottom: 16 },
   quickLabel: { fontFamily: F.mono, fontSize: 11, letterSpacing: 1, marginBottom: 10 },

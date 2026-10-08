@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Animated, Easing, StyleSheet, Text } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
+import { useReducedMotion } from '../hooks';
 
 const LINES = [
   'Reading your patterns…',
@@ -12,9 +13,11 @@ const LINES = [
 export default function ReadingScreen({ onDone }: { onDone: () => void }) {
   const [line, setLine] = useState(0);
   const pulse = useRef(new Animated.Value(0)).current;
+  const reduced = useReducedMotion();
 
   useEffect(() => {
-    Animated.loop(
+    if (reduced) return;
+    const loop = Animated.loop(
       Animated.sequence([
         Animated.timing(pulse, {
           toValue: 1,
@@ -29,8 +32,12 @@ export default function ReadingScreen({ onDone }: { onDone: () => void }) {
           useNativeDriver: true,
         }),
       ])
-    ).start();
+    );
+    loop.start();
+    return () => loop.stop();
+  }, [pulse, reduced]);
 
+  useEffect(() => {
     const t1 = setTimeout(() => setLine(1), 1100);
     const t2 = setTimeout(() => setLine(2), 2200);
     const t3 = setTimeout(onDone, 3300);
@@ -39,7 +46,7 @@ export default function ReadingScreen({ onDone }: { onDone: () => void }) {
       clearTimeout(t2);
       clearTimeout(t3);
     };
-  }, [onDone, pulse]);
+  }, [onDone]);
 
   const scale = pulse.interpolate({ inputRange: [0, 1], outputRange: [0.9, 1.25] });
 

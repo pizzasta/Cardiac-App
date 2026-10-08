@@ -13,22 +13,23 @@ import { DISCLAIMER_SHORT } from '../data/disclaimer';
 import { T, F } from '../theme';
 import { playSfx } from '../logic/sfx';
 import PressableScale from '../components/PressableScale';
+import { useTopInset } from '../hooks';
 
 const ACCENT = T.accent;
 
 const STEPS = [
   { n: '1', t: 'Answer 12 questions', s: 'About 90 seconds. No account, no fluff.' },
-  { n: '2', t: 'Meet your rhythm animal', s: 'How your nervous system actually runs.' },
-  { n: '3', t: 'Get your daily plan', s: 'Your real peaks, crashes, and wind-down.' },
+  { n: '2', t: 'Meet your rhythm animal', s: 'A read on how your energy tends to run.' },
+  { n: '3', t: 'Get your daily plan', s: 'Your likely peaks, dips, and wind-down.' },
 ];
 
 const FEATURES = [
   { t: 'Your rhythm animal', s: 'Twelve quick questions decode how your energy runs.' },
-  { t: 'A plan that fits your wiring', s: 'Your real peak, dip and wind-down, as a daily flow.' },
+  { t: 'A plan that fits your wiring', s: 'Your likely peak, dip and wind-down, as a daily flow.' },
   { t: 'Days like today', s: 'See past days that looked like this one, and what came after.' },
   { t: 'Sleep on your schedule', s: 'A wind-down and wake window tuned to your chronotype.' },
   { t: 'A one-minute reset', s: 'A breathing pace matched to how you feel right now.' },
-  { t: 'Backed by the science', s: 'Every recommendation traces to real research.' },
+  { t: 'Grounded in research', s: 'Ideas drawn from published sleep and energy research.' },
 ];
 
 const STAY = [
@@ -53,6 +54,7 @@ export default function LandingScreen({
   onScience: () => void;
 }) {
   const { height } = useWindowDimensions();
+  const topInset = useTopInset();
   const animals = Object.values(ARCHETYPES);
 
   const Cta = ({ label = 'Find your rhythm' }: { label?: string }) => (
@@ -77,12 +79,12 @@ export default function LandingScreen({
             style={StyleSheet.absoluteFill}
           />
 
-          <View style={styles.topLinks}>
-            <Pressable onPress={onSignIn} hitSlop={8}>
+          <View style={[styles.topLinks, { top: topInset }]}>
+            <Pressable onPress={onSignIn} hitSlop={12} style={styles.topLinkHit} accessibilityRole="button">
               <Text style={styles.topLink}>Sign in</Text>
             </Pressable>
             <Text style={styles.topDot}>·</Text>
-            <Pressable onPress={onSettings} hitSlop={8}>
+            <Pressable onPress={onSettings} hitSlop={12} style={styles.topLinkHit} accessibilityRole="button">
               <Text style={styles.topLink}>Settings</Text>
             </Pressable>
           </View>
@@ -91,7 +93,7 @@ export default function LandingScreen({
             <Text style={styles.kicker}>CIRCADIA</Text>
             <Text style={styles.h1}>You’re not tired.{'\n'}You’re out of rhythm.</Text>
             <Text style={styles.sub}>
-              A 90-second read of how your energy, stress, and sleep actually work, then a daily
+              A 90-second read of how your energy, stress, and sleep tend to work, then a daily
               plan built around it.
             </Text>
             <Cta />
@@ -172,7 +174,7 @@ export default function LandingScreen({
 
         {/* SCIENCE STRIP */}
         <Section>
-          <Text style={styles.scienceLine}>Backed by real circadian research, not vibes.</Text>
+          <Text style={styles.scienceLine}>Grounded in circadian research, not vibes.</Text>
           <Pressable onPress={onScience} hitSlop={8}>
             <Text style={styles.scienceLink}>Read the science  ↗</Text>
           </Pressable>
@@ -225,6 +227,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 10,
   },
+  topLinkHit: { paddingVertical: 6, paddingHorizontal: 4 },
   topLink: { color: 'rgba(255,255,255,0.85)', fontSize: 13, fontWeight: '600' },
   topDot: { color: 'rgba(255,255,255,0.4)' },
   heroBody: {},
@@ -241,7 +244,7 @@ const styles = StyleSheet.create({
   bigLineSub: { color: 'rgba(255,255,255,0.7)', fontSize: 18, marginTop: 6, marginBottom: 18 },
 
   step: { flexDirection: 'row', gap: 14, marginBottom: 18, alignItems: 'center' },
-  stepNum: { width: 36, height: 36, borderRadius: 18, backgroundColor: 'rgba(43,217,200,0.18)', borderColor: ACCENT, borderWidth: 1, alignItems: 'center', justifyContent: 'center' },
+  stepNum: { width: 36, height: 36, borderRadius: 18, backgroundColor: 'rgba(255,46,126,0.18)', borderColor: ACCENT, borderWidth: 1, alignItems: 'center', justifyContent: 'center' },
   stepNumText: { color: ACCENT, fontSize: 16, fontWeight: '800' },
   stepTitle: { color: '#fff', fontSize: 17, fontWeight: '700' },
   stepSub: { color: 'rgba(255,255,255,0.7)', fontSize: 14, marginTop: 2 },

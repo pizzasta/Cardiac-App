@@ -57,6 +57,7 @@ export default function AnimalEmblem({
   hop = 0,
   sparks = true,
   distance = 3.5,
+  emojiSize = 96,
   style,
 }: {
   animal: AnimalId;
@@ -68,12 +69,14 @@ export default function AnimalEmblem({
   sparks?: boolean;
   // Camera distance from the animal; smaller fills more of the frame.
   distance?: number;
+  // Size of the emoji shown when 3D isn't available.
+  emojiSize?: number;
   style?: StyleProp<ViewStyle>;
 }) {
   const still = useReducedMotion();
   const fallback = (
     <View style={[styles.fallback, bg ? { backgroundColor: bg } : null, style]}>
-      <Text style={styles.emoji}>{emoji}</Text>
+      <Text style={[styles.emoji, { fontSize: emojiSize }]}>{emoji}</Text>
     </View>
   );
   return (

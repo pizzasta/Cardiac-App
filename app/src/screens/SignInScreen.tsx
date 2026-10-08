@@ -4,6 +4,7 @@ import {
   KeyboardAvoidingView,
   Platform,
   Pressable,
+  ScrollView,
   StyleSheet,
   Text,
   TextInput,
@@ -15,7 +16,13 @@ import { useAuth } from '../logic/auth';
 import { DISCLAIMER_SHORT } from '../data/disclaimer';
 import { F, T } from '../theme';
 
-export default function SignInScreen({ onClose, onLegal }: { onClose: () => void; onLegal: () => void }) {
+export default function SignInScreen({
+  onClose,
+  onLegal,
+}: {
+  onClose: () => void;
+  onLegal: () => void;
+}) {
   const {
     user,
     supabaseEnabled,
@@ -44,6 +51,14 @@ export default function SignInScreen({ onClose, onLegal }: { onClose: () => void
   const emailValid = /\S+@\S+\.\S+/.test(email);
   const passwordValid = password.length >= 6;
   const canSubmit = agreed && (supabaseEnabled ? emailValid && passwordValid : emailValid);
+
+  // Apple guideline 4.8: offering a third-party login on iOS requires Sign in
+  // with Apple too, which we don't support yet, so Google stays off on iOS.
+  const showGoogle = googleAvailable && Platform.OS !== 'ios';
+
+  // After sign-up the auth context reports "Check your email..." on the error
+  // channel. It's good news, so show it in a neutral style.
+  const authIsInfo = !!authError && authError.startsWith('Check your email');
 
   const submit = async () => {
     if (!canSubmit || busy) return;
@@ -80,13 +95,23 @@ export default function SignInScreen({ onClose, onLegal }: { onClose: () => void
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       >
         <View style={[styles.header, { paddingTop: topInset }]}>
-          <Pressable onPress={onClose} hitSlop={12}>
+          <Pressable
+            onPress={onClose}
+            hitSlop={12}
+            accessibilityRole="button"
+            accessibilityLabel="Back"
+          >
             <Text style={styles.back}>‹ Back</Text>
           </Pressable>
           <View style={{ width: 64 }} />
         </View>
 
-        <View style={styles.body}>
+        <ScrollView
+          style={styles.scroll}
+          contentContainerStyle={styles.body}
+          keyboardShouldPersistTaps="handled"
+          keyboardDismissMode="on-drag"
+        >
           <Text style={styles.title}>
             {supabaseEnabled && mode === 'signup' ? 'Create your account' : 'Save your rhythm'}
           </Text>
@@ -114,23 +139,26 @@ export default function SignInScreen({ onClose, onLegal }: { onClose: () => void
             </Text>
           </Pressable>
 
-          <Pressable
-            style={[styles.google, (!googleAvailable || busy || !agreed) && styles.disabled]}
-            onPress={onGoogle}
-            disabled={!googleAvailable || busy || !agreed}
-          >
-            <Text style={styles.googleG}>G</Text>
-            <Text style={styles.googleText}>Continue with Google</Text>
-          </Pressable>
-          {!googleAvailable && (
-            <Text style={styles.note}>Google sign-in activates once OAuth is configured.</Text>
-          )}
+          {showGoogle && (
+            <>
+              <Pressable
+                style={[styles.google, (busy || !agreed) && styles.disabled]}
+                onPress={onGoogle}
+                disabled={busy || !agreed}
+                accessibilityRole="button"
+                accessibilityLabel="Continue with Google"
+              >
+                <Text style={styles.googleG}>G</Text>
+                <Text style={styles.googleText}>Continue with Google</Text>
+              </Pressable>
 
-          <View style={styles.divider}>
-            <View style={styles.line} />
-            <Text style={styles.or}>or</Text>
-            <View style={styles.line} />
-          </View>
+              <View style={styles.divider}>
+                <View style={styles.line} />
+                <Text style={styles.or}>or</Text>
+                <View style={styles.line} />
+              </View>
+            </>
+          )}
 
           {/* Name: signup (Supabase) or the passwordless fallback. */}
           {(!supabaseEnabled || mode === 'signup') && (
@@ -141,6 +169,8 @@ export default function SignInScreen({ onClose, onLegal }: { onClose: () => void
               placeholder="Name (optional)"
               placeholderTextColor="rgba(255,255,255,0.45)"
               autoCapitalize="words"
+              textContentType="name"
+              autoComplete="name"
             />
           )}
           <TextInput
@@ -150,8 +180,11 @@ export default function SignInScreen({ onClose, onLegal }: { onClose: () => void
             placeholder="Email"
             placeholderTextColor="rgba(255,255,255,0.45)"
             keyboardType="email-address"
+            textContentType="emailAddress"
+            autoComplete="email"
             autoCapitalize="none"
             autoCorrect={false}
+            accessibilityLabel="Email"
           />
           {supabaseEnabled && (
             <TextInput
@@ -161,11 +194,20 @@ export default function SignInScreen({ onClose, onLegal }: { onClose: () => void
               placeholder="Password (6+ characters)"
               placeholderTextColor="rgba(255,255,255,0.45)"
               secureTextEntry
+              keyboardType="default"
+              textContentType={mode === 'signup' ? 'newPassword' : 'password'}
+              autoComplete={mode === 'signup' ? 'new-password' : 'password'}
               autoCapitalize="none"
+              autoCorrect={false}
+              accessibilityLabel="Password"
             />
           )}
 
-          {authError && <Text style={styles.error}>{authError}</Text>}
+          {authError && (
+            <Text style={authIsInfo ? styles.info : styles.error} accessibilityLiveRegion="polite">
+              {authError}
+            </Text>
+          )}
 
           <Pressable
             style={[styles.cta, (!canSubmit || busy) && styles.disabled]}
@@ -182,7 +224,10 @@ export default function SignInScreen({ onClose, onLegal }: { onClose: () => void
           </Pressable>
 
           {supabaseEnabled ? (
-            <Pressable onPress={() => setMode(mode === 'signin' ? 'signup' : 'signin')} hitSlop={10}>
+            <Pressable
+              onPress={() => setMode(mode === 'signin' ? 'signup' : 'signin')}
+              hitSlop={10}
+            >
               <Text style={styles.toggle}>
                 {mode === 'signin'
                   ? 'New here? Create an account'
@@ -190,13 +235,11 @@ export default function SignInScreen({ onClose, onLegal }: { onClose: () => void
               </Text>
             </Pressable>
           ) : (
-            <Text style={styles.fine}>
-              We use this to save your plan. No password needed in this early version.
-            </Text>
+            <Text style={styles.fine}>We use this to save your plan.</Text>
           )}
 
           <Text style={styles.consent}>{DISCLAIMER_SHORT}</Text>
-        </View>
+        </ScrollView>
       </KeyboardAvoidingView>
     </View>
   );
@@ -206,9 +249,16 @@ const styles = StyleSheet.create({
   fill: { ...StyleSheet.absoluteFillObject, backgroundColor: '#08080A' },
   header: { flexDirection: 'row', justifyContent: 'space-between', paddingHorizontal: 18 },
   back: { color: 'rgba(255,255,255,0.85)', fontSize: 16, fontWeight: '600', width: 64 },
-  body: { flex: 1, paddingHorizontal: 28, justifyContent: 'center' },
+  scroll: { flex: 1 },
+  body: { flexGrow: 1, paddingHorizontal: 28, paddingVertical: 24, justifyContent: 'center' },
   title: { color: '#fff', fontSize: 34, fontFamily: F.display },
-  sub: { color: 'rgba(255,255,255,0.78)', fontSize: 16, lineHeight: 23, marginTop: 10, marginBottom: 28 },
+  sub: {
+    color: 'rgba(255,255,255,0.78)',
+    fontSize: 16,
+    lineHeight: 23,
+    marginTop: 10,
+    marginBottom: 28,
+  },
   google: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -220,7 +270,6 @@ const styles = StyleSheet.create({
   },
   googleG: { color: '#4285F4', fontSize: 20, fontWeight: '900' },
   googleText: { color: '#08080A', fontSize: 16, fontWeight: '700' },
-  note: { color: 'rgba(255,255,255,0.5)', fontSize: 12, textAlign: 'center', marginTop: 8, lineHeight: 17 },
   divider: { flexDirection: 'row', alignItems: 'center', gap: 12, marginVertical: 22 },
   line: { flex: 1, height: 1, backgroundColor: 'rgba(255,255,255,0.15)' },
   or: { color: 'rgba(255,255,255,0.5)', fontSize: 13 },
@@ -235,6 +284,13 @@ const styles = StyleSheet.create({
     fontSize: 15,
     marginBottom: 12,
   },
+  info: {
+    color: 'rgba(255,255,255,0.85)',
+    fontSize: 13,
+    lineHeight: 19,
+    marginBottom: 12,
+    marginTop: -2,
+  },
   error: { color: T.accent, fontSize: 13, lineHeight: 19, marginBottom: 12, marginTop: -2 },
   cta: {
     backgroundColor: T.accent,
@@ -245,8 +301,20 @@ const styles = StyleSheet.create({
   },
   ctaText: { color: '#08080A', fontSize: 16, fontWeight: '700' },
   disabled: { opacity: 0.45 },
-  toggle: { color: 'rgba(255,255,255,0.75)', fontSize: 14, textAlign: 'center', marginTop: 18, fontWeight: '600' },
-  fine: { color: 'rgba(255,255,255,0.45)', fontSize: 12, textAlign: 'center', marginTop: 18, lineHeight: 17 },
+  toggle: {
+    color: 'rgba(255,255,255,0.75)',
+    fontSize: 14,
+    textAlign: 'center',
+    marginTop: 18,
+    fontWeight: '600',
+  },
+  fine: {
+    color: 'rgba(255,255,255,0.45)',
+    fontSize: 12,
+    textAlign: 'center',
+    marginTop: 18,
+    lineHeight: 17,
+  },
   agreeRow: { flexDirection: 'row', gap: 10, alignItems: 'flex-start', marginBottom: 14 },
   box: {
     width: 20,
@@ -262,6 +330,11 @@ const styles = StyleSheet.create({
   tick: { color: '#08080A', fontSize: 13, fontWeight: '800', lineHeight: 15 },
   agreeText: { flex: 1, color: 'rgba(255,255,255,0.75)', fontSize: 13, lineHeight: 19 },
   agreeLink: { color: '#fff', fontWeight: '700', textDecorationLine: 'underline' },
-  consent: { color: 'rgba(255,255,255,0.4)', fontSize: 11, textAlign: 'center', marginTop: 16, lineHeight: 16 },
+  consent: {
+    color: 'rgba(255,255,255,0.4)',
+    fontSize: 11,
+    textAlign: 'center',
+    marginTop: 16,
+    lineHeight: 16,
+  },
 });
-

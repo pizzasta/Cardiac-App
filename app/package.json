@@ -13,7 +13,8 @@
     "lint": "eslint . --ext .ts,.tsx",
     "format": "prettier --check .",
     "gen:legal": "node scripts/gen-legal.mjs",
-    "gen:sounds": "node scripts/gen-sounds.mjs"
+    "gen:sounds": "node scripts/gen-sounds.mjs",
+    "gen:brand": "node scripts/gen-brand.mjs"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.104.1",

@@ -34,7 +34,15 @@ export default function ScienceScreen({
         </Text>
 
         {SCIENCE.map((n, i) => (
-          <Pressable key={i} style={styles.card} onPress={() => Linking.openURL(n.sourceUrl)}>
+          <Pressable
+            key={i}
+            style={styles.card}
+            accessibilityRole="link"
+            accessibilityHint="Opens the source in your browser"
+            onPress={() => {
+              Linking.openURL(n.sourceUrl).catch(() => {});
+            }}
+          >
             <Text style={[styles.cardTitle, { color: accent }]}>{n.title}</Text>
             <Text style={styles.cardBody}>{n.body}</Text>
             <Text style={[styles.source, { color: accent }]}>{n.sourceLabel}  ↗</Text>

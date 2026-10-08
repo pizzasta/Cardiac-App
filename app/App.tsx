@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from 'react';
-import { Platform, Pressable, StyleSheet, Text, View } from 'react-native';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { BackHandler, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -34,13 +34,14 @@ import { ARCHETYPES, TINTS } from './src/data/archetypes';
 import World from './src/world/World';
 import type { Mood, WorldMode } from './src/world/rig';
 import { getToday, load as loadLog } from './src/logic/pulselog';
-import { useReducedMotion } from './src/hooks';
+import { useBottomInset, useReducedMotion } from './src/hooks';
 import { RhythmResult, scoreQuiz } from './src/logic/score';
 import { AuthProvider, useAuth } from './src/logic/auth';
 import { pushResult } from './src/logic/sync';
 import { loadProfile, saveProfile } from './src/logic/profile';
 import { hasAiConsent, setAiConsent } from './src/logic/consent';
 import { loadSfxPref } from './src/logic/sfx';
+import { loadHapticsPref } from './src/logic/haptics';
 import type { Level } from './src/logic/pulselog';
 import { useFonts, SpaceGrotesk_700Bold } from '@expo-google-fonts/space-grotesk';
 import { JetBrainsMono_500Medium } from '@expo-google-fonts/jetbrains-mono';
@@ -116,6 +117,7 @@ function Flow() {
         }
       }
       loadSfxPref().catch(() => {});
+      loadHapticsPref().catch(() => {});
       // Honor a saved choice. With none saved, ambience starts on web but stays
       // off on phones, where unexpected audio at launch is unwelcome.
       if (m === 'true' || (m == null && Platform.OS !== 'web')) setMuted(true);
@@ -156,6 +158,9 @@ function Flow() {
   // asks permission; `consentFor` holds the pending question meanwhile.
   const [consentFor, setConsentFor] = useState<{ seed?: string } | null>(null);
   const goPulse = (seed?: string) => {
+    // Ask is a full stage screen, so close any world overlay that would sit
+    // on top of it.
+    closeWorldOverlays();
     setPulseSeed(seed);
     setStage('pulse');
   };
@@ -190,17 +195,55 @@ function Flow() {
     setStage('landing');
   };
 
-  // After "delete my data": drop in-memory state and close every overlay.
-  const wipe = () => {
-    reset();
+  function closeWorldOverlays() {
     setShowToday(false);
     setShowCheckIn(false);
     setShowTrends(false);
     setShowCard(false);
     setResetLevel(undefined);
+  }
+
+  // After "delete my data": drop in-memory state and close every overlay.
+  const wipe = () => {
+    reset();
+    closeWorldOverlays();
     setConsentFor(null);
     setMood(null);
   };
+
+  // Retake from Settings: back to the quiz; the new result replaces the old
+  // one when it's finished.
+  const retake = () => {
+    setShowSettings(false);
+    closeWorldOverlays();
+    setStage('quiz');
+  };
+
+  const toReveal = useCallback(() => setStage('reveal'), []);
+
+  // Android back closes the top-most layer, then steps back through the
+  // flow; it only leaves the app from the first screen.
+  const back = useRef<() => boolean>(() => false);
+  back.current = () => {
+    if (showLegal) return setShowLegal(false), true;
+    if (showSignIn) return setShowSignIn(false), true;
+    if (showScience) return setShowScience(false), true;
+    if (showSettings) return setShowSettings(false), true;
+    if (consentFor) return setConsentFor(null), true;
+    if (resetLevel !== undefined) return setResetLevel(undefined), true;
+    if (showCard) return setShowCard(false), true;
+    if (showTrends) return setShowTrends(false), true;
+    if (showCheckIn) return setShowCheckIn(false), true;
+    if (showToday) return setShowToday(false), true;
+    if (stage === 'pulse') return setPulseSeed(undefined), setStage('plan'), true;
+    if (stage === 'quiz') return setStage(result ? 'plan' : 'landing'), true;
+    if (stage === 'reveal' && result) return setStage('plan'), true;
+    return false;
+  };
+  useEffect(() => {
+    const sub = BackHandler.addEventListener('hardwareBackPress', () => back.current());
+    return () => sub.remove();
+  }, []);
 
   // The 3D world behind everything: which camera station, and whose colour.
   const reducedMotion = useReducedMotion();
@@ -229,6 +272,18 @@ function Flow() {
         : stage === 'boot'
           ? 'landing'
           : stage;
+  // The floating sound button would cover inputs and buttons on these
+  // screens; Settings has the same control.
+  const hideSoundButton =
+    showLegal ||
+    showSignIn ||
+    showSettings ||
+    !!consentFor ||
+    topOverlay === 'card' ||
+    stage === 'pulse' ||
+    stage === 'quiz' ||
+    stage === 'reading';
+  const fabBottom = useBottomInset(16);
   const showAnimal = !!result && stage !== 'quiz' && stage !== 'reading' && stage !== 'landing';
 
   return (
@@ -257,12 +312,12 @@ function Flow() {
       )}
       {stage === 'quiz' && (
         <FadeIn key="quiz">
-          <QuizScreen onComplete={handleComplete} />
+          <QuizScreen onComplete={handleComplete} onExit={() => setStage(result ? 'plan' : 'landing')} />
         </FadeIn>
       )}
       {stage === 'reading' && (
         <FadeIn key="reading">
-          <ReadingScreen onDone={() => setStage('reveal')} />
+          <ReadingScreen onDone={toReveal} />
         </FadeIn>
       )}
       {stage === 'reveal' && result && (
@@ -307,19 +362,6 @@ function Flow() {
 
       </View>
 
-      {consentFor && result && (
-        <AiConsentScreen
-          accent={ARCHETYPES[result.animal].accent}
-          onAllow={() => {
-            const { seed } = consentFor;
-            setConsentFor(null);
-            setAiConsent(true).catch(() => {});
-            goPulse(seed);
-          }}
-          onDecline={() => setConsentFor(null)}
-          onPrivacy={() => setShowLegal(true)}
-        />
-      )}
       {showSignIn && (
         <SignInScreen onClose={() => setShowSignIn(false)} onLegal={() => setShowLegal(true)} />
       )}
@@ -341,6 +383,7 @@ function Flow() {
             setShowSignIn(true);
           }}
           onDeleted={wipe}
+          onRetake={result ? retake : undefined}
           onLegal={() => setShowLegal(true)}
           onClose={() => setShowSettings(false)}
         />
@@ -426,12 +469,32 @@ function Flow() {
         </View>
       )}
 
+      {/* Consent sits above the overlays it can be opened from. */}
+      {consentFor && result && (
+        <AiConsentScreen
+          accent={ARCHETYPES[result.animal].accent}
+          onAllow={() => {
+            const { seed } = consentFor;
+            setConsentFor(null);
+            setAiConsent(true).catch(() => {});
+            goPulse(seed);
+          }}
+          onDecline={() => setConsentFor(null)}
+          onPrivacy={() => setShowLegal(true)}
+        />
+      )}
       {/* Legal renders above every other overlay so any screen can link to it. */}
       {showLegal && <LegalScreen onClose={() => setShowLegal(false)} />}
 
       {/* Persistent ambience mute — always reachable, all screens. */}
-      {soundSupported && (
-        <Pressable style={styles.soundFab} onPress={toggleMute} hitSlop={8}>
+      {soundSupported && !hideSoundButton && (
+        <Pressable
+          style={[styles.soundFab, { bottom: fabBottom }]}
+          onPress={toggleMute}
+          hitSlop={8}
+          accessibilityRole="button"
+          accessibilityLabel={muted ? 'Turn ambience on' : 'Turn ambience off'}
+        >
           <Text style={styles.soundFabIcon}>{muted ? '🔇' : '🔊'}</Text>
         </Pressable>
       )}
@@ -523,16 +586,15 @@ const styles = StyleSheet.create({
   errBtnText: { color: '#08080A', fontSize: 16, fontWeight: '700' },
   soundFab: {
     position: 'absolute',
-    bottom: 104,
-    right: 16,
-    width: 44,
-    height: 44,
-    borderRadius: 22,
+    right: 14,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
     backgroundColor: 'rgba(18,18,20,0.6)',
     borderColor: 'rgba(255,255,255,0.22)',
     borderWidth: 1,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  soundFabIcon: { fontSize: 18 },
+  soundFabIcon: { fontSize: 16 },
 });

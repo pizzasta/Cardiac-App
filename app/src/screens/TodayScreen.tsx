@@ -143,7 +143,7 @@ export default function TodayScreen({
             style={styles.companion}
           />
           {/* Rendered last so it sits above the header text and stays tappable. */}
-          <Pressable onPress={onClose} hitSlop={12} style={styles.close}>
+          <Pressable onPress={onClose} hitSlop={12} style={styles.close} accessibilityRole="button">
             <Text style={styles.closeText}>Done</Text>
           </Pressable>
         </LinearGradient>
@@ -264,8 +264,10 @@ export default function TodayScreen({
               <Text style={styles.experimentText}>Most-tagged reason during it: {outcome.commonReason}.</Text>
             )}
             <Pressable
+              hitSlop={12}
+              accessibilityRole="button"
               onPress={async () => {
-                await dismissLastExperiment();
+                await dismissLastExperiment().catch(() => {});
                 setLastExperiment(null);
                 setOutcome(null);
               }}
@@ -281,12 +283,18 @@ export default function TodayScreen({
             <Text style={styles.experimentText}>{experiment.prompt}</Text>
             <Text style={styles.experimentFine}>Notice what changes in your check-ins. Circadia treats this as a personal observation, not proof of cause.</Text>
             <Pressable
+              hitSlop={12}
+              accessibilityRole="button"
               onPress={async () => {
                 const ended = experiment;
-                await stopExperiment();
-                setExperiment(null);
-                setLastExperiment(ended);
-                setOutcome(experimentOutcome(ended, await load()));
+                try {
+                  await stopExperiment();
+                  setExperiment(null);
+                  setLastExperiment(ended);
+                  setOutcome(experimentOutcome(ended, await load()));
+                } catch {
+                  // Storage unavailable: leave the experiment running.
+                }
               }}
             >
               <Text style={styles.experimentStop}>End experiment & see results</Text>
@@ -297,7 +305,11 @@ export default function TodayScreen({
             {EXPERIMENTS.slice(0, 3).map((item) => (
               <PressableScale key={item.id} style={styles.experimentChoice} onPress={async () => {
                 playSfx('select');
-                setExperiment(await startExperiment(item));
+                try {
+                  setExperiment(await startExperiment(item));
+                } catch {
+                  // Storage unavailable: nothing started.
+                }
               }}>
                 <Text style={styles.experimentTitle}>{item.title}</Text>
                 <Text style={styles.experimentText}>{item.days}-day observation →</Text>

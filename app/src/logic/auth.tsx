@@ -12,6 +12,7 @@ import {
   pullCheckIns,
   setOnboarding,
 } from './sync';
+import { disable as disableNotifications } from './notifications';
 
 // Auth for Circadia. Backend is chosen automatically:
 //   • Supabase — when EXPO_PUBLIC_SUPABASE_URL + EXPO_PUBLIC_SUPABASE_ANON_KEY
@@ -51,7 +52,9 @@ interface AuthValue {
   signOut: () => Promise<void>;
   completeOnboarding: () => Promise<void>;
   // Erase user data. `account: true` also permanently deletes the account.
-  deleteData: (account: boolean) => Promise<void>;
+  // Resolves false when the cloud deletion failed; local data is then kept so
+  // the user can retry.
+  deleteData: (account: boolean) => Promise<boolean>;
 }
 
 const AuthContext = createContext<AuthValue | null>(null);
@@ -272,20 +275,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     },
 
     deleteData: async (account) => {
-      await clearLocalData();
       if (supabaseEnabled && supabase) {
+        // Cloud first: if it fails, keep everything so the user can retry.
         if (account) {
-          await deleteAccountRemote(); // deletes account + cascades, then signs out
+          if (!(await deleteAccountRemote())) return false; // cascades, then signs out
         } else {
-          await deleteCloudData();
+          if (!(await deleteCloudData())) return false;
           await supabase.auth.signOut().catch(() => {});
         }
       } else {
         setUser(null);
         await AsyncStorage.removeItem(STORAGE_KEY).catch(() => {});
       }
+      await clearLocalData();
+      // Scheduled reminders would otherwise keep firing after a wipe.
+      await disableNotifications().catch(() => {});
       setOnboardingComplete(false);
       await AsyncStorage.removeItem(ONBOARD_KEY).catch(() => {});
+      return true;
     },
   };
 

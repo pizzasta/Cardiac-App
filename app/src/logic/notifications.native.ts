@@ -87,10 +87,10 @@ async function scheduleCheckIn(animal: AnimalId): Promise<void> {
 }
 
 // Called after a check-in so the nudge re-times to the emerging pattern. No-op
-// if the user hasn't enabled notifications.
+// if the user hasn't turned reminders on (or has turned them off: disabling
+// cancels everything, so nothing is scheduled).
 export async function refreshSmartNudge(animal: AnimalId): Promise<void> {
-  const { granted } = await Notifications.getPermissionsAsync();
-  if (!granted) return;
+  if (!(await isEnabled())) return;
   await ensureAndroidChannel();
   await scheduleCheckIn(animal);
 }
