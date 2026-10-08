@@ -8,7 +8,9 @@ import {
   Text,
   View,
 } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useTopInset } from '../hooks';
+import { useAuth } from '../logic/auth';
 import { ARCHETYPES } from '../data/archetypes';
 import { PLANS } from '../data/plans';
 import { personalFlow } from '../logic/personalPlan';
@@ -23,6 +25,8 @@ import { F } from '../theme';
 import Scrim from '../components/Scrim';
 import PressableScale from '../components/PressableScale';
 import { blendFor, displayName } from '../data/blends';
+
+const START_KEY = 'circadia.startHere';
 
 function fmtTime(hour: number, minute: number): string {
   const ampm = hour < 12 ? 'AM' : 'PM';
@@ -41,6 +45,7 @@ export default function PlanScreen({
   onCheckIn,
   onTrends,
   onShareCard,
+  checkedInToday = false,
 }: {
   result: RhythmResult;
   onBack: () => void;
@@ -54,13 +59,27 @@ export default function PlanScreen({
   onCheckIn: () => void;
   onTrends: () => void;
   onShareCard: () => void;
+  // Whether today's check-in is done (drives the first-run checklist).
+  checkedInToday?: boolean;
 }) {
   const a = ARCHETYPES[result.animal];
   const plan = PLANS[result.animal];
   const blend = blendFor(result);
   const flow = personalFlow(plan.flow, result);
 
+  const { user } = useAuth();
   const [notifsOn, setNotifsOn] = useState(false);
+  // First-run checklist: shown until finished or hidden.
+  const [startHidden, setStartHidden] = useState(true);
+  useEffect(() => {
+    AsyncStorage.getItem(START_KEY)
+      .then((v) => setStartHidden(v === 'done'))
+      .catch(() => setStartHidden(false));
+  }, []);
+  const hideStart = () => {
+    setStartHidden(true);
+    AsyncStorage.setItem(START_KEY, 'done').catch(() => {});
+  };
   const [notifBusy, setNotifBusy] = useState(false);
   const [checkInTime, setCheckInTime] = useState<{ hour: number; minute: number; why: string } | null>(
     null
@@ -125,6 +144,58 @@ export default function PlanScreen({
           <Chip label="Crash" value={result.crash} accent={a.accent} />
           <Chip label="Recharge" value={result.recharge} accent={a.accent} />
         </View>
+
+        {!startHidden && !(checkedInToday && notifsOn && user) && (
+          <View style={[styles.startCard, { borderColor: `${a.accent}66` }]}>
+            <View style={styles.startHead}>
+              <Text style={[styles.section, { color: a.accent, marginTop: 0, marginBottom: 0 }]}>START HERE</Text>
+              <Pressable onPress={hideStart} hitSlop={12} accessibilityRole="button" accessibilityLabel="Hide start here">
+                <Text style={styles.startHide}>Hide</Text>
+              </Pressable>
+            </View>
+            <Text style={styles.startIntro}>Three small steps and your plan starts learning you.</Text>
+            {[
+              { done: checkedInToday, title: 'Check in', sub: '10 seconds. How does your energy feel right now?', onPress: onCheckIn },
+              {
+                done: notifsOn,
+                title: 'Turn on gentle nudges',
+                sub: 'A reminder before your dip and at wind-down. Easy to turn off.',
+                onPress: notifsOn ? undefined : toggleNotifs,
+              },
+              {
+                done: !!user,
+                title: 'Save your plan',
+                sub: 'Optional. Keeps your rhythm and check-ins if you change phones.',
+                onPress: user ? undefined : onSignIn,
+              },
+            ].map((step, i) => (
+              <Pressable
+                key={step.title}
+                style={styles.startRow}
+                onPress={step.onPress}
+                disabled={!step.onPress}
+                accessibilityRole="button"
+                accessibilityState={{ checked: step.done, disabled: !step.onPress }}
+              >
+                <View
+                  style={[
+                    styles.startTick,
+                    step.done ? { backgroundColor: a.accent, borderColor: a.accent } : { borderColor: `${a.accent}88` },
+                  ]}
+                >
+                  <Text style={[styles.startTickText, { color: step.done ? '#08080A' : a.accent }]}>
+                    {step.done ? '✓' : i + 1}
+                  </Text>
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={[styles.startTitle, step.done && styles.startDone]}>{step.title}</Text>
+                  {!step.done && <Text style={styles.startSub}>{step.sub}</Text>}
+                </View>
+                {!step.done && <Text style={[styles.startArrow, { color: a.accent }]}>→</Text>}
+              </Pressable>
+            ))}
+          </View>
+        )}
 
         <Text style={styles.section}>CHECK-IN</Text>
         <PressableScale style={[styles.pulseCard, { borderColor: `${a.accent}55` }]} onPress={onCheckIn}>
@@ -344,6 +415,30 @@ const styles = StyleSheet.create({
   },
   chipLabel: { fontSize: 11, fontWeight: '700', letterSpacing: 0.5 },
   chipValue: { color: '#fff', fontSize: 13, fontWeight: '600', marginTop: 4, textAlign: 'center' },
+  startCard: {
+    backgroundColor: 'rgba(18,18,20,0.6)',
+    borderWidth: 1,
+    borderRadius: 18,
+    padding: 16,
+    marginTop: 22,
+  },
+  startHead: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  startHide: { color: 'rgba(255,255,255,0.55)', fontSize: 13, fontWeight: '600' },
+  startIntro: { color: 'rgba(255,255,255,0.8)', fontSize: 14, lineHeight: 20, marginTop: 8, marginBottom: 6 },
+  startRow: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 10 },
+  startTick: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    borderWidth: 1.5,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  startTickText: { fontSize: 13, fontWeight: '800' },
+  startTitle: { color: '#fff', fontSize: 15, fontWeight: '700' },
+  startDone: { color: 'rgba(255,255,255,0.5)', textDecorationLine: 'line-through' },
+  startSub: { color: 'rgba(255,255,255,0.65)', fontSize: 12, lineHeight: 17, marginTop: 2 },
+  startArrow: { fontSize: 18, fontWeight: '700' },
   section: {
     color: 'rgba(255,255,255,0.6)',
     fontSize: 12,
