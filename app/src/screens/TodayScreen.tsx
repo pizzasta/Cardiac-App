@@ -19,6 +19,9 @@ import { TINTS } from '../data/archetypes';
 import { RhythmResult } from '../logic/score';
 import { PulseEntry, load, getToday, currentStreak } from '../logic/pulselog';
 import { weeklyReport, WeeklyReport } from '../logic/weekly';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { FirstWeekRecap, firstWeekRecap } from '../logic/recap';
+import { maybeAskForReview } from '../logic/review';
 import { F, T } from '../theme';
 import {
   ActiveExperiment,
@@ -46,6 +49,8 @@ function greeting(now = new Date()): string {
   if (h < 18) return 'Good afternoon';
   return 'Good evening';
 }
+
+const RECAP_KEY = 'circadia.recapShown';
 
 export default function TodayScreen({
   result,
@@ -82,6 +87,8 @@ export default function TodayScreen({
   const [experiment, setExperiment] = useState<ActiveExperiment | null>(null);
   const [lastExperiment, setLastExperiment] = useState<ActiveExperiment | null>(null);
   const [outcome, setOutcome] = useState<ExperimentOutcome | null>(null);
+  const [recap, setRecap] = useState<FirstWeekRecap | null>(null);
+  const [checkIns, setCheckIns] = useState(0);
 
   // Refresh local stats whenever the screen mounts.
   useEffect(() => {
@@ -92,6 +99,10 @@ export default function TodayScreen({
       setToday(getToday(log));
       setStreak(currentStreak(log));
       setReport(weeklyReport(log));
+      setCheckIns(log.length);
+      const recapSeen = await AsyncStorage.getItem(RECAP_KEY).catch(() => 'seen');
+      if (!alive) return;
+      if (!recapSeen) setRecap(firstWeekRecap(log, result));
       let active = await getActiveExperiment();
       // A finished experiment wraps itself up and moves to the results card.
       if (active && isExperimentComplete(active)) {
@@ -107,7 +118,15 @@ export default function TodayScreen({
     return () => {
       alive = false;
     };
+    // Loaded once per open; the result can't change while Today is up.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  const closeRecap = () => {
+    setRecap(null);
+    AsyncStorage.setItem(RECAP_KEY, 'seen').catch(() => {});
+    maybeAskForReview('first-week', checkIns);
+  };
 
   return (
     <View style={styles.root}>
@@ -237,6 +256,26 @@ export default function TodayScreen({
           </Text>
         </PressableScale>
 
+        {/* One-time first-week payoff */}
+        {recap && (
+          <View style={[styles.recapCard, { borderColor: `${arch.accent}88` }]}>
+            <Text style={[styles.weekLabel, { color: arch.accent }]}>{arch.emoji}  MILESTONE</Text>
+            <Text style={styles.recapHeadline}>{recap.headline}</Text>
+            {recap.lines.map((line) => (
+              <Text key={line} style={styles.recapLine}>
+                {line}
+              </Text>
+            ))}
+            <Pressable
+              onPress={closeRecap}
+              style={[styles.recapBtn, { backgroundColor: arch.accent }]}
+              accessibilityRole="button"
+            >
+              <Text style={styles.recapBtnText}>Nice. Keep going</Text>
+            </Pressable>
+          </View>
+        )}
+
         {/* Weekly reveal */}
         {report && (
           <PressableScale onPress={onTrends} style={styles.weekCard}>
@@ -291,7 +330,9 @@ export default function TodayScreen({
                   await stopExperiment();
                   setExperiment(null);
                   setLastExperiment(ended);
-                  setOutcome(experimentOutcome(ended, await load()));
+                  const log = await load();
+                  setOutcome(experimentOutcome(ended, log));
+                  maybeAskForReview('experiment-done', log.length);
                 } catch {
                   // Storage unavailable: leave the experiment running.
                 }
@@ -425,6 +466,17 @@ const styles = StyleSheet.create({
     marginBottom: 24,
   },
   checkInText: { color: T.bg, fontFamily: F.display, fontSize: 15 },
+  recapCard: {
+    backgroundColor: 'rgba(18,18,20,0.7)',
+    borderWidth: 1,
+    borderRadius: 20,
+    padding: 18,
+    marginTop: 16,
+  },
+  recapHeadline: { color: '#fff', fontSize: 24, fontFamily: F.display, marginTop: 6, marginBottom: 8 },
+  recapLine: { color: 'rgba(255,255,255,0.85)', fontSize: 14, lineHeight: 21, marginTop: 4 },
+  recapBtn: { borderRadius: 22, paddingVertical: 12, alignItems: 'center', marginTop: 14 },
+  recapBtnText: { color: '#08080A', fontSize: 15, fontWeight: '700' },
   weekCard: {
     backgroundColor: T.surface,
     borderRadius: 16,

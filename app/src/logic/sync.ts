@@ -104,6 +104,8 @@ export async function clearLocalData() {
                 'circadia.lastExperiment',
                 'circadia.aiConsent',
                 'circadia.startHere',
+                'circadia.recapShown',
+                'circadia.reviewAsks',
           ]);
     } catch {
           /* best-effort */
