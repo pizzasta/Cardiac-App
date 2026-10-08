@@ -1,4 +1,4 @@
-import { encodeWav, renderAmbience, renderSfx, SFX, SFX_IDS, sfxDuration } from './recipes';
+import { encodeWav, renderSfx, SFX, SFX_IDS, sfxDuration } from './recipes';
 
 const RATE = 22050;
 
@@ -20,19 +20,6 @@ describe('renderSfx', () => {
   });
 });
 
-describe('renderAmbience', () => {
-  const amb = renderAmbience(RATE, 4);
-
-  it('loops without a jump at the seam', () => {
-    const seam = Math.abs(amb[0] - amb[amb.length - 1]);
-    const typical = amb.reduce((m, x, i) => (i ? m + Math.abs(x - amb[i - 1]) : m), 0) / amb.length;
-    expect(seam).toBeLessThan(typical * 10);
-  });
-
-  it('is deterministic', () => {
-    expect(renderAmbience(RATE, 4)).toEqual(amb);
-  });
-});
 
 describe('encodeWav', () => {
   it('writes a 16-bit mono PCM header', () => {

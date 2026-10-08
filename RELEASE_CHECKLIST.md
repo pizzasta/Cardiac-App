@@ -32,6 +32,7 @@
 - [ ] Turn on Low Power Mode (iOS) / Battery Saver (Android) and confirm the app switches to the simple background; check Settings > Display > Simple background too.
 - [ ] Look around: on a physical iPhone and Android phone, tilt the phone and swipe sideways on the landing and plan screens; the view should turn gently and drift back. Check it stays comfortable (no motion sickness) and that Reduce Motion turns it off.
 - [ ] Walk through each animal world (dolphin cove, wolf snow and aurora, bear autumn, hummingbird meadow, fox wheat, octopus shore) at day, sunset and night on a mid-range phone and check it stays smooth.
+- [ ] Listen to the nature soundscapes on a phone speaker and headphones: the valley (birds and grasshoppers by day, crickets at night), and each animal world after the quiz. Check levels feel balanced and that sound softens behind Today, check-in and Trends.
 - [ ] Listen to interface sounds and ambience on a physical iPhone (silent switch on and off) and an Android phone.
 - [ ] Check the 3D world runs smoothly on an older iPhone and a mid-range Android phone (scrolling Today and Trends, the reading dive), and that "Reduce motion" makes it still.
 - [ ] Confirm notification copy does not present predicted crashes, burnout, or health states as facts.

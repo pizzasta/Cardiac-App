@@ -10,6 +10,7 @@ import {
   enableAutoStart,
   cancelAutoStart,
   setVolume as setSoundVolume,
+  setSoundScene,
 } from './src/logic/sound';
 import LandingScreen from './src/screens/LandingScreen';
 import QuizScreen from './src/screens/QuizScreen';
@@ -80,7 +81,7 @@ function Flow() {
   }, []);
   // undefined = closed; null = open, default to today's check-in level.
   const [resetLevel, setResetLevel] = useState<Level | null | undefined>(undefined);
-  // App-wide rainforest ambience + persistent mute/volume (remembered across visits).
+  // App-wide nature soundscape + persistent mute/volume (remembered across visits).
   const [muted, setMuted] = useState(false);
   const [volume, setVolume] = useState(0.6);
   // Battery saver: a still backdrop instead of the 3D world, chosen in
@@ -300,6 +301,12 @@ function Flow() {
     stage === 'reading';
   const fabBottom = useBottomInset(16);
   const showAnimal = !!result && stage !== 'quiz' && stage !== 'reading' && stage !== 'landing';
+
+  // The soundscape follows the world you're in and the screen you're on.
+  const soundWorld = showAnimal ? result!.animal : 'valley';
+  useEffect(() => {
+    setSoundScene({ world: soundWorld, mode: worldMode });
+  }, [soundWorld, worldMode]);
 
   // Drag to look: a sideways swipe on the open, scenic screens turns the 3D
   // view. Touches are only observed, never claimed, so scrolling and buttons
@@ -555,14 +562,14 @@ function Flow() {
       {/* Legal renders above every other overlay so any screen can link to it. */}
       {showLegal && <LegalScreen onClose={() => setShowLegal(false)} />}
 
-      {/* Persistent ambience mute — always reachable, all screens. */}
+      {/* Persistent sound mute, always reachable. */}
       {soundSupported && !hideSoundButton && (
         <Pressable
           style={[styles.soundFab, { bottom: fabBottom }]}
           onPress={toggleMute}
           hitSlop={8}
           accessibilityRole="button"
-          accessibilityLabel={muted ? 'Turn ambience on' : 'Turn ambience off'}
+          accessibilityLabel={muted ? 'Turn nature sounds on' : 'Turn nature sounds off'}
         >
           <Text style={styles.soundFabIcon}>{muted ? '🔇' : '🔊'}</Text>
         </Pressable>
