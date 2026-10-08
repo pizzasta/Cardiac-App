@@ -20,7 +20,6 @@ import { dotTexture, glowTexture } from './textures';
 import {
   damp,
   daylight,
-  groundHeight,
   Mood,
   ridgeline,
   STATIONS,
@@ -30,15 +29,18 @@ import {
   WorldMode,
 } from './rig';
 import { useLocalHour } from './clock';
+import { look as lookInput, stepDrag, useDeviceTilt } from './look';
+import { Biome, biomeFor, heightIn } from './biomes';
+import { Aurora, Clouds, GrassClock, Particles, ShootingStar, SunGlare, TileFlora, Water } from './nature';
 import { AnimalId } from '../data/archetypes';
 import Atmosphere from '../components/Atmosphere';
 import { T } from '../theme';
 
 const NATIVE = Platform.OS !== 'web';
+const Y_AXIS = new THREE.Vector3(0, 1, 0);
 const BG = '#06060A';
-const TILE = { width: 90, cols: NATIVE ? 50 : 90, rows: NATIVE ? 34 : 60 };
+const TILE = { width: 240, cols: NATIVE ? 90 : 160, rows: NATIVE ? 34 : 60 };
 const TILES = 3; // leapfrogging ground tiles, nearest to farthest
-const FIREFLIES = NATIVE ? 90 : 180;
 const TOTEM: [number, number, number] = [0, 1.0, -16];
 // Sun and moon directions, as compass angles (180 = straight ahead).
 const SUN_AZIMUTH = 180;
@@ -98,10 +100,25 @@ function dirFrom(azimuthDeg: number, elevationDeg: number, out = new THREE.Vecto
   );
 }
 
+// How freely each screen lets you look around (tilt and drag): fully on the
+// open, scenic screens, a little behind text.
+const LOOK_FREEDOM: Record<WorldMode, number> = {
+  landing: 1,
+  quiz: 0.5,
+  reading: 0.3,
+  reveal: 0.8,
+  home: 1,
+  focus: 0.3,
+  reset: 0.4,
+};
+
 function Rig({ live, params }: { live: React.MutableRefObject<Live>; params: React.MutableRefObject<Params> }) {
   const { camera, scene, gl } = useThree();
   const look = useRef(new THREE.Vector3(...STATIONS[live.current.mode].lookAt));
   const first = useRef(true);
+  const turn = useRef({ yaw: 0, pitch: 0 });
+  const dir = useMemo(() => new THREE.Vector3(), []);
+  const target = useMemo(() => new THREE.Vector3(), []);
 
   useFrame((_, rawDt) => {
     const dt = Math.min(rawDt, 0.05);
@@ -136,7 +153,19 @@ function Rig({ live, params }: { live: React.MutableRefObject<Live>; params: Rea
     look.current.x = damp(look.current.x, s.lookAt[0], speed * k, dt);
     look.current.y = damp(look.current.y, s.lookAt[1], speed * k, dt);
     look.current.z = damp(look.current.z, s.lookAt[2], speed * k, dt);
-    camera.lookAt(look.current);
+
+    // Look around: drag momentum and phone tilt turn the view.
+    const d = stepDrag(lookInput.dragYaw, lookInput.dragVel, lookInput.dragging, dt);
+    lookInput.dragYaw = d.yaw;
+    lookInput.dragVel = d.vel;
+    const free = still ? 0 : LOOK_FREEDOM[mode];
+    turn.current.yaw = damp(turn.current.yaw, (lookInput.dragYaw + lookInput.tiltYaw) * free, 7, dt);
+    turn.current.pitch = damp(turn.current.pitch, lookInput.tiltPitch * free, 7, dt);
+    dir.copy(look.current).sub(camera.position);
+    const len = dir.length();
+    dir.applyAxisAngle(Y_AXIS, turn.current.yaw);
+    dir.y += turn.current.pitch * len;
+    camera.lookAt(target.copy(camera.position).add(dir));
   });
   return null;
 }
@@ -228,8 +257,10 @@ function SunsetGlow({ params }: { params: React.MutableRefObject<Params> }) {
   useFrame(() => {
     if (mat.current) mat.current.opacity = 0.95 * params.current.dusk;
   });
+  // Drawn early among see-through things: the dome is centred on the camera,
+  // so distance sorting alone would paint it over clouds and the aurora.
   return (
-    <mesh geometry={geometry}>
+    <mesh geometry={geometry} renderOrder={-1}>
       <meshBasicMaterial ref={mat} vertexColors side={THREE.BackSide} transparent depthWrite={false} fog={false} toneMapped={false} />
     </mesh>
   );
@@ -258,8 +289,9 @@ function NightSky({ params }: { params: React.MutableRefObject<Params> }) {
   useFrame(() => {
     if (mat.current) mat.current.opacity = Math.max(0, Math.min(1, 1 - params.current.day * 2.5));
   });
+  // Drawn first among see-through things (see SunsetGlow).
   return (
-    <mesh geometry={geometry}>
+    <mesh geometry={geometry} renderOrder={-2}>
       <meshBasicMaterial ref={mat} vertexColors side={THREE.BackSide} transparent depthWrite={false} fog={false} toneMapped={false} />
     </mesh>
   );
@@ -327,12 +359,12 @@ function Stars({ params }: { params: React.MutableRefObject<Params> }) {
 }
 
 // Two ranges of mountains on the horizon; distance and fog give the haze.
-function Mountains() {
+function Mountains({ colors }: { colors: [string, string] }) {
   const ranges = useMemo(
     () =>
       [
-        { z: -175, height: 22, depth: 70, seed: 1, color: '#232a38' },
-        { z: -290, height: 48, depth: 110, seed: 2, color: '#323a52' },
+        { z: -175, height: 22, depth: 70, seed: 1 },
+        { z: -290, height: 48, depth: 110, seed: 2 },
       ].map((r) => {
         const g = new THREE.PlaneGeometry(900, r.depth, NATIVE ? 160 : 260, 14);
         g.rotateX(-Math.PI / 2);
@@ -354,7 +386,7 @@ function Mountains() {
     <>
       {ranges.map((r) => (
         <mesh key={r.seed} geometry={r.geometry} position={[0, 0, r.z]}>
-          <meshStandardMaterial color={r.color} roughness={1} />
+          <meshStandardMaterial color={colors[r.seed - 1]} roughness={1} />
         </mesh>
       ))}
     </>
@@ -364,20 +396,21 @@ function Mountains() {
 // Rolling hills along a valley. Three identical tiles leapfrog toward the
 // camera; the ground shape repeats every tile, so the joins are seamless and
 // nothing is recomputed per frame.
-function Ground({ params }: { params: React.MutableRefObject<Params> }) {
+function Ground({ params, biome }: { params: React.MutableRefObject<Params>; biome: Biome }) {
   const tiles = useRef<(THREE.Mesh | null)[]>([]);
+  const mats = useRef<(THREE.MeshStandardMaterial | null)[]>([]);
   const geometry = useMemo(() => {
     const g = new THREE.PlaneGeometry(TILE.width, TILE_LENGTH, TILE.cols, TILE.rows);
     g.rotateX(-Math.PI / 2);
     const pos = g.attributes.position as THREE.BufferAttribute;
     const colors = new Float32Array(pos.count * 3);
-    const low = new THREE.Color('#2b3a2e');
-    const high = new THREE.Color('#4a5a40');
+    const low = new THREE.Color(biome.ground[0]);
+    const high = new THREE.Color(biome.ground[1]);
     const c = new THREE.Color();
     for (let i = 0; i < pos.count; i++) {
       const x = pos.getX(i);
       const z = pos.getZ(i);
-      const y = groundHeight(x, z);
+      const y = heightIn(biome, x, z);
       pos.setY(i, y);
       // Slightly lighter on the hillsides, with a little natural variation.
       const v = Math.min(1, Math.max(0, y / 6 + 0.25 + 0.15 * Math.sin(x * 1.7 + z * 0.9)));
@@ -387,12 +420,14 @@ function Ground({ params }: { params: React.MutableRefObject<Params> }) {
     g.setAttribute('color', new THREE.BufferAttribute(colors, 3));
     g.computeVertexNormals();
     return g;
-  }, []);
+  }, [biome]);
   useEffect(() => () => geometry.dispose(), [geometry]);
 
   useFrame((_, rawDt) => {
     const dt = Math.min(rawDt, 0.05);
     const p = params.current;
+    // A soft glow of its own so the near ground isn't lost at dusk and night.
+    mats.current.forEach((m) => m && (m.emissiveIntensity = 0.1 + 0.18 * p.day + 0.12 * p.dusk));
     tiles.current.forEach((m) => {
       if (!m) return;
       m.position.z += p.travel * dt;
@@ -412,7 +447,16 @@ function Ground({ params }: { params: React.MutableRefObject<Params> }) {
           geometry={geometry}
           position={[0, 0, -i * TILE_LENGTH]}
         >
-          <meshStandardMaterial vertexColors roughness={0.95} />
+          <meshStandardMaterial
+            ref={(m: THREE.MeshStandardMaterial | null) => {
+              mats.current[i] = m;
+            }}
+            vertexColors
+            roughness={0.95}
+            emissive={biome.ground[1]}
+            emissiveIntensity={0.15}
+          />
+          <TileFlora biome={biome} seed={i + 1} />
         </mesh>
       ))}
     </>
@@ -461,62 +505,6 @@ function Mist({ params }: { params: React.MutableRefObject<Params> }) {
         </sprite>
       ))}
     </>
-  );
-}
-
-// Warm fireflies drifting over the valley, brightest after dusk.
-const WARM = new THREE.Color('#ffd98a');
-function Fireflies({ params }: { params: React.MutableRefObject<Params> }) {
-  const mat = useRef<THREE.PointsMaterial>(null);
-  const { geometry, seeds } = useMemo(() => {
-    const pos = new Float32Array(FIREFLIES * 3);
-    const seeds = new Float32Array(FIREFLIES * 2);
-    for (let i = 0; i < FIREFLIES; i++) {
-      pos[i * 3] = (Math.random() - 0.5) * 30;
-      pos[i * 3 + 1] = 0.4 + Math.random() * 3.5;
-      pos[i * 3 + 2] = 6 - Math.random() * 48;
-      seeds[i * 2] = Math.random() * Math.PI * 2;
-      seeds[i * 2 + 1] = 0.3 + Math.random() * 0.9;
-    }
-    const g = new THREE.BufferGeometry();
-    g.setAttribute('position', new THREE.BufferAttribute(pos, 3));
-    return { geometry: g, seeds };
-  }, []);
-
-  useEffect(() => () => geometry.dispose(), [geometry]);
-
-  useFrame((_, rawDt) => {
-    const dt = Math.min(rawDt, 0.05);
-    const p = params.current;
-    const pos = geometry.attributes.position as THREE.BufferAttribute;
-    const arr = pos.array as Float32Array;
-    for (let i = 0; i < FIREFLIES; i++) {
-      const phase = seeds[i * 2];
-      const f = seeds[i * 2 + 1];
-      arr[i * 3] += Math.sin(p.t * f + phase) * 0.004;
-      arr[i * 3 + 1] += Math.cos(p.t * f * 0.8 + phase) * 0.003;
-      arr[i * 3 + 2] += p.travel * dt;
-      if (arr[i * 3 + 2] > 8) arr[i * 3 + 2] -= 50;
-    }
-    pos.needsUpdate = true;
-    if (mat.current) {
-      mat.current.color.copy(WARM).lerp(p.color, 0.2);
-      mat.current.opacity = (0.6 + 0.3 * Math.sin(p.t * 1.7)) * (1 - 0.75 * p.day) * p.glow;
-    }
-  });
-
-  return (
-    <points geometry={geometry}>
-      <pointsMaterial
-        ref={mat}
-        size={0.16}
-        map={dotTexture()}
-        transparent
-        depthWrite={false}
-        blending={THREE.AdditiveBlending}
-        sizeAttenuation
-      />
-    </points>
   );
 }
 
@@ -606,6 +594,9 @@ function Scene({
   // reveal (which has its own close-up emblem), the reset (the breathing orb is
   // the focus) and dense screens, where it would sit behind text.
   const showTotem = ['landing', 'quiz', 'reading', 'home'].includes(mode);
+  // Everyone shares the valley until the reveal; then it becomes your
+  // animal's world.
+  const biome = biomeFor(animal);
   const params = useRef<Params>({
     travel: 0,
     glow: STATIONS[live.current.mode].glow,
@@ -625,10 +616,16 @@ function Scene({
       <NightSky params={params} />
       <Stars params={params} />
       <Moon params={params} />
-      <Mountains />
-      <Ground params={params} />
+      <Clouds params={params} />
+      <SunGlare params={params} />
+      <ShootingStar params={params} />
+      {biome.aurora && <Aurora params={params} />}
+      <Mountains colors={biome.mountains} />
+      <Ground params={params} biome={biome} />
+      {biome.water && <Water biome={biome} params={params} />}
+      <GrassClock params={params} />
       <Mist params={params} />
-      <Fireflies params={params} />
+      <Particles key={biome.id} biome={biome} params={params} />
       <Totem
         animal={animal}
         color={'#' + live.current.tint.getHexString()}
@@ -672,6 +669,7 @@ export default function World({
 }) {
   const hour = useLocalHour();
   const live = useLive(mode, tint, still, hour);
+  useDeviceTilt(!still);
   const [active, setActive] = useState(true);
 
   useEffect(() => {

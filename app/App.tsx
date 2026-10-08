@@ -33,6 +33,7 @@ import { QUIZ } from './src/data/quiz';
 import { ARCHETYPES, TINTS } from './src/data/archetypes';
 import World from './src/world/World';
 import SimpleBackdrop from './src/world/SimpleBackdrop';
+import { dragEnd, dragMove, dragStart, startWebTilt } from './src/world/look';
 import { loadSimpleBackground, saveSimpleBackground, useLowPowerMode } from './src/logic/background';
 import type { Mood, WorldMode } from './src/world/rig';
 import { getToday, load as loadLog } from './src/logic/pulselog';
@@ -300,8 +301,54 @@ function Flow() {
   const fabBottom = useBottomInset(16);
   const showAnimal = !!result && stage !== 'quiz' && stage !== 'reading' && stage !== 'landing';
 
+  // Drag to look: a sideways swipe on the open, scenic screens turns the 3D
+  // view. Touches are only observed, never claimed, so scrolling and buttons
+  // work as usual; a mostly vertical move is treated as a scroll.
+  const canLook =
+    !reducedMotion &&
+    !simpleBg &&
+    !lowPower &&
+    !worldOverlay &&
+    (stage === 'landing' || stage === 'reveal' || stage === 'plan');
+  const touch = useRef<{ x: number; y: number; decided: boolean; look: boolean } | null>(null);
+  // Native touch events carry pageX/timestamp; on web they're DOM events,
+  // with the position on the first touch point.
+  const touchPoint = (e: any) => {
+    const n = e.nativeEvent;
+    const first = n.touches?.[0] ?? n.changedTouches?.[0];
+    return {
+      pageX: n.pageX ?? first?.pageX ?? 0,
+      pageY: n.pageY ?? first?.pageY ?? 0,
+      timestamp: n.timestamp ?? n.timeStamp ?? Date.now(),
+    };
+  };
+  const onTouchStart = (e: any) => {
+    if (!canLook) return;
+    startWebTilt();
+    const { pageX, pageY } = touchPoint(e);
+    touch.current = { x: pageX, y: pageY, decided: false, look: false };
+  };
+  const onTouchMove = (e: any) => {
+    const t = touch.current;
+    if (!t) return;
+    const { pageX, pageY, timestamp } = touchPoint(e);
+    if (!t.decided) {
+      const dx = Math.abs(pageX - t.x);
+      const dy = Math.abs(pageY - t.y);
+      if (dx < 8 && dy < 8) return;
+      t.decided = true;
+      t.look = dx > dy * 1.4;
+      if (t.look) dragStart(pageX, timestamp ?? Date.now());
+    }
+    if (t.look) dragMove(pageX, timestamp ?? Date.now());
+  };
+  const onTouchEnd = () => {
+    if (touch.current?.look) dragEnd();
+    touch.current = null;
+  };
+
   return (
-    <>
+    <View style={styles.root} onTouchStart={onTouchStart} onTouchMove={onTouchMove} onTouchEnd={onTouchEnd} onTouchCancel={onTouchEnd}>
       {simpleBg || lowPower ? (
         <SimpleBackdrop />
       ) : (
@@ -520,7 +567,7 @@ function Flow() {
           <Text style={styles.soundFabIcon}>{muted ? '🔇' : '🔊'}</Text>
         </Pressable>
       )}
-    </>
+    </View>
   );
 }
 
@@ -606,6 +653,7 @@ const styles = StyleSheet.create({
     marginTop: 24,
   },
   errBtnText: { color: '#08080A', fontSize: 16, fontWeight: '700' },
+  root: { flex: 1 },
   soundFab: {
     position: 'absolute',
     right: 14,

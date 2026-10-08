@@ -34,6 +34,7 @@
     "expo-haptics": "~13.0.1",
     "expo-linear-gradient": "~13.0.2",
     "expo-notifications": "^0.28.19",
+    "expo-sensors": "~13.0.9",
     "expo-sharing": "~12.0.1",
     "expo-speech": "^11.7.0",
     "expo-status-bar": "~1.12.1",
@@ -79,7 +80,8 @@
     "moduleNameMapper": {
       "^@react-native-async-storage/async-storage$": "<rootDir>/src/__mocks__/async-storage.ts",
       "^react-native$": "<rootDir>/src/__mocks__/react-native.ts",
-      "^./supabase$": "<rootDir>/src/__mocks__/supabase.ts"
+      "^./supabase$": "<rootDir>/src/__mocks__/supabase.ts",
+      "^expo-sensors$": "<rootDir>/src/__mocks__/expo-sensors.ts"
     },
     "testRegex": "src/.*\\.test\\.ts$"
   },
