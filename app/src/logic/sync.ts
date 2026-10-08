@@ -103,6 +103,7 @@ export async function clearLocalData() {
                 'circadia.activeExperiment',
                 'circadia.lastExperiment',
                 'circadia.aiConsent',
+                'circadia.startHere',
           ]);
     } catch {
           /* best-effort */

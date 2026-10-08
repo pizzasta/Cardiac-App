@@ -21,6 +21,8 @@ export default function QuizScreen({
   onExit?: () => void;
 }) {
   const [index, setIndex] = useState(0);
+  // The option just tapped stays lit while the question fades out.
+  const [picked, setPicked] = useState<string | null>(null);
   const answers = useRef<Option[]>([]);
   const fade = useRef(new Animated.Value(1)).current;
   // Ignores taps while a question transition is running, so a double tap
@@ -46,6 +48,7 @@ export default function QuizScreen({
   const select = (opt: Option) => {
     if (busy.current || done.current) return;
     busy.current = true;
+    setPicked(opt.label);
     playSfx('select');
     haptic('tap');
     const at = index;
@@ -55,10 +58,12 @@ export default function QuizScreen({
     Animated.timing(fade, {
       toValue: 0,
       duration: 160,
+      delay: 140,
       useNativeDriver: true,
     }).start(({ finished }) => {
       if (!finished) {
         fade.setValue(1);
+        setPicked(null);
         busy.current = false;
         return;
       }
@@ -67,6 +72,7 @@ export default function QuizScreen({
         onComplete(answers.current.slice(0, QUIZ.length));
         return;
       }
+      setPicked(null);
       setIndex(at + 1);
       fadeIn();
     });
@@ -115,6 +121,8 @@ export default function QuizScreen({
         <View style={styles.metaRow}>
           <Text style={styles.count}>
             {index + 1} / {QUIZ.length}
+            {index === Math.floor(QUIZ.length / 2) ? '  ·  Halfway there' : ''}
+            {index === QUIZ.length - 1 ? '  ·  Last one' : ''}
           </Text>
           {index > 0 || onExit ? (
             <Pressable
@@ -136,7 +144,8 @@ export default function QuizScreen({
               <Pressable
                 key={opt.label}
                 accessibilityRole="button"
-                style={({ pressed }) => [styles.option, pressed && styles.optionPressed]}
+                accessibilityState={{ selected: picked === opt.label }}
+                style={({ pressed }) => [styles.option, (pressed || picked === opt.label) && styles.optionPressed]}
                 onPress={() => select(opt)}
               >
                 <Text style={styles.optionText}>{opt.label}</Text>

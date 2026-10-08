@@ -315,9 +315,9 @@ function Flow() {
           <QuizScreen onComplete={handleComplete} onExit={() => setStage(result ? 'plan' : 'landing')} />
         </FadeIn>
       )}
-      {stage === 'reading' && (
+      {stage === 'reading' && result && (
         <FadeIn key="reading">
-          <ReadingScreen onDone={toReveal} />
+          <ReadingScreen result={result} onDone={toReveal} />
         </FadeIn>
       )}
       {stage === 'reveal' && result && (
@@ -343,6 +343,7 @@ function Flow() {
             onCheckIn={() => setShowToday(true)}
             onTrends={() => setShowTrends(true)}
             onShareCard={() => setShowCard(true)}
+            checkedInToday={mood != null}
           />
         </FadeIn>
       )}
