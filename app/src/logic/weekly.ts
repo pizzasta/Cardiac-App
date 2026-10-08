@@ -1,4 +1,4 @@
-// Weekly report — the "weekly reveal" from CIRCADIA.md (§9 retention).
+// Weekly report — the "weekly reveal" from WILDHOUR.md (§9 retention).
 //
 // Pure, UI-free aggregation over the local pulselog so it can be unit-tested
 // and reused by any screen. Everything is derived from the PulseEntry log;

@@ -44,12 +44,20 @@ export default function RevealScreen({
   const beat = useRef(new Animated.Value(0)).current;
   const reduced = useReducedMotion();
 
+  // Once per reveal, not again when the reduced-motion setting resolves.
   useEffect(() => {
     playSfx('reveal');
     const buzz = setTimeout(() => haptic('success'), 160);
+    return () => clearTimeout(buzz);
+  }, []);
+
+  useEffect(() => {
     if (reduced) {
+      enter.stopAnimation();
+      beat.stopAnimation();
       enter.setValue(1);
-      return () => clearTimeout(buzz);
+      beat.setValue(0);
+      return;
     }
     Animated.spring(enter, {
       toValue: 1,
@@ -63,7 +71,6 @@ export default function RevealScreen({
       Animated.timing(beat, { toValue: 1, duration: 150, easing: Easing.out(Easing.quad), useNativeDriver: true }),
       Animated.timing(beat, { toValue: 0, duration: 260, easing: Easing.inOut(Easing.ease), useNativeDriver: true }),
     ]).start();
-    return () => clearTimeout(buzz);
   }, [enter, beat, reduced]);
 
   const lift = enter.interpolate({ inputRange: [0, 1], outputRange: [24, 0] });
@@ -185,7 +192,7 @@ function Chip({ label, value, accent }: { label: string; value: string; accent: 
 
 const styles = StyleSheet.create({
   fill: { flex: 1, backgroundColor: 'transparent' },
-  body: { paddingHorizontal: 24, paddingTop: 70, paddingBottom: 44, alignItems: 'center' },
+  body: { paddingHorizontal: 24, paddingTop: 70, paddingBottom: 96, alignItems: 'center' },
   kicker: {
     color: 'rgba(255,255,255,0.7)',
     letterSpacing: 4,

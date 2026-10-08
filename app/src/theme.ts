@@ -1,4 +1,4 @@
-// Circadia visual system — "your nervous system, rendered as an OS."
+// Wildhour visual system — "your nervous system, rendered as an OS."
 // Black canvas, charcoal glass, one hot-pink signal, red pulse glows.
 
 export const T = {

@@ -1,7 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // Consent for sending personal data to the third-party AI service behind Ask
-// Circadia. Asked once, before the first request; revocable in Settings.
+// Wildhour. Asked once, before the first request; revocable in Settings.
 
 export const AI_CONSENT_KEY = 'circadia.aiConsent';
 

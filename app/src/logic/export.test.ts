@@ -26,7 +26,7 @@ describe('toCsv', () => {
 
 describe('exportFilename', () => {
   it('is dated', () => {
-    expect(exportFilename(new Date('2026-10-07T12:00:00Z'))).toBe('circadia-checkins-2026-10-07.csv');
+    expect(exportFilename(new Date('2026-10-07T12:00:00Z'))).toBe('wildhour-checkins-2026-10-07.csv');
   });
 });
 

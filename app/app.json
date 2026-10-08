@@ -1,11 +1,11 @@
 {
   "expo": {
-    "name": "Circadia",
-    "slug": "circadia",
+    "name": "Wildhour",
+    "slug": "wildhour",
     "version": "0.1.0",
     "orientation": "portrait",
     "userInterfaceStyle": "dark",
-    "scheme": "circadia",
+    "scheme": "wildhour",
     "splash": {
       "image": "./assets/splash.png",
       "resizeMode": "contain",
@@ -13,7 +13,7 @@
     },
     "ios": {
       "supportsTablet": false,
-      "bundleIdentifier": "app.circadia.mobile",
+      "bundleIdentifier": "app.wildhour.mobile",
       "buildNumber": "1",
       "config": {
         "usesNonExemptEncryption": false
@@ -52,7 +52,7 @@
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#08080A"
       },
-      "package": "app.circadia.mobile",
+      "package": "app.wildhour.mobile",
       "blockedPermissions": [
         "android.permission.RECORD_AUDIO"
       ],
@@ -82,7 +82,7 @@
       [
         "expo-sensors",
         {
-          "motionPermission": "Circadia uses your phone's motion so you can look around the 3D scenery by tilting it."
+          "motionPermission": "Wildhour uses your phone's motion so you can look around the 3D scenery by tilting it."
         }
       ]
     ],

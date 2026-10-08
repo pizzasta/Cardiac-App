@@ -4,6 +4,10 @@
 // experiment), only once the person has really used the app, and rarely:
 // at most three times ever and never within four months of the last ask.
 // The stores rate-limit the prompt too; this keeps us well inside that.
+//
+// Apple asks apps not to show the prompt straight from a button tap. So a good
+// moment only marks a prompt as pending; it's shown at the next natural pause
+// (the person comes back to the app), and only if that's reasonably soon.
 
 export type ReviewMoment = 'steady-checkin' | 'first-week' | 'experiment-done';
 
@@ -35,4 +39,24 @@ export function parseReviewState(raw: string | null): ReviewState {
     // Corrupt value: start fresh.
   }
   return { count: 0, last: null };
+}
+
+// How long a good moment stays worth asking about.
+export const REVIEW_PENDING_DAYS = 14;
+
+export function parsePendingReview(raw: string | null): number | null {
+  const at = raw == null ? NaN : Number(raw);
+  return Number.isFinite(at) && at > 0 ? at : null;
+}
+
+// Whether a pending prompt (marked at `pendingAt`) should be shown now.
+export function shouldShowPendingReview(
+  pendingAt: number | null,
+  state: ReviewState,
+  now = Date.now()
+): boolean {
+  if (pendingAt == null) return false;
+  if (now < pendingAt || now - pendingAt > REVIEW_PENDING_DAYS * DAY_MS) return false;
+  // The check-in minimum was met when the moment was marked.
+  return shouldAskForReview(state, REVIEW_MIN_CHECKINS, now);
 }

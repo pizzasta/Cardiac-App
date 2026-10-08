@@ -58,7 +58,7 @@ function render(doc) {
 </head>
 <body>
 <main>
-  <a class="brand" href="../">CIRCADIA</a>
+  <a class="brand" href="../">WILDHOUR</a>
   <nav>
       ${nav.replace(`href="../${doc.id}/"`, `href="../${doc.id}/" aria-current="page"`)}
   </nav>

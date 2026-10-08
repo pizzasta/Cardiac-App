@@ -1,4 +1,12 @@
-import { parseReviewState, REVIEW_GAP_DAYS, shouldAskForReview } from './reviewPolicy';
+import {
+  parsePendingReview,
+  parseReviewState,
+  REVIEW_GAP_DAYS,
+  REVIEW_MAX_ASKS,
+  REVIEW_PENDING_DAYS,
+  shouldAskForReview,
+  shouldShowPendingReview,
+} from './reviewPolicy';
 
 const DAY = 24 * 60 * 60 * 1000;
 const now = Date.UTC(2026, 9, 8);
@@ -26,5 +34,32 @@ describe('parseReviewState', () => {
     expect(parseReviewState('{"count":2,"last":5}')).toEqual({ count: 2, last: 5 });
     expect(parseReviewState(null)).toEqual({ count: 0, last: null });
     expect(parseReviewState('not json')).toEqual({ count: 0, last: null });
+  });
+});
+
+describe('pending review prompt', () => {
+  const fresh = { count: 0, last: null };
+
+  it('shows nothing when no good moment was marked', () => {
+    expect(shouldShowPendingReview(null, fresh, now)).toBe(false);
+  });
+
+  it('shows a recent good moment at the next pause', () => {
+    expect(shouldShowPendingReview(now - DAY, fresh, now)).toBe(true);
+  });
+
+  it('lets an old good moment lapse', () => {
+    expect(shouldShowPendingReview(now - (REVIEW_PENDING_DAYS + 1) * DAY, fresh, now)).toBe(false);
+  });
+
+  it('still respects the ask limits', () => {
+    expect(shouldShowPendingReview(now - DAY, { count: REVIEW_MAX_ASKS, last: null }, now)).toBe(false);
+    expect(shouldShowPendingReview(now - DAY, { count: 1, last: now - 2 * DAY }, now)).toBe(false);
+  });
+
+  it('reads a stored timestamp and survives junk', () => {
+    expect(parsePendingReview(String(now))).toBe(now);
+    expect(parsePendingReview(null)).toBeNull();
+    expect(parsePendingReview('soon')).toBeNull();
   });
 });

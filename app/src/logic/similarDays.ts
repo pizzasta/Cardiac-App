@@ -20,7 +20,7 @@ export interface SimilarDays {
 }
 
 export const SIMILAR_DAYS_NOTE =
-  'This describes your previous Circadia entries. It doesn’t predict what will happen today.';
+  'This describes your previous Wildhour entries. It doesn’t predict what will happen today.';
 
 const MAX_MATCHES = 3;
 
@@ -72,7 +72,7 @@ export function findSimilarDays(log: PulseEntry[], minimum = 5): SimilarDays {
       today,
       matches: [],
       headline: 'Not enough history yet',
-      shared: `After ${plural(minimum, 'check-in')}, Circadia can find past days that looked like today.`,
+      shared: `After ${plural(minimum, 'check-in')}, Wildhour can find past days that looked like today.`,
       whatNext: '',
       question: '',
     };
@@ -115,7 +115,7 @@ export function findSimilarDays(log: PulseEntry[], minimum = 5): SimilarDays {
     whatNext,
     question: [
       `Today I checked in as ${today.level}${today.reason ? ` (${today.reason})` : ''}.`,
-      `Similar days in my Circadia history: ${list}.`,
+      `Similar days in my Wildhour history: ${list}.`,
       whatNext,
       'Describe only what these recorded entries have in common and what was logged after them.',
       'Do not predict what will happen today. Suggest one small thing I could try.',

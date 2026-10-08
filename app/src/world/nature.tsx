@@ -136,6 +136,13 @@ function Grass({ biome, seed }: { biome: Biome; seed: number }) {
     return m;
   }, [geometry, biome, spec, seed]);
   useEffect(() => () => geometry.dispose(), [geometry]);
+  // Free the per-instance buffers when the world changes.
+  useEffect(
+    () => () => {
+      mesh.dispose();
+    },
+    [mesh]
+  );
   return <primitive object={mesh} />;
 }
 
@@ -197,7 +204,14 @@ function Trees({ biome, seed }: { biome: Biome; seed: number }) {
     });
     return all;
   }, [biome, spec, seed]);
-  useEffect(() => () => meshes.forEach((m) => (m.material as THREE.Material).dispose()), [meshes]);
+  useEffect(
+    () => () =>
+      meshes.forEach((m) => {
+        (m.material as THREE.Material).dispose();
+        m.dispose();
+      }),
+    [meshes]
+  );
   return (
     <>
       {meshes.map((m, i) => (
@@ -234,6 +248,12 @@ function Flowers({ biome, seed }: { biome: Biome; seed: number }) {
     m.frustumCulled = false;
     return m;
   }, [biome, spec, seed]);
+  useEffect(
+    () => () => {
+      mesh.dispose();
+    },
+    [mesh]
+  );
   return <primitive object={mesh} />;
 }
 

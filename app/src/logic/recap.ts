@@ -5,6 +5,17 @@ import { Level, LEVELS, PulseEntry, REASONS } from './pulselog';
 import type { RhythmResult } from './score';
 
 export const RECAP_MIN_DAYS = 5;
+// Only call it a "week" when the check-ins really fit in about one.
+export const RECAP_WEEK_SPAN_DAYS = 10;
+
+// Whole days between two YYYY-MM-DD keys (calendar math, no time zones).
+function daysBetween(a: string, b: string): number {
+  const toUtc = (k: string) => {
+    const [y, m, d] = k.split('-').map(Number);
+    return Date.UTC(y, (m || 1) - 1, d || 1);
+  };
+  return Math.round(Math.abs(toUtc(b) - toUtc(a)) / 86400000);
+}
 
 export interface FirstWeekRecap {
   days: number;
@@ -28,8 +39,10 @@ function mostCommon<T extends string>(values: T[]): T | null {
 }
 
 export function firstWeekRecap(log: PulseEntry[], result: RhythmResult): FirstWeekRecap | null {
-  const days = new Set(log.map((e) => e.date)).size;
+  const dates = [...new Set(log.map((e) => e.date))].sort();
+  const days = dates.length;
   if (days < RECAP_MIN_DAYS) return null;
+  const withinAWeek = daysBetween(dates[0], dates[dates.length - 1]) <= RECAP_WEEK_SPAN_DAYS;
 
   const dominant = mostCommon(log.map((e) => e.level)) ?? 'steady';
   const label = LEVELS.find((l) => l.id === dominant)?.label.toLowerCase() ?? dominant;
@@ -46,8 +59,13 @@ export function firstWeekRecap(log: PulseEntry[], result: RhythmResult): FirstWe
       ? `Next week, guard your recharge: ${result.recharge}.`
       : dominant === 'wired'
         ? `Next week, try a short reset before your dip (${result.crash}).`
-        : `Next week, keep protecting your peak (${result.peak}). It’s working.`
+        : `Next week, keep protecting your peak (${result.peak}). It seems to suit you.`
   );
 
-  return { days, dominant, headline: 'Your first week', lines };
+  return {
+    days,
+    dominant,
+    headline: withinAWeek ? 'Your first week' : `Your first ${days === 5 ? 'five' : days} check-ins`,
+    lines,
+  };
 }

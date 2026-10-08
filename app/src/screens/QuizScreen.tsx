@@ -1,4 +1,4 @@
-import React, { useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   Animated,
   Pressable,
@@ -16,9 +16,13 @@ import { useBottomInset, useTopInset } from '../hooks';
 export default function QuizScreen({
   onComplete,
   onExit,
+  onRegisterBack,
 }: {
   onComplete: (answers: Option[]) => void;
   onExit?: () => void;
+  // Hands the app this screen's back step (for the Android back button);
+  // called with null on unmount.
+  onRegisterBack?: (back: (() => void) | null) => void;
 }) {
   const [index, setIndex] = useState(0);
   // The option just tapped stays lit while the question fades out.
@@ -102,6 +106,14 @@ export default function QuizScreen({
       fadeIn();
     });
   };
+
+  const backRef = useRef(back);
+  backRef.current = back;
+  useEffect(() => {
+    if (!onRegisterBack) return;
+    onRegisterBack(() => backRef.current());
+    return () => onRegisterBack(null);
+  }, [onRegisterBack]);
 
   return (
     <LinearGradient

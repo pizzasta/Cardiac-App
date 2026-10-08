@@ -19,7 +19,7 @@ export function toCsv(log: PulseEntry[], result: RhythmResult | null): string {
   const lines: string[] = [];
   if (result) {
     const a = ARCHETYPES[result.animal];
-    lines.push(`# Circadia rhythm profile: ${a?.name ?? result.animal}`);
+    lines.push(`# Wildhour rhythm profile: ${a?.name ?? result.animal}`);
     lines.push(`# peak: ${result.peak} | crash: ${result.crash} | recharge: ${result.recharge}`);
   }
   lines.push('date,level,reason,logged_at');
@@ -33,7 +33,7 @@ export function toCsv(log: PulseEntry[], result: RhythmResult | null): string {
 }
 
 export function exportFilename(now = new Date()): string {
-  return `circadia-checkins-${now.toISOString().slice(0, 10)}.csv`;
+  return `wildhour-checkins-${now.toISOString().slice(0, 10)}.csv`;
 }
 
 // Returns 'downloaded' | 'shared' | 'none'. Never throws.

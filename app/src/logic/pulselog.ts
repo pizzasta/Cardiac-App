@@ -178,7 +178,7 @@ export function buildSignalQuestion(
     .join(', ');
 
   return [
-    'Explain my signal using only my Circadia check-ins and rhythm profile.',
+    'Explain my signal using only my Wildhour check-ins and rhythm profile.',
     `Today I checked in as ${level}${reason ? ` and chose "${reason}" as the reason` : ''}.`,
     pattern ? `Across my recent check-ins, the mix is ${pattern}.` : '',
     'Give me a short, non-diagnostic explanation of what I may be noticing, then one gentle thing I could try right now.',
@@ -244,7 +244,7 @@ export function compareGoodDays(log: PulseEntry[], minimum = 7): GoodDayPattern 
     : 'No clear reason pattern yet';
 
   const pulseQuestion = [
-    'Compare my better Circadia days using only my check-in history.',
+    'Compare my better Wildhour days using only my check-in history.',
     `I have ${recent.length} recent check-ins, including ${steady.length} Steady days.`,
     `Observed reason patterns: ${factorText}.`,
     'Explain what looks different about my Steady days in plain language.',

@@ -33,20 +33,33 @@ export default function SignalCardScreen({
   const [status, setStatus] = useState<'idle' | 'copied' | 'shared'>('idle');
   const statement = pickStatement(result.animal, index);
   const cardRef = useRef<View>(null);
+  // Ignore taps while a share sheet or capture is already in progress.
+  const sharing = useRef(false);
+  const [busy, setBusy] = useState(false);
 
   const onShare = async () => {
-    // Native: snapshot the card to an image and open the share sheet. Web (or on
-    // failure): fall back to sharing the statement as text.
-    if (canCaptureImage && (await captureAndShare(cardRef))) {
-      // The image share sheet can't report whether it was sent or dismissed,
-      // so don't claim "Shared".
-      return;
+    if (sharing.current) return;
+    sharing.current = true;
+    setBusy(true);
+    try {
+      // Native: snapshot the card to an image and open the share sheet. Web (or on
+      // failure): fall back to sharing the statement as text.
+      if (canCaptureImage && (await captureAndShare(cardRef))) {
+        // The image share sheet can't report whether it was sent or dismissed,
+        // so don't claim "Shared".
+        return;
+      }
+      const r = await shareText(
+        `“${statement}” (my ${displayName(result)} rhythm, mapped by Wildhour)`
+      );
+      if (r === 'copied') setStatus('copied');
+      else if (r === 'shared') setStatus('shared');
+    } catch {
+      // Share sheet unavailable or dismissed with an error: nothing to do.
+    } finally {
+      sharing.current = false;
+      setBusy(false);
     }
-    const r = await shareText(
-      `“${statement}” (my ${displayName(result)} rhythm, mapped by Circadia)`
-    );
-    if (r === 'copied') setStatus('copied');
-    else if (r === 'shared') setStatus('shared');
   };
 
   const topInset = useTopInset();
@@ -121,7 +134,7 @@ export default function SignalCardScreen({
             <View>
               <PulseLine height={compact ? 40 : 56} color={tint} style={{ opacity: 0.9 }} />
               <View style={styles.readout}>
-                <Text style={styles.readoutText}>circadia</Text>
+                <Text style={styles.readoutText}>wildhour</Text>
               </View>
             </View>
           </View>
@@ -145,7 +158,9 @@ export default function SignalCardScreen({
           <Pressable
             style={[styles.cta, { backgroundColor: tint }]}
             onPress={onShare}
+            disabled={busy}
             accessibilityRole="button"
+            accessibilityState={{ busy, disabled: busy }}
           >
             <Text style={styles.ctaText}>
               {status === 'copied'

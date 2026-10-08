@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import {
   ActivityIndicator,
-  Alert,
+  AppState,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -19,6 +19,8 @@ import { DEEP_DIVE } from '../data/deepdive';
 import { DISCLAIMER_FULL } from '../data/disclaimer';
 import { RhythmResult } from '../logic/score';
 import { canSchedule, disable as disableNotifs, enable as enableNotifs, isEnabled } from '../logic/notifications';
+import { emitNotifsChanged, onNotifsChanged } from '../logic/notifyPrefs';
+import { hasAI } from '../logic/ai';
 import { load as loadLog, suggestCheckInTime } from '../logic/pulselog';
 import Protected from '../components/Protected';
 import { F } from '../theme';
@@ -68,6 +70,7 @@ export default function PlanScreen({
   const flow = personalFlow(plan.flow, result);
 
   const { user } = useAuth();
+  const ai = hasAI();
   const [notifsOn, setNotifsOn] = useState(false);
   // First-run checklist: shown until finished or hidden.
   const [startHidden, setStartHidden] = useState(true);
@@ -81,24 +84,43 @@ export default function PlanScreen({
     AsyncStorage.setItem(START_KEY, 'done').catch(() => {});
   };
   const [notifBusy, setNotifBusy] = useState(false);
+  const [notifError, setNotifError] = useState<string | null>(null);
   const [checkInTime, setCheckInTime] = useState<{ hour: number; minute: number; why: string } | null>(
     null
   );
 
+  // Re-read on mount, when Settings flips reminders, and when the app comes
+  // back to the foreground (permission may have changed in system settings).
   useEffect(() => {
-    isEnabled().then(setNotifsOn);
+    let alive = true;
+    const refresh = () => {
+      isEnabled()
+        .then((on) => alive && setNotifsOn(on))
+        .catch(() => {});
+    };
+    refresh();
+    const unsubscribe = onNotifsChanged(refresh);
+    const sub = AppState.addEventListener('change', (s) => {
+      if (s === 'active') refresh();
+    });
+    return () => {
+      alive = false;
+      unsubscribe();
+      sub.remove();
+    };
   }, []);
 
   useEffect(() => {
     const base = REMINDERS[result.animal][0];
-    loadLog().then((log) =>
-      setCheckInTime(suggestCheckInTime(log, { hour: base.hour, minute: base.minute }))
-    );
+    loadLog()
+      .then((log) => setCheckInTime(suggestCheckInTime(log, { hour: base.hour, minute: base.minute })))
+      .catch(() => {});
   }, [result.animal]);
 
   const toggleNotifs = async () => {
     if (notifBusy) return;
     setNotifBusy(true);
+    setNotifError(null);
     try {
       if (notifsOn) {
         await disableNotifs();
@@ -106,13 +128,16 @@ export default function PlanScreen({
       } else {
         const ok = await enableNotifs(result.animal);
         setNotifsOn(ok);
+        // Shown inline: Alert.alert does nothing on web.
         if (!ok) {
-          Alert.alert(
-            'Notifications blocked',
-            'Enable notifications for Circadia in your device settings, then try again.'
+          setNotifError(
+            'Notifications are blocked. Allow them for Wildhour in your device or browser settings, then try again.'
           );
         }
       }
+      emitNotifsChanged();
+    } catch {
+      setNotifError('Couldn’t change reminders just now. Please try again.');
     } finally {
       setNotifBusy(false);
     }
@@ -279,6 +304,12 @@ export default function PlanScreen({
             </View>
           )}
 
+          {notifError && (
+            <Text style={styles.notifError} accessibilityLiveRegion="polite">
+              {notifError}
+            </Text>
+          )}
+
           {!canSchedule && (
             <Text style={styles.notifWeb}>
               On the web we can only ask permission. Install the phone app for daily reminders.
@@ -304,11 +335,14 @@ export default function PlanScreen({
         </View>
 
         <Text style={styles.section}>TIPS FOR A {a.name.toUpperCase()}</Text>
-        <Text style={styles.tipsHint}>Tap a tip to ask a follow-up question.</Text>
+        {ai && <Text style={styles.tipsHint}>Tap a tip to ask a follow-up question.</Text>}
         {plan.tips.map((t, i) => (
           <Pressable
             key={i}
             style={styles.tipCard}
+            disabled={!ai}
+            accessibilityRole={ai ? 'button' : 'text'}
+            accessibilityHint={ai ? 'Ask a follow-up question about this tip' : undefined}
             onPress={() =>
               onPulse(
                 `As a ${a.name}, give me a deeper, personal tip on ${t.label.toLowerCase()}, building on this: "${t.text}". One concrete thing I can do today.`
@@ -317,7 +351,7 @@ export default function PlanScreen({
           >
             <View style={styles.tipHead}>
               <Text style={[styles.tipLabel, { color: a.accent }]}>{t.label}</Text>
-              <Text style={[styles.tipGo, { color: a.accent }]}>Ask ›</Text>
+              {ai && <Text style={[styles.tipGo, { color: a.accent }]}>Ask ›</Text>}
             </View>
             <Text style={styles.tipText}>{t.text}</Text>
           </Pressable>
@@ -325,6 +359,8 @@ export default function PlanScreen({
         {blend && (
           <Pressable
             style={[styles.tipCard, { borderColor: `${a.accent}55`, borderWidth: 1 }]}
+            disabled={!ai}
+            accessibilityRole={ai ? 'button' : 'text'}
             onPress={() =>
               onPulse(
                 `I'm a ${blend.name} (a ${a.name} with a ${ARCHETYPES[blend.streak].name} streak). Give me one concrete way to use this tip today: "${blend.tip.text}"`
@@ -335,7 +371,7 @@ export default function PlanScreen({
               <Text style={[styles.tipLabel, { color: a.accent }]}>
                 FROM YOUR {ARCHETYPES[blend.streak].name.toUpperCase()} STREAK · {blend.tip.label}
               </Text>
-              <Text style={[styles.tipGo, { color: a.accent }]}>Ask ›</Text>
+              {ai && <Text style={[styles.tipGo, { color: a.accent }]}>Ask ›</Text>}
             </View>
             <Text style={styles.tipText}>{blend.tip.text}</Text>
           </Pressable>
@@ -346,7 +382,7 @@ export default function PlanScreen({
           onSignIn={onSignIn}
           accent={a.accent}
           title="🔒 Unlock your detailed plan"
-          message="Sign in to get your weekly-grain plan: deeper scheduling, caffeine and recovery timing, and the patterns to track for your rhythm."
+          message="Sign in to see your week-by-week plan: deeper scheduling, caffeine and recovery timing, and the patterns worth noticing for your rhythm."
         >
           <View style={styles.deepCard}>
             {DEEP_DIVE[result.animal].map((d, i) => (
@@ -358,19 +394,22 @@ export default function PlanScreen({
           </View>
         </Protected>
 
-        <Pressable style={[styles.cta, { backgroundColor: a.accent }]} onPress={() => onPulse()}>
-          <Text style={styles.ctaText}>Ask a question  →</Text>
-        </Pressable>
+        {ai && (
+          <Pressable style={[styles.cta, { backgroundColor: a.accent }]} onPress={() => onPulse()} accessibilityRole="button">
+            <Text style={styles.ctaText}>Ask a question  →</Text>
+          </Pressable>
+        )}
 
         <Pressable
           style={[styles.scienceBtn, { borderColor: `${a.accent}66` }]}
           onPress={onScience}
+          accessibilityRole="button"
         >
           <Text style={[styles.scienceText, { color: a.accent }]}>Why this works: the science</Text>
         </Pressable>
 
         <Text style={styles.disclaimer}>{DISCLAIMER_FULL}</Text>
-        <Pressable onPress={onLegal} hitSlop={10}>
+        <Pressable onPress={onLegal} hitSlop={10} accessibilityRole="link">
           <Text style={styles.legalLink}>Terms & Privacy</Text>
         </Pressable>
       </ScrollView>
@@ -401,7 +440,7 @@ const styles = StyleSheet.create({
   headerTitle: { color: '#fff', fontSize: 18, fontFamily: F.display },
   gear: { width: 64, alignItems: 'flex-end' },
   gearIcon: { color: 'rgba(255,255,255,0.85)', fontSize: 20 },
-  body: { paddingHorizontal: 22, paddingBottom: 40 },
+  body: { paddingHorizontal: 22, paddingBottom: 96 },
   animal: { color: '#fff', fontSize: 30, fontFamily: F.display, marginTop: 8 },
   intro: { color: 'rgba(255,255,255,0.82)', fontSize: 15, lineHeight: 22, marginTop: 8 },
   chips: { flexDirection: 'row', gap: 10, marginTop: 18 },
@@ -507,6 +546,7 @@ const styles = StyleSheet.create({
   },
   smartLabel: { color: 'rgba(255,255,255,0.55)', fontSize: 11, fontFamily: F.mono, letterSpacing: 1 },
   smartTime: { color: 'rgba(255,255,255,0.8)', fontSize: 13, lineHeight: 19, marginTop: 6 },
+  notifError: { color: '#FFB4C8', fontSize: 13, lineHeight: 18, marginTop: 12 },
   notifWeb: { color: 'rgba(255,255,255,0.5)', fontSize: 12, lineHeight: 17, marginTop: 12 },
   timeline: {},
   flowRow: { flexDirection: 'row', gap: 14 },

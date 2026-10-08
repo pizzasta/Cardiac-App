@@ -1,4 +1,4 @@
-// Circadia's sound palette, defined once as synthesis recipes.
+// Wildhour's sound palette, defined once as synthesis recipes.
 //
 // Web renders these live with the Web Audio API; `npm run gen:sounds` renders
 // the same recipes to assets/sounds/*.wav for iOS/Android (expo-av). Keep this

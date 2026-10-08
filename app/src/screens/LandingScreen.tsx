@@ -14,6 +14,7 @@ import { T, F } from '../theme';
 import { playSfx } from '../logic/sfx';
 import PressableScale from '../components/PressableScale';
 import { useTopInset } from '../hooks';
+import { useAuth } from '../logic/auth';
 
 const ACCENT = T.accent;
 
@@ -36,7 +37,7 @@ const STAY = [
   'Your history builds up. Every check-in makes your patterns clearer.',
   'It’s specific to you, not generic “drink more water” advice.',
   'It shows what’s coming in your day, so a dip is less of a surprise.',
-  'Missing a day never resets you to zero.',
+  'Missing a day never wipes your history.',
   'Your data stays yours. Export it any time, free.',
 ];
 
@@ -56,6 +57,7 @@ export default function LandingScreen({
   const { height } = useWindowDimensions();
   const topInset = useTopInset();
   const animals = Object.values(ARCHETYPES);
+  const { user } = useAuth();
 
   const Cta = ({ label = 'Find your rhythm' }: { label?: string }) => (
     <PressableScale
@@ -80,17 +82,22 @@ export default function LandingScreen({
           />
 
           <View style={[styles.topLinks, { top: topInset }]}>
-            <Pressable onPress={onSignIn} hitSlop={12} style={styles.topLinkHit} accessibilityRole="button">
-              <Text style={styles.topLink}>Sign in</Text>
-            </Pressable>
-            <Text style={styles.topDot}>·</Text>
+            {/* Signed-in people already have an account; Settings covers it. */}
+            {!user && (
+              <>
+                <Pressable onPress={onSignIn} hitSlop={12} style={styles.topLinkHit} accessibilityRole="button">
+                  <Text style={styles.topLink}>Sign in</Text>
+                </Pressable>
+                <Text style={styles.topDot}>·</Text>
+              </>
+            )}
             <Pressable onPress={onSettings} hitSlop={12} style={styles.topLinkHit} accessibilityRole="button">
               <Text style={styles.topLink}>Settings</Text>
             </Pressable>
           </View>
 
           <View style={styles.heroBody}>
-            <Text style={styles.kicker}>CIRCADIA</Text>
+            <Text style={styles.kicker}>WILDHOUR</Text>
             <Text style={styles.h1}>You’re not tired.{'\n'}You’re out of rhythm.</Text>
             <Text style={styles.sub}>
               A 90-second read of how your energy, stress, and sleep tend to work, then a daily
@@ -163,7 +170,7 @@ export default function LandingScreen({
 
         {/* WHY PEOPLE STAY */}
         <Section label="WHY PEOPLE STAY">
-          <Text style={styles.h2}>It gets more accurate the longer you use it.</Text>
+          <Text style={styles.h2}>It gets more personal the more you check in.</Text>
           {STAY.map((s, i) => (
             <View key={i} style={styles.stayRow}>
               <Text style={styles.stayDot}>◆</Text>
@@ -175,7 +182,7 @@ export default function LandingScreen({
         {/* SCIENCE STRIP */}
         <Section>
           <Text style={styles.scienceLine}>Grounded in circadian research, not vibes.</Text>
-          <Pressable onPress={onScience} hitSlop={8}>
+          <Pressable onPress={onScience} hitSlop={8} style={styles.scienceLinkPill} accessibilityRole="link">
             <Text style={styles.scienceLink}>Read the science  ↗</Text>
           </Pressable>
         </Section>
@@ -189,12 +196,12 @@ export default function LandingScreen({
 
         {/* FOOTER */}
         <View style={styles.footer}>
-          <View style={styles.topLinks}>
-            <Pressable onPress={onLegal} hitSlop={8}>
+          <View style={styles.footerLinks}>
+            <Pressable onPress={onLegal} hitSlop={8} style={styles.topLinkHit} accessibilityRole="link">
               <Text style={styles.topLink}>Terms & Privacy</Text>
             </Pressable>
             <Text style={styles.topDot}>·</Text>
-            <Pressable onPress={onSettings} hitSlop={8}>
+            <Pressable onPress={onSettings} hitSlop={8} style={styles.topLinkHit} accessibilityRole="button">
               <Text style={styles.topLink}>Settings</Text>
             </Pressable>
           </View>
@@ -216,7 +223,7 @@ function Section({ label, children }: { label?: string; children: React.ReactNod
 
 const styles = StyleSheet.create({
   fill: { flex: 1, backgroundColor: 'transparent' },
-  scroll: { paddingBottom: 40 },
+  scroll: { paddingBottom: 96 },
 
   hero: { paddingHorizontal: 28, justifyContent: 'flex-end', paddingBottom: 56 },
   topLinks: {
@@ -270,11 +277,22 @@ const styles = StyleSheet.create({
   stayText: { flex: 1, color: '#fff', fontSize: 15, lineHeight: 22 },
 
   scienceLine: { color: '#fff', fontSize: 17, fontWeight: '600', lineHeight: 24 },
-  scienceLink: { color: ACCENT, fontSize: 15, fontWeight: '700', marginTop: 10 },
+  // A dark pill keeps the pink link readable over the pink sunset.
+  scienceLinkPill: {
+    alignSelf: 'flex-start',
+    marginTop: 12,
+    backgroundColor: 'rgba(8,8,10,0.6)',
+    borderRadius: 16,
+    paddingVertical: 7,
+    paddingHorizontal: 14,
+  },
+  scienceLink: { color: ACCENT, fontSize: 15, fontWeight: '700' },
 
   cta: { backgroundColor: '#fff', borderRadius: 30, paddingVertical: 17, alignItems: 'center', marginTop: 20, alignSelf: 'center', width: '100%', maxWidth: 380 },
   ctaText: { color: '#08080A', fontSize: 17, fontWeight: '700' },
 
   footer: { paddingHorizontal: 28, paddingTop: 28, alignItems: 'center', gap: 12 },
+  // The footer row sits in normal flow (unlike the hero's absolute top links).
+  footerLinks: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10 },
   footNote: { color: 'rgba(255,255,255,0.45)', fontSize: 12, textAlign: 'center' },
 });

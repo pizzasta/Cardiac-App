@@ -4,6 +4,7 @@ import React from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { PulseEntry } from '../logic/pulselog';
 import { findSimilarDays, SIMILAR_DAYS_NOTE } from '../logic/similarDays';
+import { hasAI } from '../logic/ai';
 import RhythmConstellation from './RhythmConstellation';
 import { F, T } from '../theme';
 
@@ -65,8 +66,12 @@ export default function SimilarDaysCard({
 
       {r.ready && <Text style={styles.note}>{SIMILAR_DAYS_NOTE}</Text>}
 
-      {onAsk && !!r.question && (
-        <Pressable style={[styles.ask, { borderColor: accent }]} onPress={() => onAsk(r.question)}>
+      {onAsk && !!r.question && hasAI() && (
+        <Pressable
+          style={[styles.ask, { borderColor: accent }]}
+          onPress={() => onAsk(r.question)}
+          accessibilityRole="button"
+        >
           <Text style={[styles.askText, { color: accent }]}>Ask about these days  →</Text>
         </Pressable>
       )}

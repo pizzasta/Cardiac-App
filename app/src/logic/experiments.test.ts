@@ -1,4 +1,11 @@
-import { experimentDay, experimentOutcome, isExperimentComplete } from './experiments';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import {
+  experimentDay,
+  experimentOutcome,
+  getActiveExperiment,
+  getLastExperiment,
+  isExperimentComplete,
+} from './experiments';
 
 const active = {
     id: 'morning-light' as const,
@@ -43,5 +50,19 @@ describe('isExperimentComplete', () => {
   it('completes once the full run of days has elapsed', () => {
     expect(isExperimentComplete(active, new Date('2026-10-05T12:00:00.000Z'))).toBe(false);
     expect(isExperimentComplete(active, new Date('2026-10-06T12:00:00.000Z'))).toBe(true);
+  });
+});
+
+describe('reading experiments', () => {
+  it('reads unavailable storage as no experiment', async () => {
+    (AsyncStorage.getItem as jest.Mock).mockRejectedValueOnce(new Error('storage down'));
+    await expect(getActiveExperiment()).resolves.toBeNull();
+    (AsyncStorage.getItem as jest.Mock).mockRejectedValueOnce(new Error('storage down'));
+    await expect(getLastExperiment()).resolves.toBeNull();
+  });
+
+  it('reads a corrupt value as no experiment', async () => {
+    await AsyncStorage.setItem('circadia.activeExperiment', '{not json');
+    await expect(getActiveExperiment()).resolves.toBeNull();
   });
 });

@@ -3,6 +3,7 @@ import { blendFor } from '../data/blends';
 import { ARCHETYPES } from '../data/archetypes';
 import { Option, QUIZ } from '../data/quiz';
 import { RhythmResult } from './score';
+import { dateKey, Level, PulseEntry } from './pulselog';
 import { supabase } from './supabase';
 
 // Sentinel returned by the function path when the server rate-limit trips, so
@@ -11,7 +12,7 @@ const RATE_LIMITED = '__rate_limited__';
 
 // User-facing copy for the chat's error states. Plain and neutral: never
 // mention keys, endpoints or other setup details.
-export const AI_UNAVAILABLE_MSG = 'Ask Circadia isn’t available right now.';
+export const AI_UNAVAILABLE_MSG = 'Ask Wildhour isn’t available right now.';
 export const AI_ERROR_MSG = 'That didn’t go through. Check your connection and try again.';
 export const AI_TIMEOUT_MSG = 'That took too long to answer. Try again in a moment.';
 export const AI_RATE_LIMIT_MSG = 'You’re asking a little fast. Give it a few seconds and try again.';
@@ -85,9 +86,9 @@ async function readText(res: Response): Promise<string> {
 // question and (truncated) answer prefilled.
 export function buildReportMailto(email: string, question: string, answer: string, maxLen = 1500): string {
   const clip = (s: string) => (s.length > maxLen ? `${s.slice(0, maxLen).trimEnd()}…` : s);
-  const subject = 'Report: Ask Circadia answer';
+  const subject = 'Report: Ask Wildhour answer';
   const body = [
-    'I’d like to report this answer from Ask Circadia.',
+    'I’d like to report this answer from Ask Wildhour.',
     '',
     'What I asked:',
     clip(question || '(no question)'),
@@ -102,7 +103,7 @@ export function buildReportMailto(email: string, question: string, answer: strin
 }
 
 // ---------------------------------------------------------------------------
-// Pulse — Circadia's AI companion.
+// Ask Wildhour: the app's AI companion (internally "pulse").
 //
 // Three ways to reach Claude, in priority order:
 //   1. A Supabase Edge Function (EXPO_PUBLIC_PULSE_FN) that holds the key AND
@@ -113,7 +114,7 @@ export function buildReportMailto(email: string, question: string, answer: strin
 //      but takes a client-built prompt (e.g. the Cloudflare worker).
 //   3. Direct from the client with EXPO_PUBLIC_ANTHROPIC_API_KEY — dev only,
 //      since EXPO_PUBLIC_* values are bundled into the app.
-// If none is set, Pulse degrades to static copy so the app still runs.
+// If none is set, Ask Wildhour degrades to static copy so the app still runs.
 // ---------------------------------------------------------------------------
 
 const MODEL = 'claude-opus-4-8';
@@ -126,7 +127,16 @@ const ENDPOINT = process.env.EXPO_PUBLIC_PULSE_ENDPOINT;
 // in production bundles, which drops the key from hasAI() and the client below.
 const API_KEY = __DEV__ ? process.env.EXPO_PUBLIC_ANTHROPIC_API_KEY : undefined;
 
-export const hasAI = () => !!SUPA_FN || !!ENDPOINT || !!API_KEY;
+/**
+ * Whether Ask Wildhour can reach a model at all: true when the Edge Function
+ * (EXPO_PUBLIC_PULSE_FN), the backend proxy (EXPO_PUBLIC_PULSE_ENDPOINT) or,
+ * in dev builds only, a direct API key is configured. Screens use this to hide
+ * or disable Ask Wildhour entry points when it would only show an error.
+ * Constant for the lifetime of the bundle (read from build-time env vars).
+ */
+export function hasAI(): boolean {
+  return !!SUPA_FN || !!ENDPOINT || !!API_KEY;
+}
 
 const client =
   !ENDPOINT && API_KEY
@@ -138,7 +148,6 @@ export interface ChatTurn {
   text: string;
 }
 
-// Pulse's voice — the guardrails from the concept doc, enforced as a system prompt.
 // The animal's one-liner, plus the blend when there is one, e.g.
 // "...; blend: Steady Dolphin (A Bear streak: ...)".
 function describe(result: RhythmResult): string {
@@ -147,23 +156,65 @@ function describe(result: RhythmResult): string {
   return blend ? `${a.oneLiner}; blend: ${blend.name} (${blend.line})` : a.oneLiner;
 }
 
-function systemPrompt(result: RhythmResult, answers: Option[]): string {
+// Max length of the check-in summary sent with a chat request. The edge
+// function enforces the same cap server-side.
+export const CHECKIN_SUMMARY_MAX = 1200;
+
+// A compact, plain-text summary of the user's recent check-ins for the chat
+// prompt, e.g. "6 check-ins in the last 14 days (steady 3, flat 2, wired 1).
+// By day, oldest first: 2026-10-01 steady (sleep); ...". Returns '' when there
+// are no check-ins in the window, so callers can tell "no data" apart.
+export function summarizeCheckIns(log: PulseEntry[], days = 14, now = new Date()): string {
+  const cutoff = new Date(now);
+  cutoff.setDate(cutoff.getDate() - (days - 1));
+  const cut = dateKey(cutoff);
+  const recent = log
+    .filter((e) => e && typeof e.date === 'string' && e.date >= cut)
+    .sort((a, b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : 0));
+  if (!recent.length) return '';
+  const counts: Record<Level, number> = { steady: 0, flat: 0, wired: 0 };
+  recent.forEach((e) => {
+    if (e.level in counts) counts[e.level] += 1;
+  });
+  const mix = (Object.entries(counts) as [Level, number][])
+    .filter(([, n]) => n > 0)
+    .map(([lvl, n]) => `${lvl} ${n}`)
+    .join(', ');
+  const daysList = recent
+    .map((e) => `${e.date} ${e.level}${e.reason ? ` (${e.reason})` : ''}`)
+    .join('; ');
+  const text = `${recent.length} check-in${recent.length === 1 ? '' : 's'} in the last ${days} days (${mix}). Today is ${dateKey(now)}. By day, oldest first: ${daysList}.`;
+  return text.length > CHECKIN_SUMMARY_MAX ? `${text.slice(0, CHECKIN_SUMMARY_MAX - 1).trimEnd()}…` : text;
+}
+
+// undefined: check-ins weren't provided (e.g. the opening reading), so say
+// nothing. '': the user has none yet.
+function checkInSection(checkins?: string): string {
+  if (checkins === undefined) return '';
+  return checkins
+    ? `Their recent daily check-ins (self-reported as steady, flat or wired, with an optional reason):
+${checkins}
+Use these only as self-reported observations. A few days is not a pattern; say so when the data is thin.`
+    : 'They have not logged any daily check-ins yet. If asked about check-in patterns, say there are no check-ins to look at yet and suggest checking in for a few days.';
+}
+
+function systemPrompt(result: RhythmResult, answers: Option[], checkins?: string): string {
   const a = ARCHETYPES[result.animal];
   const profile = answers
     .map((opt, i) => `- ${QUIZ[i].prompt} → ${opt.label}`)
     .join('\n');
 
-  return `You are Pulse, the AI companion inside Circadia, a wellness app that reads people's nervous-system rhythms.
+  return `You are Wildhour, the AI companion inside the Wildhour app (the feature is called Ask Wildhour), a wellness app that helps people reflect on daily energy, sleep-routine, and focus patterns. If you refer to yourself, use Wildhour; never use any other name.
 
 The user just took the onboarding quiz. Their rhythm animal is the ${a.name} (${describe(result)}). From their actual answers: peak focus ${result.peak}, crash risk around ${result.crash}, recharges through ${result.recharge}.
 
 Their raw answers:
 ${profile}
 
-VOICE (follow exactly):
+${checkInSection(checkins)}${checkins === undefined ? '' : '\n\n'}VOICE (follow exactly):
 - Talk like a perceptive friend who happens to know neuroscience. Never a therapist, never a hype coach, never a fortune cookie.
 - Smart, calm, personal, a little mysterious. Specific over vague.
-- Reference only patterns supported by the Circadia context provided to you. If the context is insufficient, say you do not have enough information yet.
+- Reference only patterns supported by the Wildhour context provided to you. If the context is insufficient, say you do not have enough information yet.
 - Always give one concrete, doable thing. Always leave them an out; never moralize about rest, food, or productivity.
 - No fake-deep poetry, no "manifest your best self", no corporate-wellness "wellness journey" language, no emoji spam.
 - Write in plain sentences. Never use em dashes (—); use a period, comma or colon instead.
@@ -182,7 +233,7 @@ EVIDENCE YOU CAN DRAW ON (only state what's supported; don't invent studies or n
 BOUNDARIES:
 - You are not a doctor or therapist. Don't diagnose, name conditions, or give medical, psychiatric, or medication advice.
 - If they describe something clinical or concerning (e.g. persistent insomnia, panic, deep lows, self-harm), say plainly that this is worth talking to a qualified professional about (calm, brief, no alarm), then offer what you genuinely can help with.
-- Do not claim Circadia or Pulse can diagnose, prevent, treat, cure, predict, or rule out a disease or mental-health condition.`;
+- Do not claim Wildhour can diagnose, prevent, treat, cure, predict, or rule out a disease or mental-health condition.`;
 }
 
 type Msg = { role: 'user' | 'assistant'; content: string };
@@ -265,19 +316,48 @@ async function complete(system: string, messages: Msg[], maxTokens: number, sign
   return callClient(system, messages, maxTokens, signal);
 }
 
-// The opening personalized reading shown when Pulse first loads.
+// Session cache of AI readings, keyed by profile, so reopening Ask Wildhour
+// doesn't spend another request. Holds the in-flight promise too, so two
+// quick opens share one request. Static fallbacks are not cached: a failed
+// request is retried on the next open.
+const readingCache = new Map<string, Promise<string>>();
+
+function profileKey(result: RhythmResult, answers: Option[]): string {
+  return `${result.animal}|${answers.map((o) => o.label).join('|')}`;
+}
+
+// Test hook: forget cached readings.
+export function clearReadingCache(): void {
+  readingCache.clear();
+}
+
+// The opening personalized reading shown when Ask Wildhour first loads.
 // Falls back to the archetype's static reading if AI is unavailable or errors.
-export async function generateReading(
-  result: RhythmResult,
-  answers: Option[]
-): Promise<string> {
-  if (!hasAI()) return ARCHETYPES[result.animal].reading;
+export function generateReading(result: RhythmResult, answers: Option[]): Promise<string> {
+  const fallback = ARCHETYPES[result.animal].reading;
+  if (!hasAI()) return Promise.resolve(fallback);
+  const key = profileKey(result, answers);
+  const cached = readingCache.get(key);
+  if (cached) return cached;
+  const pending = fetchReading(result, answers).then((text) => {
+    if (text === null) {
+      readingCache.delete(key);
+      return fallback;
+    }
+    return text;
+  });
+  readingCache.set(key, pending);
+  return pending;
+}
+
+// Returns the AI reading, or null when it could not be fetched.
+async function fetchReading(result: RhythmResult, answers: Option[]): Promise<string | null> {
   if (SUPA_FN) {
     try {
       const text = await withTimeout((signal) => callSupabaseFn('reading', profilePieces(result, answers), signal));
-      return text === RATE_LIMITED ? ARCHETYPES[result.animal].reading : text;
+      return text === RATE_LIMITED ? null : text;
     } catch {
-      return ARCHETYPES[result.animal].reading;
+      return null;
     }
   }
   try {
@@ -295,28 +375,36 @@ export async function generateReading(
         signal
       )
     );
-    return text === RATE_LIMITED ? ARCHETYPES[result.animal].reading : text;
+    return text === RATE_LIMITED ? null : text;
   } catch {
-    return ARCHETYPES[result.animal].reading;
+    return null;
   }
 }
 
 // A follow-up question in the chat. Never fabricates a reply: on timeout,
 // network/HTTP failure, rate limiting or an empty answer it returns an error
 // result the screen renders as an error bubble with "Try again".
+// `checkins` is an optional summary from summarizeCheckIns(); pass '' or omit
+// when the user has no recent check-ins.
 export async function askPulse(
   result: RhythmResult,
   answers: Option[],
   history: ChatTurn[],
-  question: string
+  question: string,
+  checkins?: string
 ): Promise<AskResult> {
   if (!hasAI()) return errorResult('unavailable');
+  const summary = (checkins ?? '').trim().slice(0, CHECKIN_SUMMARY_MAX);
   try {
     const text = await withTimeout((signal) =>
       SUPA_FN
-        ? callSupabaseFn('chat', { ...profilePieces(result, answers), history, question }, signal)
+        ? callSupabaseFn(
+            'chat',
+            { ...profilePieces(result, answers), history, question, checkins: summary },
+            signal
+          )
         : complete(
-            systemPrompt(result, answers),
+            systemPrompt(result, answers, summary),
             [
               ...history.map((t) => ({ role: t.role, content: t.text })),
               { role: 'user' as const, content: question },

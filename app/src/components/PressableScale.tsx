@@ -2,11 +2,12 @@ import React, { useRef } from 'react';
 import { Animated, Pressable, PressableProps, StyleProp, ViewStyle } from 'react-native';
 
 // A Pressable that dips slightly when pressed and springs back, so cards and
-// buttons feel physical.
+// buttons feel physical. Announced as a button unless a role is passed in.
 export default function PressableScale({
   style,
   children,
   scaleTo = 0.97,
+  accessibilityRole = 'button',
   ...props
 }: Omit<PressableProps, 'style' | 'children'> & {
   style?: StyleProp<ViewStyle>;
@@ -20,6 +21,7 @@ export default function PressableScale({
   return (
     <Pressable
       {...props}
+      accessibilityRole={accessibilityRole}
       onPressIn={(e) => {
         to(scaleTo);
         props.onPressIn?.(e);

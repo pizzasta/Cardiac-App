@@ -1,12 +1,12 @@
 # Cardiac-App
 
-See [CIRCADIA.md](CIRCADIA.md) for the full concept doc and [supabase/README.md](supabase/README.md) for backend setup.
+See [WILDHOUR.md](WILDHOUR.md) for the full concept doc and [supabase/README.md](supabase/README.md) for backend setup.
 
 ---
 
 ## Pre-launch checklist
 
-Store-submission steps live in [RELEASE_CHECKLIST.md](RELEASE_CHECKLIST.md). Competitive positioning and the features that set Circadia apart are in [COMPETITIVE.md](COMPETITIVE.md).
+Store-submission steps live in [RELEASE_CHECKLIST.md](RELEASE_CHECKLIST.md). Competitive positioning and the features that set Wildhour apart are in [COMPETITIVE.md](COMPETITIVE.md).
 
 ### ✅ Confirmed good
 - **CI** — `tsc --noEmit`, ESLint, Jest (unit tests for scoring, sync merge, weekly report, experiments, resonance, forecast, reset pacer, export and profile persistence), plus web and iOS export on every push to `main` and every PR.
@@ -19,7 +19,7 @@ Store-submission steps live in [RELEASE_CHECKLIST.md](RELEASE_CHECKLIST.md). Com
 - **Account deletion** — `delete_account()` RPC ships in `supabase/migrations/0003_account_deletion.sql`; "Delete my data" also clears the saved profile and experiments on-device.
 - **Data portability** — Settings → Export my data downloads (web) or shares (native) every check-in as CSV.
 - **Legal pages** — Privacy Policy, Terms, account deletion and support are written once in `app/src/data/legal.ts`, shown in-app, and generated to `app/public/*/index.html` (`npm run gen:legal`; CI fails on drift). They publish with the web build.
-- **Consent** — explicit consent before account creation (health-related data) and before the first Ask Circadia request (third-party AI), revocable in Settings.
+- **Consent** — explicit consent before account creation (health-related data) and before the first Ask Wildhour request (third-party AI), revocable in Settings.
 - **3D world** — one persistent React Three Fiber landscape (`app/src/world/`) behind every screen on web and native: a physically based sky that follows the local time (sunrise, day, sunset, starry night), rolling hills, hazy mountain ranges, mist, fireflies and your animal on the path, with a camera station per screen (`rig.ts`). Respects reduce-motion, pauses in the background, falls back to the flat backdrop without WebGL. Preview a time of day on web with `?hour=19.5`.
 - **Sound** — interface sounds and rainforest ambience come from one set of recipes in `app/src/logic/sfx/recipes.ts`: synthesized live on web, rendered to `app/assets/sounds/*.wav` for iOS/Android (`npm run gen:sounds`).
 - **Error handling** — `App.tsx` wraps the tree in an `ErrorBoundary`; all AI/sync calls have user-friendly fallbacks.

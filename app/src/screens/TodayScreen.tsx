@@ -1,4 +1,4 @@
-// TodayScreen — the adaptive "Today" dashboard from CIRCADIA.md §5.
+// TodayScreen — the adaptive "Today" dashboard from WILDHOUR.md §5.
 //
 // A single scrollable, top-to-bottom narrative of the user's day (not a grid
 // of widgets): pulse header → rhythm ribbon → Now card → today's flow →
@@ -8,7 +8,7 @@
 // Design law (from the spec): no empty states, no red, no streak-shaming,
 // and never more than one primary action visible at once.
 import React, { useEffect, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useTopInset } from '../hooks';
 import { ARCHETYPES } from '../data/archetypes';
@@ -66,6 +66,8 @@ export default function TodayScreen({
   onClose: () => void;
 }) {
   const topInset = useTopInset();
+  // Narrow phones (iPhone SE size) get a smaller greeting and animal.
+  const narrow = useWindowDimensions().width < 360;
   const arch = ARCHETYPES[result.animal];
   const plan = PLANS[result.animal];
   const flow = plan ? personalFlow(plan.flow, result) : [];
@@ -94,7 +96,7 @@ export default function TodayScreen({
   useEffect(() => {
     let alive = true;
     (async () => {
-      const log = await load();
+      const log = await load().catch(() => [] as PulseEntry[]);
       if (!alive) return;
       setToday(getToday(log));
       setStreak(currentStreak(log));
@@ -106,15 +108,21 @@ export default function TodayScreen({
       let active = await getActiveExperiment();
       // A finished experiment wraps itself up and moves to the results card.
       if (active && isExperimentComplete(active)) {
-        await stopExperiment();
-        active = null;
+        try {
+          await stopExperiment();
+          active = null;
+        } catch {
+          // Storage unavailable: keep showing it; it wraps up next time.
+        }
       }
       const last = await getLastExperiment();
       if (!alive) return;
       setExperiment(active);
       setLastExperiment(last);
       setOutcome(last ? experimentOutcome(last, log) : null);
-    })();
+    })().catch(() => {
+      // Storage unavailable: Today still renders from the plan alone.
+    });
     return () => {
       alive = false;
     };
@@ -143,24 +151,30 @@ export default function TodayScreen({
           end={{ x: 0, y: 1 }}
           style={styles.header}
         >
-          <Text style={styles.kicker}>
-            {arch.emoji} {displayName(result).toUpperCase()}
-          </Text>
-          <Text style={styles.greeting}>{greeting(now)}.</Text>
+          {/* The animal sits beside the greeting (not over the text), so
+              nothing overlaps on narrow phones. */}
+          <View style={styles.headerTop}>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.kicker}>
+                {arch.emoji} {displayName(result).toUpperCase()}
+              </Text>
+              <Text style={[styles.greeting, narrow && styles.greetingNarrow]}>{greeting(now)}.</Text>
+            </View>
+            {/* Your animal, moving the way you checked in today. */}
+            <AnimalEmblem
+              animal={result.animal}
+              accent={TINTS[result.animal]}
+              emoji={arch.emoji}
+              bg={null}
+              sparks={false}
+              mood={today?.level ?? null}
+              style={narrow ? styles.companionNarrow : styles.companion}
+            />
+          </View>
           <Text style={styles.headerCopy}>
             Your quiz suggests a stronger focus window around {result.peak} and a
             possible lower-energy window near {result.crash}. Your check-ins help refine the picture.
           </Text>
-          {/* Your animal, moving the way you checked in today. */}
-          <AnimalEmblem
-            animal={result.animal}
-            accent={TINTS[result.animal]}
-            emoji={arch.emoji}
-            bg={null}
-            sparks={false}
-            mood={today?.level ?? null}
-            style={styles.companion}
-          />
           {/* Rendered last so it sits above the header text and stays tappable. */}
           <Pressable onPress={onClose} hitSlop={12} style={styles.close} accessibilityRole="button">
             <Text style={styles.closeText}>Done</Text>
@@ -284,7 +298,7 @@ export default function TodayScreen({
             <View style={styles.weekStats}>
               <Stat value={report.consistencyPct + '%'} label="consistency" />
               <Stat value={String(report.daysLogged) + '/7'} label="days logged" />
-              <Stat value={String(streak)} label="day streak" />
+              <Stat value={String(streak)} label="days in a row" />
             </View>
             <Text style={styles.weekMore}>See your patterns →</Text>
           </PressableScale>
@@ -320,7 +334,7 @@ export default function TodayScreen({
             <Text style={[styles.experimentKicker, { color: arch.accent }]}>DAY {experimentDay(experiment)} OF {experiment.days}</Text>
             <Text style={styles.experimentTitle}>{experiment.title}</Text>
             <Text style={styles.experimentText}>{experiment.prompt}</Text>
-            <Text style={styles.experimentFine}>Notice what changes in your check-ins. Circadia treats this as a personal observation, not proof of cause.</Text>
+            <Text style={styles.experimentFine}>Notice what changes in your check-ins. Wildhour treats this as a personal observation, not proof of cause.</Text>
             <Pressable
               hitSlop={12}
               accessibilityRole="button"
@@ -387,9 +401,12 @@ function Stat({ value, label }: { value: string; label: string }) {
 
 const styles = StyleSheet.create({
   root: { ...StyleSheet.absoluteFillObject, backgroundColor: 'transparent' },
-  content: { paddingHorizontal: 20, paddingBottom: 24 },
+  content: { paddingHorizontal: 20, paddingBottom: 96 },
   header: { borderRadius: 20, padding: 20, marginBottom: 24, overflow: 'hidden' },
-  companion: { position: 'absolute', right: -6, top: 26, width: 120, height: 96 },
+  headerTop: { flexDirection: 'row', alignItems: 'flex-end' },
+  // Top margin keeps the animal below the Done button.
+  companion: { width: 110, height: 92, marginTop: 22, marginRight: -10 },
+  companionNarrow: { width: 88, height: 76, marginTop: 22, marginRight: -10 },
   close: { position: 'absolute', top: 16, right: 16 },
   closeText: { color: T.text, fontFamily: F.mono, fontSize: 13, opacity: 0.8 },
   kicker: {
@@ -400,6 +417,7 @@ const styles = StyleSheet.create({
     opacity: 0.85,
   },
   greeting: { color: T.text, fontFamily: F.display, fontSize: 30, marginTop: 8 },
+  greetingNarrow: { fontSize: 25 },
   headerCopy: {
     color: T.text,
     fontSize: 15,

@@ -1,4 +1,4 @@
-# Circadia — Supabase setup
+# Wildhour — Supabase setup
 
 Backend for auth + cloud sync. The app runs fully **without** this (on-device
 auth + local check-ins); configuring Supabase unlocks real accounts, persistent
@@ -39,7 +39,7 @@ Prefer to do it by hand? Paste `migrations/0001_init.sql` then
   `SUPABASE_AUTH_EXTERNAL_GOOGLE_CLIENT_ID` / `_SECRET`.)
 - **Redirect URLs** — Authentication → URL Configuration → add:
   - your web URL, e.g. `https://pizzasta.github.io/Cardiac-App/`
-  - the native scheme: `circadia://`
+  - the native scheme: `wildhour://`
 
 ## 4. Regenerate types (after schema changes)
 ```bash

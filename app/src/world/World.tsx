@@ -658,6 +658,7 @@ export default function World({
   mood = null,
   hop = 0,
   still = false,
+  paused = false,
 }: {
   mode: WorldMode;
   animal: AnimalId | null;
@@ -666,10 +667,12 @@ export default function World({
   mood?: Mood | null;
   hop?: number;
   still?: boolean;
+  // Stops rendering and sensors while an opaque page covers the world.
+  paused?: boolean;
 }) {
   const hour = useLocalHour();
   const live = useLive(mode, tint, still, hour);
-  useDeviceTilt(!still);
+  useDeviceTilt(!still && !paused);
   const [active, setActive] = useState(true);
 
   useEffect(() => {
@@ -679,7 +682,7 @@ export default function World({
 
   // Gentle parallax from the pointer on web.
   useEffect(() => {
-    if (NATIVE || still) return;
+    if (NATIVE || still || paused) return;
     const g: any = globalThis;
     const onMove = (e: PointerEvent) => {
       live.current.pointer.x = (e.clientX / g.innerWidth) * 2 - 1;
@@ -687,9 +690,9 @@ export default function World({
     };
     g.addEventListener?.('pointermove', onMove);
     return () => g.removeEventListener?.('pointermove', onMove);
-  }, [live, still]);
+  }, [live, still, paused]);
 
-  const frameloop = !active ? 'never' : still ? 'demand' : 'always';
+  const frameloop = !active || paused ? 'never' : still ? 'demand' : 'always';
 
   return (
     <View pointerEvents="none" style={styles.fill}>
@@ -703,7 +706,7 @@ export default function World({
         >
           <Scene animal={animal} mood={mood} hop={hop} mode={mode} live={live} />
           {/* Redraw when anything visible changes, including the hour. */}
-          {still && <Settle deps={[mode, tint, animal, hour]} />}
+          {still && <Settle deps={[mode, tint, animal, hour, paused]} />}
         </Canvas>
       </GLBoundary>
     </View>
