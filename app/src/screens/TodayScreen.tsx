@@ -94,7 +94,7 @@ export default function TodayScreen({
   useEffect(() => {
     let alive = true;
     (async () => {
-      const log = await load();
+      const log = await load().catch(() => [] as PulseEntry[]);
       if (!alive) return;
       setToday(getToday(log));
       setStreak(currentStreak(log));
@@ -106,15 +106,21 @@ export default function TodayScreen({
       let active = await getActiveExperiment();
       // A finished experiment wraps itself up and moves to the results card.
       if (active && isExperimentComplete(active)) {
-        await stopExperiment();
-        active = null;
+        try {
+          await stopExperiment();
+          active = null;
+        } catch {
+          // Storage unavailable: keep showing it; it wraps up next time.
+        }
       }
       const last = await getLastExperiment();
       if (!alive) return;
       setExperiment(active);
       setLastExperiment(last);
       setOutcome(last ? experimentOutcome(last, log) : null);
-    })();
+    })().catch(() => {
+      // Storage unavailable: Today still renders from the plan alone.
+    });
     return () => {
       alive = false;
     };
@@ -284,7 +290,7 @@ export default function TodayScreen({
             <View style={styles.weekStats}>
               <Stat value={report.consistencyPct + '%'} label="consistency" />
               <Stat value={String(report.daysLogged) + '/7'} label="days logged" />
-              <Stat value={String(streak)} label="day streak" />
+              <Stat value={String(streak)} label="days in a row" />
             </View>
             <Text style={styles.weekMore}>See your patterns →</Text>
           </PressableScale>
@@ -407,6 +413,8 @@ const styles = StyleSheet.create({
     lineHeight: 21,
     marginTop: 8,
     opacity: 0.92,
+    // Same clearance as the greeting, so the companion never covers the copy.
+    paddingRight: 92,
   },
   section: {
     color: T.muted,

@@ -30,18 +30,24 @@ export default function LegalScreen({
       <LinearGradient colors={['#08080A', '#141016', '#08080A']} style={StyleSheet.absoluteFill} />
 
       <View style={[styles.header, { paddingTop: topInset }]}>
-        <Pressable onPress={onClose} hitSlop={12}>
+        <Pressable onPress={onClose} hitSlop={12} accessibilityRole="button" accessibilityLabel="Back">
           <Text style={styles.back}>‹ Back</Text>
         </Pressable>
         <Text style={styles.headerTitle}>Legal & support</Text>
         <View style={{ width: 64 }} />
       </View>
 
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.tabs} style={styles.tabsWrap}>
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.tabs} style={styles.tabsWrap} accessibilityRole="tablist">
         {LEGAL_DOCS.map((d) => {
           const active = d.id === tab;
           return (
-            <Pressable key={d.id} onPress={() => pick(d.id)} style={[styles.tab, active && styles.tabActive]}>
+            <Pressable
+              key={d.id}
+              onPress={() => pick(d.id)}
+              style={[styles.tab, active && styles.tabActive]}
+              accessibilityRole="tab"
+              accessibilityState={{ selected: active }}
+            >
               <Text style={[styles.tabText, active && styles.tabTextActive]}>{d.shortTitle}</Text>
             </Pressable>
           );

@@ -5,7 +5,7 @@ import { AnimalId } from './archetypes';
 export const STATEMENTS: Record<AnimalId, string[]> = {
   dolphin: [
     'You feel everything two hours before you understand it.',
-    'Your nervous system never fully clocks out.',
+    'Part of you never fully clocks out.',
     'You recover through silence.',
     'You’d notice the one thing wrong in a perfect room.',
     'You’re not overreacting. You’re early.',

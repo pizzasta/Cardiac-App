@@ -24,10 +24,20 @@ export const EXPERIMENTS: RhythmExperiment[] = [
 const KEY = 'circadia.activeExperiment';
 const LAST_KEY = 'circadia.lastExperiment';
 
+// Reads never throw: unavailable storage or a corrupt value reads as "none".
+async function readExperiment(key: string): Promise<ActiveExperiment | null> {
+  try {
+    const raw = await AsyncStorage.getItem(key);
+    if (!raw) return null;
+    const v = JSON.parse(raw) as ActiveExperiment | null;
+    return v && typeof v === 'object' && typeof v.startedAt === 'string' ? v : null;
+  } catch {
+    return null;
+  }
+}
+
 export async function getActiveExperiment(): Promise<ActiveExperiment | null> {
-  const raw = await AsyncStorage.getItem(KEY);
-  if (!raw) return null;
-  try { return JSON.parse(raw) as ActiveExperiment; } catch { return null; }
+  return readExperiment(KEY);
 }
 
 export async function startExperiment(item: RhythmExperiment): Promise<ActiveExperiment> {
@@ -43,9 +53,7 @@ export async function stopExperiment(): Promise<void> {
 }
 
 export async function getLastExperiment(): Promise<ActiveExperiment | null> {
-  const raw = await AsyncStorage.getItem(LAST_KEY);
-  if (!raw) return null;
-  try { return JSON.parse(raw) as ActiveExperiment; } catch { return null; }
+  return readExperiment(LAST_KEY);
 }
 
 export async function dismissLastExperiment(): Promise<void> {

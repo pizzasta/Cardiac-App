@@ -24,6 +24,7 @@ import {
   buildSignalQuestion,
 } from '../logic/pulselog';
 import { refreshSmartNudge } from '../logic/notifications';
+import { hasAI } from '../logic/ai';
 import PulseLine from '../components/PulseLine';
 import SimilarDaysCard from '../components/SimilarDaysCard';
 import AnimalEmblem from '../world/AnimalEmblem';
@@ -61,16 +62,18 @@ export default function CheckInScreen({
   const beat = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
-    load().then((entries) => {
-      setLog(entries);
-      const t = getToday(entries);
-      setToday(t);
-      if (t) {
-        setLevel(t.level);
-        setReason(t.reason);
-        setSaved(true);
-      }
-    });
+    load()
+      .then((entries) => {
+        setLog(entries);
+        const t = getToday(entries);
+        setToday(t);
+        if (t) {
+          setLevel(t.level);
+          setReason(t.reason);
+          setSaved(true);
+        }
+      })
+      .catch(() => {});
   }, []);
 
   const save = async () => {
@@ -122,7 +125,7 @@ export default function CheckInScreen({
           hop={hop}
           style={styles.companion}
         />
-        <Text style={styles.kicker}>{morning ? 'MORNING FORECAST' : 'EVENING REFLECTION'}</Text>
+        <Text style={styles.kicker}>{morning ? 'MORNING CHECK-IN' : 'EVENING REFLECTION'}</Text>
         <Text style={styles.question}>How’s your energy{morning ? '' : ' been today'}?</Text>
         <Text style={styles.sub}>10 seconds. No streak to protect, just an honest read.</Text>
 
@@ -162,7 +165,11 @@ export default function CheckInScreen({
                   <Pressable
                     key={r}
                     style={[styles.chip, active && { borderColor: a.accent, backgroundColor: `${a.accent}26` }]}
-                    onPress={() => setReason(active ? undefined : r)}
+                    onPress={() => {
+                      setReason(active ? undefined : r);
+                      // A new reason after saving needs saving again.
+                      setSaved(false);
+                    }}
                     hitSlop={6}
                     accessibilityRole="button"
                     accessibilityState={{ selected: active }}
@@ -184,7 +191,7 @@ export default function CheckInScreen({
             <Text style={styles.tomorrow}>
               {morning
                 ? 'Check back tonight to see how the day actually ran.'
-                : 'Come back in the morning for tomorrow’s forecast.'}
+                : 'Come back in the morning for tomorrow’s plan.'}
             </Text>
           </Animated.View>
         )}
@@ -194,12 +201,13 @@ export default function CheckInScreen({
             <PressableScale style={[styles.cta, { backgroundColor: a.accent }]} onPress={saved ? onTrends : save}>
               <Text style={styles.ctaText}>{saved ? 'See your trends  →' : today ? 'Update today' : 'Save check-in'}</Text>
             </PressableScale>
-            {saved && (
+            {saved && hasAI() && (
               <Pressable
                 style={[styles.explainBtn, { borderColor: `${a.accent}66` }]}
+                accessibilityRole="button"
                 onPress={async () => {
                   // Re-read storage: a background cloud sync may have added entries.
-                  const fresh = await load();
+                  const fresh = await load().catch(() => log);
                   setLog(fresh);
                   onExplain(buildSignalQuestion(fresh, level, reason));
                 }}
@@ -208,7 +216,7 @@ export default function CheckInScreen({
               </Pressable>
             )}
             {saved && level !== 'steady' && (
-              <Pressable onPress={() => onReset(level)} hitSlop={8}>
+              <Pressable onPress={() => onReset(level)} hitSlop={8} accessibilityRole="button">
                 <Text style={styles.resetLink}>
                   {level === 'wired' ? 'Settle down' : 'Lift your energy'} with a 1-minute reset  →
                 </Text>

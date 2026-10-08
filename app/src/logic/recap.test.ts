@@ -36,4 +36,18 @@ describe('firstWeekRecap', () => {
     expect(r.lines.some((l) => l.includes('reason'))).toBe(false);
     expect(r.lines.join(' ')).toContain('early morning');
   });
+
+  it('calls it a week only when the check-ins fit in about one', () => {
+    const week = Array.from({ length: 5 }, (_, i) => day(i, 'steady'));
+    expect(firstWeekRecap(week, result)!.headline).toBe('Your first week');
+
+    const spread: PulseEntry[] = [
+      { date: '2026-06-01', level: 'steady', ts: 1 },
+      { date: '2026-06-20', level: 'steady', ts: 2 },
+      { date: '2026-07-15', level: 'flat', ts: 3 },
+      { date: '2026-08-30', level: 'steady', ts: 4 },
+      { date: '2026-10-01', level: 'steady', ts: 5 },
+    ];
+    expect(firstWeekRecap(spread, result)!.headline).toBe('Your first five check-ins');
+  });
 });

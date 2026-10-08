@@ -26,7 +26,12 @@ export default function Protected({
   if (allowed) return <>{children}</>;
 
   return (
-    <Pressable style={[styles.lockCard, { borderColor: `${accent}55` }]} onPress={onSignIn}>
+    <Pressable
+      style={[styles.lockCard, { borderColor: `${accent}55` }]}
+      onPress={onSignIn}
+      accessibilityRole="button"
+      accessibilityLabel={`${title.replace('🔒', '').trim()}. Sign in`}
+    >
       <Text style={styles.lockTitle}>{title}</Text>
       <Text style={styles.lockText}>{message}</Text>
       <View style={[styles.lockBtn, { backgroundColor: accent }]}>

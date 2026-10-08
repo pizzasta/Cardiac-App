@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
+  AppState,
   Linking,
   Pressable,
   ScrollView,
@@ -30,6 +31,7 @@ import {
   enable as enableNotifs,
   isEnabled as notifsEnabled,
 } from '../logic/notifications';
+import { emitNotifsChanged, onNotifsChanged } from '../logic/notifyPrefs';
 
 const VOLUMES: { label: string; value: number }[] = [
   { label: 'Low', value: 0.3 },
@@ -73,6 +75,7 @@ export default function SettingsScreen({
 
   const [notifsOn, setNotifsOn] = useState(false);
   const [notifBusy, setNotifBusy] = useState(false);
+  const [notifError, setNotifError] = useState<string | null>(null);
   const [confirm, setConfirm] = useState<null | 'data' | 'account'>(null);
   const [delBusy, setDelBusy] = useState(false);
   const [exportNote, setExportNote] = useState<string | null>(null);
@@ -83,7 +86,9 @@ export default function SettingsScreen({
   const [supportNote, setSupportNote] = useState<string | null>(null);
 
   useEffect(() => {
-    hasAiConsent().then(setAiAllowed);
+    hasAiConsent()
+      .then(setAiAllowed)
+      .catch(() => {});
   }, []);
 
   const toggleUiSounds = () => {
@@ -115,19 +120,23 @@ export default function SettingsScreen({
   };
 
   const runExport = async () => {
-    const log = await loadLog();
-    if (!log.length) {
-      setExportNote('No check-ins yet. Log a few days, then export.');
-      return;
+    try {
+      const log = await loadLog();
+      if (!log.length) {
+        setExportNote('No check-ins yet. Log a few days, then export.');
+        return;
+      }
+      const r = await exportCsv(log, result);
+      setExportNote(
+        r === 'downloaded'
+          ? `Downloaded ${log.length} check-in${log.length === 1 ? '' : 's'} as CSV.`
+          : r === 'shared'
+            ? 'Export ready.'
+            : 'Export isn’t available here.'
+      );
+    } catch {
+      setExportNote('Couldn’t export just now. Please try again.');
     }
-    const r = await exportCsv(log, result);
-    setExportNote(
-      r === 'downloaded'
-        ? `Downloaded ${log.length} check-in${log.length === 1 ? '' : 's'} as CSV.`
-        : r === 'shared'
-          ? 'Export ready.'
-          : 'Export isn’t available here.'
-    );
   };
 
   const runDelete = async (account: boolean) => {
@@ -161,13 +170,31 @@ export default function SettingsScreen({
     }
   };
 
+  // Re-read on mount, when Plan flips reminders, and when the app comes back
+  // to the foreground (permission may have changed in system settings).
   useEffect(() => {
-    notifsEnabled().then(setNotifsOn);
+    let alive = true;
+    const refresh = () => {
+      notifsEnabled()
+        .then((on) => alive && setNotifsOn(on))
+        .catch(() => {});
+    };
+    refresh();
+    const unsubscribe = onNotifsChanged(refresh);
+    const sub = AppState.addEventListener('change', (s) => {
+      if (s === 'active') refresh();
+    });
+    return () => {
+      alive = false;
+      unsubscribe();
+      sub.remove();
+    };
   }, []);
 
   const toggleNotifs = async () => {
     if (notifBusy || !result) return;
     setNotifBusy(true);
+    setNotifError(null);
     try {
       if (notifsOn) {
         await disableNotifs();
@@ -175,8 +202,16 @@ export default function SettingsScreen({
       } else {
         const ok = await enableNotifs(result.animal);
         setNotifsOn(ok);
-        if (!ok) Alert.alert('Notifications blocked', 'Enable notifications for Circadia in your device settings.');
+        // Shown inline: Alert.alert does nothing on web.
+        if (!ok) {
+          setNotifError(
+            'Notifications are blocked. Allow them for Circadia in your device or browser settings, then try again.'
+          );
+        }
       }
+      emitNotifsChanged();
+    } catch {
+      setNotifError('Couldn’t change reminders just now. Please try again.');
     } finally {
       setNotifBusy(false);
     }
@@ -221,7 +256,7 @@ export default function SettingsScreen({
             <>
               <Text style={styles.rowTitle}>Not signed in</Text>
               <Text style={styles.rowSub}>Sign in to save your plan and unlock the detailed plan.</Text>
-              <Pressable style={[styles.btn, { backgroundColor: accent }]} onPress={onSignIn}>
+              <Pressable style={[styles.btn, { backgroundColor: accent }]} onPress={onSignIn} accessibilityRole="button">
                 <Text style={styles.btnText}>Sign in</Text>
               </Pressable>
             </>
@@ -256,6 +291,9 @@ export default function SettingsScreen({
                   key={v.label}
                   style={[styles.segment, active && { backgroundColor: accent, borderColor: accent }]}
                   onPress={() => onSetVolume(v.value)}
+                  accessibilityRole="button"
+                  accessibilityLabel={`Volume ${v.label}`}
+                  accessibilityState={{ selected: active }}
                 >
                   <Text style={[styles.segmentText, active && { color: '#08080A' }]}>{v.label}</Text>
                 </Pressable>
@@ -322,7 +360,9 @@ export default function SettingsScreen({
             </Pressable>
           </View>
           {lowPower && !simpleBackground && (
-            <Text style={styles.note}>Low Power Mode is on, so the simple background is in use for now.</Text>
+            <Text style={styles.note}>
+              {Platform.OS === 'android' ? 'Battery Saver' : 'Low Power Mode'} is on, so the simple background is in use for now.
+            </Text>
           )}
         </View>
 
@@ -355,6 +395,11 @@ export default function SettingsScreen({
               )}
             </Pressable>
           </View>
+          {notifError && (
+            <Text style={[styles.note, { color: T.accent2 }]} accessibilityLiveRegion="polite">
+              {notifError}
+            </Text>
+          )}
           {!canSchedule && result && (
             <Text style={styles.note}>On the web we can only ask permission. The phone app delivers daily reminders.</Text>
           )}
@@ -392,7 +437,7 @@ export default function SettingsScreen({
             Every check-in as a CSV you own. Open it in any spreadsheet or share it with someone you
             trust. Free, always.
           </Text>
-          <Pressable style={[styles.btn, styles.btnGhost]} onPress={runExport}>
+          <Pressable style={[styles.btn, styles.btnGhost]} onPress={runExport} accessibilityRole="button">
             <Text style={styles.btnGhostText}>Export CSV</Text>
           </Pressable>
           {exportNote && <Text style={styles.note}>{exportNote}</Text>}

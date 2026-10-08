@@ -15,13 +15,29 @@ import * as Speech from 'expo-speech';
 import { ARCHETYPES } from '../data/archetypes';
 import { Option } from '../data/quiz';
 import { RhythmResult } from '../logic/score';
-import { askPulse, buildReportMailto, ChatTurn, generateReading, hasAI } from '../logic/ai';
+import { askPulse, buildReportMailto, ChatTurn, generateReading, hasAI, summarizeCheckIns } from '../logic/ai';
+import { load as loadCheckIns } from '../logic/pulselog';
 import { LEGAL } from '../data/legal';
 import { listen, voiceSupported } from '../logic/voice';
 import { DISCLAIMER_SHORT } from '../data/disclaimer';
 import PulseLoader from '../components/PulseLoader';
 import { F } from '../theme';
 import Scrim from '../components/Scrim';
+
+// Starter questions. The check-in ones only make sense once there are
+// check-ins to look at; otherwise offer questions the quiz profile can answer.
+const CHECKIN_IDEAS = [
+  'What changed in my rhythm this week?',
+  'What looks different on my better days?',
+  'Is this actually a pattern yet?',
+  'What is one small experiment I could try tomorrow?',
+];
+const PROFILE_IDEAS = [
+  'When should I do my hardest work?',
+  'How do I handle my afternoon dip?',
+  'What helps me recharge best?',
+  'What is one small experiment I could try tomorrow?',
+];
 
 export default function PulseScreen({
   result,
@@ -32,7 +48,7 @@ export default function PulseScreen({
   result: RhythmResult;
   answers: Option[];
   onBack: () => void;
-  // If set (e.g. from tapping a tip on the Plan screen), Pulse opens with this
+  // If set (e.g. from tapping a tip on the Plan screen), the chat opens with this
   // question already asked.
   seed?: string;
 }) {
@@ -53,11 +69,47 @@ export default function PulseScreen({
   const seededRef = useRef(false);
   const lastSentRef = useRef(0);
   const scroller = useRef<ScrollView>(null);
+  // False once the screen unmounts: late replies must not set state or speak.
+  const mountedRef = useRef(true);
+  // Compact summary of recent check-ins sent with chat questions ('' = none).
+  // null until loaded; the ref lets a seeded question wait for it.
+  const [checkins, setCheckins] = useState<string | null>(null);
+  const checkinsRef = useRef<Promise<string> | null>(null);
+
+  const getCheckins = () => {
+    if (!checkinsRef.current) {
+      checkinsRef.current = loadCheckIns()
+        .then((log) => summarizeCheckIns(log))
+        .catch(() => '');
+    }
+    return checkinsRef.current;
+  };
 
   useEffect(() => {
-    generateReading(result, answers).then(setReading);
+    mountedRef.current = true;
+    getCheckins().then((s) => {
+      if (mountedRef.current) setCheckins(s);
+    });
     return () => {
+      mountedRef.current = false;
+      // Close the mic (web keeps it open otherwise) and stop any speech.
+      stopListenRef.current?.();
+      stopListenRef.current = null;
       Speech.stop();
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // The reading is cached per profile in ai.ts for the session, so reopening
+  // the screen doesn't spend another request.
+  useEffect(() => {
+    let live = true;
+    setReading(null);
+    generateReading(result, answers).then((text) => {
+      if (live && mountedRef.current) setReading(text);
+    });
+    return () => {
+      live = false;
     };
   }, [result, answers]);
 
@@ -71,7 +123,7 @@ export default function PulseScreen({
   }, [seed]);
 
   const say = (text: string) => {
-    if (speakRef.current) Speech.speak(text, { rate: 0.98, pitch: 1.0 });
+    if (mountedRef.current && speakRef.current) Speech.speak(text, { rate: 0.98, pitch: 1.0 });
   };
 
   const toggleSpeak = () => {
@@ -88,7 +140,9 @@ export default function PulseScreen({
     setFailed(null);
     setThinking(true);
     try {
-      const reply = await askPulse(result, answers, base, q);
+      const summary = await getCheckins();
+      const reply = await askPulse(result, answers, base, q, summary);
+      if (!mountedRef.current) return;
       if (reply.ok) {
         setTurns([...next, { role: 'assistant', text: reply.text }]);
         say(reply.text);
@@ -96,7 +150,7 @@ export default function PulseScreen({
         setFailed({ question: q, message: reply.message, retryable: reply.retryable });
       }
     } finally {
-      setThinking(false);
+      if (mountedRef.current) setThinking(false);
     }
   };
 
@@ -120,8 +174,12 @@ export default function PulseScreen({
   const report = (i: number) => {
     const question = turns[i - 1]?.role === 'user' ? turns[i - 1].text : '';
     Linking.openURL(buildReportMailto(LEGAL.contactEmail, question, turns[i].text))
-      .then(() => setReported((r) => (r.includes(i) ? r : [...r, i])))
-      .catch(() => setReportNote(`To report an answer, email ${LEGAL.contactEmail}.`));
+      .then(() => {
+        if (mountedRef.current) setReported((r) => (r.includes(i) ? r : [...r, i]));
+      })
+      .catch(() => {
+        if (mountedRef.current) setReportNote(`To report an answer, email ${LEGAL.contactEmail}.`);
+      });
   };
 
   const toggleMic = () => {
@@ -132,13 +190,17 @@ export default function PulseScreen({
     }
     Speech.stop();
     setListening(true);
+    const done = () => {
+      if (mountedRef.current) setListening(false);
+    };
     stopListenRef.current = listen(
       (text) => {
+        if (!mountedRef.current) return;
         setListening(false);
         send(text);
       },
-      () => setListening(false),
-      () => setListening(false)
+      done,
+      done
     );
   };
 
@@ -203,8 +265,14 @@ export default function PulseScreen({
               {t.role === 'assistant' && whyOpen === i && (
                 <View style={styles.evidenceCard}>
                   <Text style={styles.evidenceTitle}>WHAT THIS ANSWER USED</Text>
-                  <Text style={styles.evidenceText}>Your Circadia quiz profile, the question you asked, and the conversation shown here.</Text>
-                  <Text style={styles.evidenceFine}>Answers should not treat an association as a cause, diagnose a condition, or invent personal facts that are not in this context.</Text>
+                  <Text style={styles.evidenceText}>
+                    {checkins
+                      ? 'Your Circadia quiz profile, a summary of your check-ins from the last two weeks, the question you asked, and the conversation shown here.'
+                      : 'Your Circadia quiz profile, the question you asked, and the conversation shown here.'}
+                  </Text>
+                  <Text style={styles.evidenceFine}>
+                    Answers are reflections, not diagnoses. Patterns in your check-ins are associations, not proof of cause.
+                  </Text>
                 </View>
               )}
             </View>
@@ -228,16 +296,11 @@ export default function PulseScreen({
             </View>
           )}
 
-          {turns.length === 0 && reading && (
+          {turns.length === 0 && reading && checkins !== null && (
             <View style={styles.quickWrap}>
               <Text style={[styles.quickLabel, { color: a.accent }]}>IDEAS TO ASK</Text>
               <View style={styles.quickRow}>
-                {[
-                  'What changed in my rhythm this week?',
-                  'What looks different on my better days?',
-                  'Is this actually a pattern yet?',
-                  'What is one small experiment I could try tomorrow?',
-                ].map((q) => (
+                {(checkins ? CHECKIN_IDEAS : PROFILE_IDEAS).map((q) => (
                   <Pressable key={q} style={styles.quickChip} onPress={() => send(q)}>
                     <Text style={styles.quickText}>{q}</Text>
                   </Pressable>

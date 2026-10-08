@@ -1,6 +1,7 @@
 // Supabase Edge Function: "pulse"
 // Backs "Ask Circadia". Proxies Anthropic so the API key never ships to
-// clients, AND owns the system prompt + safety guardrails (the chatbot "prompts" live here, server-side).
+// clients, AND owns the system prompt + safety guardrails (the chatbot
+// "prompts" live here, server-side).
 //
 // Deploy:   supabase functions deploy pulse
 // Secret:   supabase secrets set ANTHROPIC_API_KEY=sk-ant-...
@@ -38,7 +39,7 @@ const cors: Record<string, string> = {
   'Access-Control-Allow-Methods': 'POST, OPTIONS',
 };
 
-// ── The assistant's voice + guardrails (the chatbot prompt) ─────────────────────────
+// ── The assistant's voice + guardrails (the chatbot prompt) ─────────────────
 const VOICE = `VOICE (follow exactly):
 - Talk like a perceptive friend who happens to know neuroscience. Never a therapist, never a hype coach, never a fortune cookie.
 - Smart, calm, personal, a little mysterious. Specific over vague.

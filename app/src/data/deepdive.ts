@@ -1,13 +1,13 @@
 import { AnimalId } from './archetypes';
 
-// The "detailed plan" unlocked by signing in — a deeper, weekly-grain layer
+// The "detailed plan" unlocked by signing in — a deeper, week-by-week layer
 // beyond the daily flow.
 
 export const DEEP_DIVE: Record<AnimalId, string[]> = {
   dolphin: [
     'Weekly: schedule your two hardest projects on back-to-back mornings, then a deliberately light afternoon after each.',
     'Caffeine cutoff by 1pm. As a light sleeper, it lingers and steepens tonight’s fall-asleep time.',
-    'Build a 20-minute “sensory offload” into the day (walk, no audio). Your nervous system needs the input to drop, not just the task.',
+    'Build a 20-minute “sensory offload” into the day (walk, no audio). You need the noise to drop, not just the task.',
     'Track which afternoons you crashed hardest; you’ll usually find a too-busy morning the day before.',
   ],
   wolf: [

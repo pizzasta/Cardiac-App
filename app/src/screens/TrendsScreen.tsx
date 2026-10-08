@@ -16,6 +16,7 @@ import {
   yFor,
 } from '../logic/pulselog';
 import { useAuth } from '../logic/auth';
+import { hasAI } from '../logic/ai';
 import { fetchStreak, fetchWeeksTracked, pullCheckIns, subscribeCheckIns } from '../logic/sync';
 import { F, T } from '../theme';
 import SimilarDaysCard from '../components/SimilarDaysCard';
@@ -41,12 +42,15 @@ export default function TrendsScreen({
   const a = ARCHETYPES[result.animal];
   const tint = TINTS[result.animal];
   const { user } = useAuth();
+  const ai = hasAI();
   const [log, setLog] = useState<PulseEntry[]>([]);
   const [server, setServer] = useState<{ current: number; longest: number } | null>(null);
   const [weeks, setWeeks] = useState<number | null>(null);
 
   useEffect(() => {
-    load().then(setLog);
+    load()
+      .then(setLog)
+      .catch(() => {});
   }, []);
 
   // When signed in, pull the cloud copy and read the authoritative streak +
@@ -60,11 +64,20 @@ export default function TrendsScreen({
       if (!active) return;
       const fresh = await load();
       if (active) setLog(fresh);
-      fetchStreak().then((s) => active && setServer(s));
-      fetchWeeksTracked().then((w) => active && setWeeks(w));
+      fetchStreak()
+        .then((s) => active && setServer(s))
+        .catch(() => {});
+      fetchWeeksTracked()
+        .then((w) => active && setWeeks(w))
+        .catch(() => {});
     };
-    refresh();
-    const unsubscribe = subscribeCheckIns(refresh);
+    const safeRefresh = () => {
+      refresh().catch(() => {
+        // Offline: keep showing the local log.
+      });
+    };
+    safeRefresh();
+    const unsubscribe = subscribeCheckIns(safeRefresh);
     return () => {
       active = false;
       unsubscribe();
@@ -105,7 +118,7 @@ export default function TrendsScreen({
       <Scrim shade="strong" />
 
       <View style={[styles.header, { paddingTop: topInset }]}>
-        <Pressable onPress={onClose} hitSlop={12}>
+        <Pressable onPress={onClose} hitSlop={12} accessibilityRole="button" accessibilityLabel="Close">
           <Text style={styles.back}>‹ Close</Text>
         </Pressable>
         <Text style={styles.headerTitle}>Your trends</Text>
@@ -140,7 +153,8 @@ export default function TrendsScreen({
           )}
         </View>
         <Text style={styles.forgive}>
-          Rest days count too. Miss one and the line dims. It doesn’t reset.
+          Missing a day only restarts the in-a-row count. Every check-in you’ve logged stays, and so do
+          your patterns.
         </Text>
 
         {/* The waveform */}
@@ -178,7 +192,7 @@ export default function TrendsScreen({
           ))}
         </View>
 
-        <SimilarDaysCard log={log} accent={a.accent} tint={tint} showMap onAsk={onAskPulse} />
+        <SimilarDaysCard log={log} accent={a.accent} tint={tint} showMap onAsk={ai ? onAskPulse : undefined} />
 
         {/* Discoveries: earned from the user's own check-ins, not medical inference. */}
         {rhythm >= 5 && (
@@ -201,17 +215,21 @@ export default function TrendsScreen({
             </View>
           ))}
           <Text style={styles.discoveryFine}>Based only on your Circadia check-ins. These are associations, not proof of cause.</Text>
-          {goodDays.ready && (
-            <Pressable style={[styles.goodDaysBtn, { borderColor: a.accent }]} onPress={() => onAskPulse(goodDays.pulseQuestion)}>
+          {goodDays.ready && ai && (
+            <Pressable
+              style={[styles.goodDaysBtn, { borderColor: a.accent }]}
+              onPress={() => onAskPulse(goodDays.pulseQuestion)}
+              accessibilityRole="button"
+            >
               <Text style={[styles.goodDaysBtnText, { color: a.accent }]}>Ask about this pattern</Text>
             </Pressable>
           )}
         </View>
 
-        <Pressable style={[styles.cta, { backgroundColor: a.accent }]} onPress={onCheckIn}>
+        <Pressable style={[styles.cta, { backgroundColor: a.accent }]} onPress={onCheckIn} accessibilityRole="button">
           <Text style={styles.ctaText}>Check in now  →</Text>
         </Pressable>
-        <Pressable style={[styles.shareBtn, { borderColor: `${a.accent}66` }]} onPress={onShare}>
+        <Pressable style={[styles.shareBtn, { borderColor: `${a.accent}66` }]} onPress={onShare} accessibilityRole="button">
           <Text style={[styles.shareText, { color: a.accent }]}>Share your rhythm card</Text>
         </Pressable>
       </ScrollView>

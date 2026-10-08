@@ -42,7 +42,7 @@ export const PLANS: Record<AnimalId, RhythmPlan> = {
     },
     flow: [
       { kind: 'focus', time: '9:30', title: 'Hardest task here', note: "You're sharpest late morning. Spend it on the thing that needs real thinking." },
-      { kind: 'dip', time: '1:45', title: 'Possible energy dip', note: 'Water + 5 min off the screen now. Consider water and a short screen break before deciding what you need next.' },
+      { kind: 'dip', time: '1:45', title: 'Possible energy dip', note: 'A glass of water and 5 minutes off the screen. Then decide what you actually need next.' },
       { time: '4:00', title: 'Light, low-stakes work', note: 'Admin, replies, tidying. Nothing that needs willpower.' },
       { time: '9:30', title: 'Wind-down, screens down', note: 'A light sleeper needs a real runway. Dim everything, soundscape on.' },
     ],
