@@ -107,17 +107,19 @@ export function useDeviceTilt(enabled: boolean): void {
   }, [enabled]);
 }
 
-// Mobile web: iOS Safari only shares orientation after a tap and a permission
-// prompt, so this is wired to the first touch. Desktop browsers have no tilt
-// and keep the mouse parallax instead.
+// Mobile web: iOS Safari only shares orientation after a permission prompt
+// raised from a tap (touchend or click, not touchstart), so this is wired to
+// the end of a touch. It retries on later taps until permission is granted.
+// Desktop browsers have no tilt and keep the mouse parallax instead.
 let webTiltStarted = false;
+let webTiltAsking = false;
 export function startWebTilt(): void {
-  if (Platform.OS !== 'web' || webTiltStarted) return;
+  if (Platform.OS !== 'web' || webTiltStarted || webTiltAsking) return;
   const g: any = globalThis;
   const Evt = g.DeviceOrientationEvent;
   if (!Evt || !('ontouchstart' in g)) return;
-  webTiltStarted = true;
   const listen = () => {
+    webTiltStarted = true;
     let base: { b: number; g: number } | null = null;
     g.addEventListener('deviceorientation', (e: { beta: number | null; gamma: number | null }) => {
       if (e.beta == null || e.gamma == null) return;
@@ -132,9 +134,22 @@ export function startWebTilt(): void {
     });
   };
   if (typeof Evt.requestPermission === 'function') {
-    Evt.requestPermission()
-      .then((r: string) => r === 'granted' && listen())
-      .catch(() => {});
+    // Called synchronously so the request stays inside the user gesture.
+    let ask: Promise<string>;
+    try {
+      ask = Evt.requestPermission();
+    } catch {
+      return;
+    }
+    webTiltAsking = true;
+    Promise.resolve(ask)
+      .then((r) => {
+        if (r === 'granted' && !webTiltStarted) listen();
+      })
+      .catch(() => {})
+      .finally(() => {
+        webTiltAsking = false;
+      });
   } else {
     listen();
   }

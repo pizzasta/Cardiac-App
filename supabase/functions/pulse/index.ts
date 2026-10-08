@@ -1,6 +1,6 @@
 // Supabase Edge Function: "pulse"
-// Proxies Anthropic so the API key never ships to clients, AND owns Pulse's
-// system prompt + safety guardrails (the chatbot "prompts" live here, server-side).
+// Backs "Ask Circadia". Proxies Anthropic so the API key never ships to
+// clients, AND owns the system prompt + safety guardrails (the chatbot "prompts" live here, server-side).
 //
 // Deploy:   supabase functions deploy pulse
 // Secret:   supabase secrets set ANTHROPIC_API_KEY=sk-ant-...
@@ -12,8 +12,9 @@
 //     chips: { peak, crash, recharge },
 //     profileLines: string[],            // ["<question> → <answer>", ...]
 //     history?: [{ role, text }],         // chat only
-//     question?: string }                 // chat only
-// Also accepts a legacy passthrough: { system, messages, max_tokens, model }.
+//     question?: string,                  // chat only
+//     checkins?: string }                 // chat only: recent check-in summary
+//                                         // ('' = none yet; capped at CHECKIN_MAX)
 
 // @ts-ignore esm import resolved by the Supabase Edge (Deno) runtime
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
@@ -27,13 +28,17 @@ const RATE_WINDOW_SECS = 60;
 const RATE_MAX_CHAT = 30;
 const RATE_MAX_READING = 8;
 
+// Max length of the client-built check-in summary (matches CHECKIN_SUMMARY_MAX
+// in app/src/logic/ai.ts).
+const CHECKIN_MAX = 1200;
+
 const cors: Record<string, string> = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
   'Access-Control-Allow-Methods': 'POST, OPTIONS',
 };
 
-// ── Pulse's voice + guardrails (the chatbot prompt) ─────────────────────────
+// ── The assistant's voice + guardrails (the chatbot prompt) ─────────────────────────
 const VOICE = `VOICE (follow exactly):
 - Talk like a perceptive friend who happens to know neuroscience. Never a therapist, never a hype coach, never a fortune cookie.
 - Smart, calm, personal, a little mysterious. Specific over vague.
@@ -59,20 +64,33 @@ const READING_PROMPT =
   "Give me my first read. In 3-4 sentences: what my rhythm means day-to-day, and the one thing to protect this week. Don't restate the animal name back to me.";
 
 // deno-lint-ignore no-explicit-any
-function buildSystem(p: any): string {
+function buildSystem(p: any, checkins?: string): string {
   const a = p.archetype ?? {};
   const c = p.chips ?? {};
   const profile = Array.isArray(p.profileLines)
     ? p.profileLines.map((l: string) => `- ${l}`).join('\n')
     : '';
-  return `You are Pulse, the AI companion inside Circadia, a wellness app that helps people reflect on daily energy, sleep-routine, and focus patterns.
+  // undefined: not provided (readings), so say nothing. '': none logged yet.
+  const checkinSection =
+    checkins === undefined
+      ? ''
+      : checkins
+        ? `Their recent daily check-ins (self-reported as steady, flat or wired, with an optional reason):
+${checkins}
+Use these only as self-reported observations. A few days is not a pattern; say so when the data is thin.
+
+`
+        : `They have not logged any daily check-ins yet. If asked about check-in patterns, say there are no check-ins to look at yet and suggest checking in for a few days.
+
+`;
+  return `You are Circadia, the AI companion inside the Circadia app (the feature is called Ask Circadia), a wellness app that helps people reflect on daily energy, sleep-routine, and focus patterns. If you refer to yourself, use Circadia; never use any other name.
 
 The user just took the onboarding quiz. Their rhythm animal is the ${a.name ?? 'unknown'} (${a.oneLiner ?? ''}). From their actual answers: their reported focus window is ${c.peak ?? 'unknown'}, a possible lower-energy window is ${c.crash ?? 'unknown'}, and they say they recharge through ${c.recharge ?? 'unknown'}.
 
 Their raw answers:
 ${profile}
 
-${VOICE}
+${checkinSection}${VOICE}
 
 ${EVIDENCE}
 
@@ -111,7 +129,7 @@ function jwtSub(auth: string | null): string | null {
 }
 
 // Returns true if allowed. Separate buckets per kind. Fails open (allows) if the
-// rate-limit store is unavailable, so a misconfig never takes Pulse down.
+// rate-limit store is unavailable, so a misconfig never takes the chat down.
 async function withinRateLimit(req: Request, kind: string): Promise<boolean> {
   try {
     // @ts-ignore Deno.env in the edge runtime
@@ -159,7 +177,16 @@ Deno.serve(async (req: Request) => {
       return json({ error: 'invalid request kind' }, 400);
     }
 
-    const system = buildSystem(body);
+    // Optional chat-only check-in summary: must be a string, trimmed and capped.
+    if (body.checkins !== undefined && typeof body.checkins !== 'string') {
+      return json({ error: 'invalid checkins' }, 400);
+    }
+    const checkins =
+      body.kind === 'chat' && typeof body.checkins === 'string'
+        ? body.checkins.trim().slice(0, CHECKIN_MAX)
+        : undefined;
+
+    const system = buildSystem(body, checkins);
     let messages: { role: string; content: string }[];
     let maxTokens = 400;
 

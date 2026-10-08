@@ -6,12 +6,15 @@ import GLBoundary from './GLBoundary';
 import Animal from './animals';
 import { Mood } from './rig';
 import { useReducedMotion } from '../hooks';
+import { useDisplayPrefs } from './displayPrefs';
 import { dotTexture } from './textures';
 import { AnimalId } from '../data/archetypes';
 
 // The rhythm animal in 3D, moving and reacting to mood, on web and native.
 // Falls back to the emoji when WebGL isn't available. Pass bg={null} for a
-// transparent canvas that sits on top of other content.
+// transparent canvas that sits on top of other content. `simple` (or the
+// app's battery-saver setting) shows the emoji instead; `still` (or reduced
+// motion) renders on demand without the spinning sparks.
 
 function Sparks({ accent }: { accent: string }) {
   const ref = useRef<THREE.Points>(null);
@@ -58,6 +61,8 @@ export default function AnimalEmblem({
   sparks = true,
   distance = 3.5,
   emojiSize = 96,
+  still: stillProp,
+  simple: simpleProp,
   style,
 }: {
   animal: AnimalId;
@@ -71,19 +76,26 @@ export default function AnimalEmblem({
   distance?: number;
   // Size of the emoji shown when 3D isn't available.
   emojiSize?: number;
+  still?: boolean;
+  simple?: boolean;
   style?: StyleProp<ViewStyle>;
 }) {
-  const still = useReducedMotion();
+  const reduced = useReducedMotion();
+  const prefs = useDisplayPrefs();
+  const still = !!stillProp || reduced;
+  const simple = !!simpleProp || prefs.simple;
   const fallback = (
     <View style={[styles.fallback, bg ? { backgroundColor: bg } : null, style]}>
       <Text style={[styles.emoji, { fontSize: emojiSize }]}>{emoji}</Text>
     </View>
   );
+  if (simple) return fallback;
   return (
     <GLBoundary fallback={fallback}>
       <View style={style} pointerEvents="none">
         <Canvas
           style={StyleSheet.absoluteFill as any}
+          frameloop={still ? 'demand' : 'always'}
           gl={{ alpha: !bg } as any}
           camera={{ position: [0, 0.25, distance], fov: 50 }}
         >
@@ -92,7 +104,7 @@ export default function AnimalEmblem({
           <directionalLight position={[3, 4, 5]} intensity={1.6} color="#ffffff" />
           <pointLight position={[-4, -2, 2]} intensity={8} color={accent} />
           <Animal animal={animal} color={accent} mood={mood} hop={hop} still={still} />
-          {sparks && <Sparks accent={accent} />}
+          {sparks && !still && <Sparks accent={accent} />}
         </Canvas>
       </View>
     </GLBoundary>
