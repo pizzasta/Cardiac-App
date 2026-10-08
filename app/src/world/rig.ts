@@ -58,10 +58,10 @@ export function groundHeight(x: number, z: number): number {
     0.22 * Math.sin(z * w * 5 + x * 0.53 + 2.9) +
     0.12 * Math.sin(z * w * 9 - x * 0.91 + 0.8) +
     0.06 * Math.sin(z * w * 14 + x * 1.37 + 4.1);
-  const side = Math.max(0, Math.abs(x) - 5);
+  const side = Math.max(0, Math.abs(x) - 8);
   // Flat-ish path near the centre, hills that grow toward the sides.
   const valley = Math.min(1, Math.abs(x) / 7);
-  return rolling * (0.25 + 0.75 * valley) + Math.min(9, side * side * 0.06);
+  return rolling * (0.25 + 0.75 * valley) + Math.min(9, side * side * 0.035);
 }
 
 // Deterministic 1D value noise in [0, 1).

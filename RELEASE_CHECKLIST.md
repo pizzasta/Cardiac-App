@@ -30,6 +30,8 @@
 - [ ] Confirm the AI consent screen appears before the first Ask Circadia request on a fresh install, and that turning it off in Settings stops requests.
 - [ ] Rating prompt: TestFlight and debug builds never show the real store sheet, so confirm on a production build that it appears at most once, after a steady check-in, the first-week recap or a finished experiment (and only after 3+ check-ins).
 - [ ] Turn on Low Power Mode (iOS) / Battery Saver (Android) and confirm the app switches to the simple background; check Settings > Display > Simple background too.
+- [ ] Look around: on a physical iPhone and Android phone, tilt the phone and swipe sideways on the landing and plan screens; the view should turn gently and drift back. Check it stays comfortable (no motion sickness) and that Reduce Motion turns it off.
+- [ ] Walk through each animal world (dolphin cove, wolf snow and aurora, bear autumn, hummingbird meadow, fox wheat, octopus shore) at day, sunset and night on a mid-range phone and check it stays smooth.
 - [ ] Listen to interface sounds and ambience on a physical iPhone (silent switch on and off) and an Android phone.
 - [ ] Check the 3D world runs smoothly on an older iPhone and a mid-range Android phone (scrolling Today and Trends, the reading dive), and that "Reduce motion" makes it still.
 - [ ] Confirm notification copy does not present predicted crashes, burnout, or health states as facts.
