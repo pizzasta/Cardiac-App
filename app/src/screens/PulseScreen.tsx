@@ -219,7 +219,7 @@ export default function PulseScreen({
           <Pressable onPress={onBack} hitSlop={12} accessibilityRole="button" accessibilityLabel="Back">
             <Text style={styles.back}>‹ Back</Text>
           </Pressable>
-          <Text style={styles.headerTitle}>{a.emoji}  Ask Circadia</Text>
+          <Text style={styles.headerTitle}>{a.emoji}  Ask Wildhour</Text>
           <Pressable
             onPress={toggleSpeak}
             hitSlop={12}
@@ -267,8 +267,8 @@ export default function PulseScreen({
                   <Text style={styles.evidenceTitle}>WHAT THIS ANSWER USED</Text>
                   <Text style={styles.evidenceText}>
                     {checkins
-                      ? 'Your Circadia quiz profile, a summary of your check-ins from the last two weeks, the question you asked, and the conversation shown here.'
-                      : 'Your Circadia quiz profile, the question you asked, and the conversation shown here.'}
+                      ? 'Your Wildhour quiz profile, a summary of your check-ins from the last two weeks, the question you asked, and the conversation shown here.'
+                      : 'Your Wildhour quiz profile, the question you asked, and the conversation shown here.'}
                   </Text>
                   <Text style={styles.evidenceFine}>
                     Answers are reflections, not diagnoses. Patterns in your check-ins are associations, not proof of cause.

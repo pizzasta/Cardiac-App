@@ -200,7 +200,7 @@ export default function TrendsScreen({
             <Text style={[styles.insightKicker, { color: a.accent }]}>A PATTERN IS SHOWING</Text>
             <Text style={styles.discoveryTitle}>Here’s what your recent check-ins lean toward.</Text>
             <Text style={styles.insightText}>{trendInsight(log)}</Text>
-            <Text style={styles.discoveryFine}>Based only on your Circadia check-ins. This is an observation, not a diagnosis or proof of cause.</Text>
+            <Text style={styles.discoveryFine}>Based only on your Wildhour check-ins. This is an observation, not a diagnosis or proof of cause.</Text>
           </View>
         )}
 
@@ -214,7 +214,7 @@ export default function TrendsScreen({
               <Text style={styles.factorValue}>{factor.steadyPct}% Steady · {factor.otherPct}% other</Text>
             </View>
           ))}
-          <Text style={styles.discoveryFine}>Based only on your Circadia check-ins. These are associations, not proof of cause.</Text>
+          <Text style={styles.discoveryFine}>Based only on your Wildhour check-ins. These are associations, not proof of cause.</Text>
           {goodDays.ready && ai && (
             <Pressable
               style={[styles.goodDaysBtn, { borderColor: a.accent }]}

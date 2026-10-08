@@ -131,7 +131,7 @@ export default function PlanScreen({
         // Shown inline: Alert.alert does nothing on web.
         if (!ok) {
           setNotifError(
-            'Notifications are blocked. Allow them for Circadia in your device or browser settings, then try again.'
+            'Notifications are blocked. Allow them for Wildhour in your device or browser settings, then try again.'
           );
         }
       }

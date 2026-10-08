@@ -175,7 +175,7 @@ function Flow() {
     }
   };
 
-  // Ask Circadia sends data to a third-party AI service, so the first visit
+  // Ask Wildhour sends data to a third-party AI service, so the first visit
   // asks permission; `consentFor` holds the pending question meanwhile.
   const [consentFor, setConsentFor] = useState<{ seed?: string } | null>(null);
   const goPulse = (seed?: string) => {
@@ -640,7 +640,7 @@ class ErrorBoundary extends React.Component<
         <View style={styles.errFill}>
           <Text style={styles.errTitle}>Something hiccuped</Text>
           <Text style={styles.errBody}>
-            Circadia hit an unexpected error. Try again. Your rhythm data is safe.
+            Wildhour hit an unexpected error. Try again. Your rhythm data is safe.
           </Text>
           <Pressable style={styles.errBtn} onPress={() => this.setState({ error: null })}>
             <Text style={styles.errBtnText}>Reload</Text>

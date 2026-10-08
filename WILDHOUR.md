@@ -1,8 +1,8 @@
-# Circadia
+# Wildhour
 
 **Know your rhythm. Work with your nervous system, not against it.**
 
-Circadia is an AI wellness app that reads your energy, stress, and sleep patterns and turns them into a living daily rhythm. You take a short quiz, get assigned a rhythm animal, and from then on the app shapes your day around how your nervous system actually works — when to focus, when to recover, when to socialize, when to stop.
+Wildhour is an AI wellness app that reads your energy, stress, and sleep patterns and turns them into a living daily rhythm. You take a short quiz, get assigned a rhythm animal, and from then on the app shapes your day around how your nervous system actually works — when to focus, when to recover, when to socialize, when to stop.
 
 It should feel like Spotify Wrapped found out who you are, Finch grew up, and Apple Health learned to talk.
 
@@ -37,10 +37,10 @@ A personalized rhythm engine for your nervous system.
 ### The real problem
 Productivity apps assume everyone runs on the same clock. Wellness apps tell you to "breathe" without knowing anything about you. People are exhausted, overstimulated, and out of sync with their own bodies — and they *feel* it but can't name it.
 
-Circadia names it. It gives people language ("I'm a Dolphin, I crash at 2pm and I'm a light sleeper") and then acts on it. The animal isn't a gimmick — it's the entry point to genuinely useful, adaptive scheduling.
+Wildhour names it. It gives people language ("I'm a Dolphin, I crash at 2pm and I'm a light sleeper") and then acts on it. The animal isn't a gimmick — it's the entry point to genuinely useful, adaptive scheduling.
 
 ### Positioning statement
-> For overstimulated, ambitious people who feel out of sync with their own energy, Circadia is the AI that learns your nervous system and rebuilds your day around it — so you stop white-knuckling through and start running on your actual rhythm.
+> For overstimulated, ambitious people who feel out of sync with their own energy, Wildhour is the AI that learns your nervous system and rebuilds your day around it — so you stop white-knuckling through and start running on your actual rhythm.
 
 ### Where it sits
 - **Not** a meditation app (Calm/Headspace) — it's about *timing and pattern*, not just relaxation.
@@ -125,7 +125,7 @@ This means two "Wolves" can differ, and the AI personalizes within the archetype
 | 🐙 **Octopus** | Emotionally absorbent, social masker | Variable | Variable | Mask until empty | Decompression, low-demand company |
 
 ### Evolving archetypes (the retention engine)
-Your animal isn't permanent. As Circadia learns your real data, it surfaces **states** and **shifts**:
+Your animal isn't permanent. As Wildhour learns your real data, it surfaces **states** and **shifts**:
 - **Phases:** "You're in a *Restless Dolphin* phase — 4 short-sleep nights this week."
 - **Evolution:** sustained change in patterns can shift your core animal over weeks. ("Your rhythm is moving toward Bear — steadier sleep, slower crashes. Keep going.")
 - **Sub-types unlocked over time:** Calm Dolphin, Wired Dolphin, Recovering Bear, etc. These are collectible and shareable without being childish.
@@ -245,7 +245,7 @@ Rules: never more than ~2/day default. Never red badges. Never "You broke your s
 
 ## 9. Retention Mechanics
 
-The trap is making this feel like another streak app. Circadia retains through *self-knowledge compounding*, not guilt.
+The trap is making this feel like another streak app. Wildhour retains through *self-knowledge compounding*, not guilt.
 
 - **Daily check-in** — 5-second, one-tap, builds the data that makes everything more accurate. Framed as "teaching your rhythm," not a chore.
 - **Consistency, not streaks** — track "rhythm consistency %" that's forgiving (missing a day barely dents it). No streak-shame, ever.
@@ -267,7 +267,7 @@ The trap is making this feel like another streak app. Circadia retains through *
 - Daily check-in + basic weekly report
 - Limited Pulse AI (a few exchanges/day)
 
-### Circadia+ — ~$9.99/mo or $59.99/yr
+### Wildhour+ — ~$9.99/mo or $59.99/yr
 - Unlimited Pulse AI + proactive coaching
 - Full adaptive scheduling + Calendar/Health/Sleep sync
 - Evolving archetypes, sub-types, deep pattern history
@@ -282,7 +282,7 @@ The trap is making this feel like another streak app. Circadia retains through *
 - **Annual "Rhythm Year in Review"** — a paid, premium Wrapped-style artifact (also a huge viral/acquisition moment).
 - **Partnerships** — non-clinical wellness brands (mattresses, supplements, light therapy) via *contextual, opt-in* suggestions only — never ads that break the calm.
 
-Pricing psychology: anchor on the yearly (≈ 50% off monthly), free trial of Circadia+ unlocked *right after the reveal* when motivation peaks.
+Pricing psychology: anchor on the yearly (≈ 50% off monthly), free trial of Wildhour+ unlocked *right after the reveal* when motivation peaks.
 
 ---
 
@@ -360,12 +360,12 @@ The growth engine is identity + "it's so accurate it's scary." Lean into POV, re
 
 ## 14. App Store Positioning
 
-**Name:** Circadia
+**Name:** Wildhour
 **Subtitle:** Your rhythm, decoded by AI
 **Category:** Health & Fitness (primary), Lifestyle (secondary)
 
 **Short pitch (top of listing):**
-> Circadia learns your energy, stress, and sleep patterns and rebuilds your day around them. Take the 60-second quiz, meet your rhythm animal, and let AI guide when to focus, recover, and rest — personalized to your nervous system.
+> Wildhour learns your energy, stress, and sleep patterns and rebuilds your day around them. Take the 60-second quiz, meet your rhythm animal, and let AI guide when to focus, recover, and rest — personalized to your nervous system.
 
 **Screenshot order (the listing is a funnel):**
 1. The reveal card — "Meet your rhythm animal" (the hook).
@@ -412,7 +412,7 @@ The growth engine is identity + "it's so accurate it's scary." Lean into POV, re
 - Daily check-ins
 - Basic Pulse AI + daily summaries
 - Weekly Rhythm Report (Wrapped-style)
-- Freemium + Circadia+ trial
+- Freemium + Wildhour+ trial
 
 **V2 — "It knows you" (depth)**
 - Calendar / Health / Sleep sync → real-data predictions
@@ -441,7 +441,7 @@ The growth engine is identity + "it's so accurate it's scary." Lean into POV, re
 1. **Identity is the hook, utility is the moat.** The animal gets people in the door (TikTok-quiz energy); the adaptive scheduling and accurate predictions keep them (Apple Health depth). Most apps have one or the other.
 2. **The accuracy flywheel is defensible.** The longer you use it, the better it knows you — and switching means starting over. That's real retention, not gamified guilt.
 3. **Two built-in viral loops:** the reveal card (acquisition) and the weekly Wrapped report (recurring re-share). Growth is structural, not paid.
-4. **It fills a genuine gap:** between vague wellness apps and rigid productivity apps, nobody owns "work *with* your nervous system." Circadia owns that sentence.
+4. **It fills a genuine gap:** between vague wellness apps and rigid productivity apps, nobody owns "work *with* your nervous system." Wildhour owns that sentence.
 5. **The tone is the differentiator.** Calm, specific, a little mysterious, never cringe — in a category drowning in fake-deep wellness-speak, sounding like a smart, perceptive friend is a competitive advantage.
 
 ---

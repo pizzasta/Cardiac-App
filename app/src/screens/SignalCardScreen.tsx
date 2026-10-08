@@ -50,7 +50,7 @@ export default function SignalCardScreen({
         return;
       }
       const r = await shareText(
-        `“${statement}” (my ${displayName(result)} rhythm, mapped by Circadia)`
+        `“${statement}” (my ${displayName(result)} rhythm, mapped by Wildhour)`
       );
       if (r === 'copied') setStatus('copied');
       else if (r === 'shared') setStatus('shared');
@@ -134,7 +134,7 @@ export default function SignalCardScreen({
             <View>
               <PulseLine height={compact ? 40 : 56} color={tint} style={{ opacity: 0.9 }} />
               <View style={styles.readout}>
-                <Text style={styles.readoutText}>circadia</Text>
+                <Text style={styles.readoutText}>wildhour</Text>
               </View>
             </View>
           </View>

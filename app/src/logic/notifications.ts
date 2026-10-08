@@ -43,7 +43,7 @@ export async function enable(_animal: AnimalId): Promise<boolean> {
   if (perm !== 'granted') return false;
   await setOptedOut(false);
   try {
-    new Notification('Circadia', {
+    new Notification('Wildhour', {
       body: 'Notifications on. Open the app on your phone for daily rhythm nudges.',
     });
   } catch {

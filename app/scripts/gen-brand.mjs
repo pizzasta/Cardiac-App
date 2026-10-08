@@ -1,4 +1,4 @@
-// Renders the Circadia brand images (icon, adaptive icon, splash, favicon,
+// Renders the Wildhour brand images (icon, adaptive icon, splash, favicon,
 // Android notification icon) to assets/*.png with Playwright.
 // Run: node scripts/gen-brand.mjs
 // Mark: a glowing hot-pink sun half-set behind a soft rolling horizon, on a

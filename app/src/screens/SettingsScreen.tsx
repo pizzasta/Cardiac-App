@@ -106,7 +106,7 @@ export default function SettingsScreen({
   };
 
   const contactSupport = () => {
-    const subject = encodeURIComponent('Circadia support');
+    const subject = encodeURIComponent('Wildhour support');
     Linking.openURL(`mailto:${LEGAL.contactEmail}?subject=${subject}`).catch(() =>
       setSupportNote(`Email us at ${LEGAL.contactEmail}`)
     );
@@ -205,7 +205,7 @@ export default function SettingsScreen({
         // Shown inline: Alert.alert does nothing on web.
         if (!ok) {
           setNotifError(
-            'Notifications are blocked. Allow them for Circadia in your device or browser settings, then try again.'
+            'Notifications are blocked. Allow them for Wildhour in your device or browser settings, then try again.'
           );
         }
       }
@@ -405,8 +405,8 @@ export default function SettingsScreen({
           )}
         </View>
 
-        {/* ASK CIRCADIA */}
-        <Text style={styles.section}>ASK CIRCADIA</Text>
+        {/* ASK WILDHOUR */}
+        <Text style={styles.section}>ASK WILDHOUR</Text>
         <View style={styles.card}>
           <View style={styles.rowBetween}>
             <View style={{ flex: 1, paddingRight: 12 }}>

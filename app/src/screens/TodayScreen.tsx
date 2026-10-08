@@ -1,4 +1,4 @@
-// TodayScreen — the adaptive "Today" dashboard from CIRCADIA.md §5.
+// TodayScreen — the adaptive "Today" dashboard from WILDHOUR.md §5.
 //
 // A single scrollable, top-to-bottom narrative of the user's day (not a grid
 // of widgets): pulse header → rhythm ribbon → Now card → today's flow →
@@ -8,7 +8,7 @@
 // Design law (from the spec): no empty states, no red, no streak-shaming,
 // and never more than one primary action visible at once.
 import React, { useEffect, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useTopInset } from '../hooks';
 import { ARCHETYPES } from '../data/archetypes';
@@ -66,6 +66,8 @@ export default function TodayScreen({
   onClose: () => void;
 }) {
   const topInset = useTopInset();
+  // Narrow phones (iPhone SE size) get a smaller greeting and animal.
+  const narrow = useWindowDimensions().width < 360;
   const arch = ARCHETYPES[result.animal];
   const plan = PLANS[result.animal];
   const flow = plan ? personalFlow(plan.flow, result) : [];
@@ -149,24 +151,30 @@ export default function TodayScreen({
           end={{ x: 0, y: 1 }}
           style={styles.header}
         >
-          <Text style={styles.kicker}>
-            {arch.emoji} {displayName(result).toUpperCase()}
-          </Text>
-          <Text style={styles.greeting}>{greeting(now)}.</Text>
+          {/* The animal sits beside the greeting (not over the text), so
+              nothing overlaps on narrow phones. */}
+          <View style={styles.headerTop}>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.kicker}>
+                {arch.emoji} {displayName(result).toUpperCase()}
+              </Text>
+              <Text style={[styles.greeting, narrow && styles.greetingNarrow]}>{greeting(now)}.</Text>
+            </View>
+            {/* Your animal, moving the way you checked in today. */}
+            <AnimalEmblem
+              animal={result.animal}
+              accent={TINTS[result.animal]}
+              emoji={arch.emoji}
+              bg={null}
+              sparks={false}
+              mood={today?.level ?? null}
+              style={narrow ? styles.companionNarrow : styles.companion}
+            />
+          </View>
           <Text style={styles.headerCopy}>
             Your quiz suggests a stronger focus window around {result.peak} and a
             possible lower-energy window near {result.crash}. Your check-ins help refine the picture.
           </Text>
-          {/* Your animal, moving the way you checked in today. */}
-          <AnimalEmblem
-            animal={result.animal}
-            accent={TINTS[result.animal]}
-            emoji={arch.emoji}
-            bg={null}
-            sparks={false}
-            mood={today?.level ?? null}
-            style={styles.companion}
-          />
           {/* Rendered last so it sits above the header text and stays tappable. */}
           <Pressable onPress={onClose} hitSlop={12} style={styles.close} accessibilityRole="button">
             <Text style={styles.closeText}>Done</Text>
@@ -326,7 +334,7 @@ export default function TodayScreen({
             <Text style={[styles.experimentKicker, { color: arch.accent }]}>DAY {experimentDay(experiment)} OF {experiment.days}</Text>
             <Text style={styles.experimentTitle}>{experiment.title}</Text>
             <Text style={styles.experimentText}>{experiment.prompt}</Text>
-            <Text style={styles.experimentFine}>Notice what changes in your check-ins. Circadia treats this as a personal observation, not proof of cause.</Text>
+            <Text style={styles.experimentFine}>Notice what changes in your check-ins. Wildhour treats this as a personal observation, not proof of cause.</Text>
             <Pressable
               hitSlop={12}
               accessibilityRole="button"
@@ -395,7 +403,10 @@ const styles = StyleSheet.create({
   root: { ...StyleSheet.absoluteFillObject, backgroundColor: 'transparent' },
   content: { paddingHorizontal: 20, paddingBottom: 96 },
   header: { borderRadius: 20, padding: 20, marginBottom: 24, overflow: 'hidden' },
-  companion: { position: 'absolute', right: -6, top: 26, width: 120, height: 96 },
+  headerTop: { flexDirection: 'row', alignItems: 'flex-end' },
+  // Top margin keeps the animal below the Done button.
+  companion: { width: 110, height: 92, marginTop: 22, marginRight: -10 },
+  companionNarrow: { width: 88, height: 76, marginTop: 22, marginRight: -10 },
   close: { position: 'absolute', top: 16, right: 16 },
   closeText: { color: T.text, fontFamily: F.mono, fontSize: 13, opacity: 0.8 },
   kicker: {
@@ -405,16 +416,14 @@ const styles = StyleSheet.create({
     letterSpacing: 1,
     opacity: 0.85,
   },
-  // Keeps clear of the animal companion on the right, even on small phones.
-  greeting: { color: T.text, fontFamily: F.display, fontSize: 30, marginTop: 8, paddingRight: 92 },
+  greeting: { color: T.text, fontFamily: F.display, fontSize: 30, marginTop: 8 },
+  greetingNarrow: { fontSize: 25 },
   headerCopy: {
     color: T.text,
     fontSize: 15,
     lineHeight: 21,
     marginTop: 8,
     opacity: 0.92,
-    // Same clearance as the greeting, so the companion never covers the copy.
-    paddingRight: 92,
   },
   section: {
     color: T.muted,

@@ -1,4 +1,4 @@
-// Circadia's Privacy Policy, Terms of Use, account-deletion and support pages.
+// Wildhour's Privacy Policy, Terms of Use, account-deletion and support pages.
 //
 // Single source of truth: the in-app Legal screen renders these documents, and
 // `npm run gen:legal` renders the same content to public/*/index.html, which
@@ -12,10 +12,10 @@
 // entity and a monitored inbox, and have counsel review.
 
 export const LEGAL = {
-  appName: 'Circadia',
+  appName: 'Wildhour',
   // The person or company legally responsible for the app.
-  operator: 'Circadia',
-  contactEmail: 'support@circadia.app',
+  operator: 'Wildhour',
+  contactEmail: 'support@wildhour.app',
   webBase: 'https://pizzasta.github.io/Cardiac-App',
   updated: 'October 7, 2026',
 };
@@ -44,22 +44,22 @@ export const PRIVACY: LegalDoc = {
   title: 'Privacy Policy',
   shortTitle: 'Privacy',
   intro:
-    'This policy explains what Circadia collects, why, who it is shared with, and the choices you have. We wrote it to be read, not skimmed past.',
+    'This policy explains what Wildhour collects, why, who it is shared with, and the choices you have. We wrote it to be read, not skimmed past.',
   sections: [
     {
       heading: 'The short version',
       bullets: [
-        'Circadia works without an account. Until you sign in, your quiz answers and check-ins stay on your device.',
+        'Wildhour works without an account. Until you sign in, your quiz answers and check-ins stay on your device.',
         'If you create an account, we store your data so it syncs across devices. You can delete it, or your whole account, in the app at any time.',
-        'Ask Circadia sends your question and some of your Circadia data to an AI service, and only after you allow it.',
+        'Ask Wildhour sends your question and some of your Wildhour data to an AI service, and only after you allow it.',
         'We don’t sell your data, show ads, or use advertising or analytics trackers.',
-        'Circadia is a self-awareness tool, not a medical service.',
+        'Wildhour is a self-awareness tool, not a medical service.',
       ],
     },
     {
       heading: 'Who we are',
       paragraphs: [
-        `${LEGAL.operator} (“we”, “us”) operates the Circadia app and website and is responsible for your personal data under this policy. Contact us at ${E}.`,
+        `${LEGAL.operator} (“we”, “us”) operates the Wildhour app and website and is responsible for your personal data under this policy. Contact us at ${E}.`,
       ],
     },
     {
@@ -69,7 +69,7 @@ export const PRIVACY: LegalDoc = {
         'Your quiz answers and the rhythm profile they produce (rhythm animal, peak, dip and recharge notes).',
         'Daily check-ins: an energy level (Wired, Steady or Flat), an optional reason (sleep, people, work, body or nothing) and the time you logged it.',
         'Experiments you start and their dates.',
-        'App settings, such as sound and volume, interface sounds, and whether you allowed Ask Circadia.',
+        'App settings, such as sound and volume, interface sounds, and whether you allowed Ask Wildhour.',
       ],
     },
     {
@@ -79,9 +79,9 @@ export const PRIVACY: LegalDoc = {
       ],
     },
     {
-      heading: 'If you use Ask Circadia',
+      heading: 'If you use Ask Wildhour',
       paragraphs: [
-        'Ask Circadia answers come from an AI model provided by Anthropic. When you ask a question, Circadia sends it through our server to Anthropic together with the context needed to answer: your rhythm profile, your quiz answers, the conversation so far and, for check-in questions, a summary of your recent check-ins. We ask for your permission before the first request, and you can withdraw it in Settings.',
+        'Ask Wildhour answers come from an AI model provided by Anthropic. When you ask a question, Wildhour sends it through our server to Anthropic together with the context needed to answer: your rhythm profile, your quiz answers, the conversation so far and, for check-in questions, a summary of your recent check-ins. We ask for your permission before the first request, and you can withdraw it in Settings.',
         'To prevent abuse, our server counts requests per account or, if you are not signed in, per IP address. IP addresses are stored only as a one-way hash, and anonymous counters are deleted within about a day.',
       ],
     },
@@ -97,14 +97,14 @@ export const PRIVACY: LegalDoc = {
     {
       heading: 'What we don’t collect',
       paragraphs: [
-        'We don’t collect your location, contacts, photos, camera or microphone recordings, advertising identifiers or payment details. Circadia contains no advertising or third-party analytics SDKs and doesn’t track you across other apps or websites.',
+        'We don’t collect your location, contacts, photos, camera or microphone recordings, advertising identifiers or payment details. Wildhour contains no advertising or third-party analytics SDKs and doesn’t track you across other apps or websites.',
       ],
     },
     {
       heading: 'Health-related information',
       paragraphs: [
         'Check-ins describe how you feel, so we treat them, and your quiz answers, as sensitive health-related data. This includes “consumer health data” under laws such as Washington’s My Health My Data Act. We use it only to provide the features you ask for. We never sell it or use it for advertising, and we share it only with the service providers listed below so they can run those features.',
-        'We ask for your consent before storing it in an account and before sending it to the AI service. You can withdraw consent at any time by turning off Ask Circadia in Settings, deleting your data, or deleting your account.',
+        'We ask for your consent before storing it in an account and before sending it to the AI service. You can withdraw consent at any time by turning off Ask Wildhour in Settings, deleting your data, or deleting your account.',
       ],
     },
     {
@@ -112,12 +112,12 @@ export const PRIVACY: LegalDoc = {
       bullets: [
         'To give you your rhythm profile, daily plan, trends, experiment results and Days like today.',
         'To sync your data across devices when you have an account.',
-        'To answer your Ask Circadia questions.',
+        'To answer your Ask Wildhour questions.',
         'To keep the service secure and prevent abuse, for example with usage limits.',
         'To comply with the law and respond to lawful requests.',
       ],
       paragraphs: [
-        'We don’t use your data to train AI models. Anthropic processes Ask Circadia requests under its commercial API terms, which don’t allow it to train its models on that data.',
+        'We don’t use your data to train AI models. Anthropic processes Ask Wildhour requests under its commercial API terms, which don’t allow it to train its models on that data.',
       ],
     },
     {
@@ -136,7 +136,7 @@ export const PRIVACY: LegalDoc = {
       ],
       bullets: [
         'Supabase: database and sign-in for accounts.',
-        'Anthropic: generates Ask Circadia answers.',
+        'Anthropic: generates Ask Wildhour answers.',
         'Google: only if you choose “Sign in with Google”.',
         'GitHub and Vercel: host the web version. Like most hosts, they may keep standard request logs, such as IP address and browser type, for security.',
         'Apple and Google: distribute the mobile app under their own privacy policies.',
@@ -159,7 +159,7 @@ export const PRIVACY: LegalDoc = {
       bullets: [
         'On your device: until you delete it in Settings, delete the app, or clear the site’s data.',
         'In your account: until you delete it or your account. Deleted data is removed from our live database straight away. It may remain in our provider’s encrypted backups for a limited period, typically up to 30 days.',
-        'Ask Circadia: we don’t store your questions or answers on our server. Anthropic may keep requests for a limited period under its terms (currently up to 30 days) for trust and safety.',
+        'Ask Wildhour: we don’t store your questions or answers on our server. Anthropic may keep requests for a limited period under its terms (currently up to 30 days) for trust and safety.',
         'Usage-limit counters: anonymous counters are deleted within about a day; account counters are deleted with your account.',
       ],
     },
@@ -169,7 +169,7 @@ export const PRIVACY: LegalDoc = {
         'Access and portability: Settings → Data & privacy → Export my data downloads every check-in as a CSV file.',
         'Correction: retake the quiz or update today’s check-in at any time.',
         'Deletion: Settings → Data & privacy → Delete my data, or Delete my account. You can also ask us at the address below.',
-        'Withdraw consent: turn off Ask Circadia in Settings, sign out, or delete your data.',
+        'Withdraw consent: turn off Ask Wildhour in Settings, sign out, or delete your data.',
         'Object, restrict, or complain: email us. In the EEA or UK you can also complain to your local data protection authority.',
       ],
       paragraphs: [
@@ -186,7 +186,7 @@ export const PRIVACY: LegalDoc = {
     {
       heading: 'Children',
       paragraphs: [
-        'Circadia is for adults aged 18 and over. It isn’t directed at children, and we don’t knowingly collect their data. If you believe a child has used Circadia, contact us and we will delete their data.',
+        'Wildhour is for adults aged 18 and over. It isn’t directed at children, and we don’t knowingly collect their data. If you believe a child has used Wildhour, contact us and we will delete their data.',
       ],
     },
     {
@@ -207,16 +207,16 @@ export const TERMS: LegalDoc = {
   title: 'Terms of Use',
   shortTitle: 'Terms',
   intro:
-    'These terms are the agreement between you and Circadia for using the app and website. By using Circadia you agree to them. If you don’t agree, please don’t use Circadia.',
+    'These terms are the agreement between you and Wildhour for using the app and website. By using Wildhour you agree to them. If you don’t agree, please don’t use Wildhour.',
   sections: [
     {
-      heading: 'Who can use Circadia',
+      heading: 'Who can use Wildhour',
       paragraphs: ['You must be at least 18 years old and able to form a binding agreement.'],
     },
     {
       heading: 'Not medical advice',
       paragraphs: [
-        'Circadia helps you notice your own rhythms. It is not a medical or mental-health service, and nothing in it is a diagnosis, treatment or substitute for professional care. Rhythm animals, plans, forecasts, resets, experiments and insights are reflections generated by the app from your own answers and check-ins. They are not validated assessments, biological measurements or predictions.',
+        'Wildhour helps you notice your own rhythms. It is not a medical or mental-health service, and nothing in it is a diagnosis, treatment or substitute for professional care. Rhythm animals, plans, forecasts, resets, experiments and insights are reflections generated by the app from your own answers and check-ins. They are not validated assessments, biological measurements or predictions.',
         'If you may be experiencing a medical or mental-health emergency, contact your local emergency services right away. In the US you can call or text 988 to reach the Suicide & Crisis Lifeline.',
       ],
     },
@@ -227,9 +227,9 @@ export const TERMS: LegalDoc = {
       ],
     },
     {
-      heading: 'Ask Circadia',
+      heading: 'Ask Wildhour',
       paragraphs: [
-        'Ask Circadia answers are generated by AI. They may be wrong, incomplete or out of date, so use your own judgment and check anything important with a qualified professional. Please don’t enter other people’s personal information.',
+        'Ask Wildhour answers are generated by AI. They may be wrong, incomplete or out of date, so use your own judgment and check anything important with a qualified professional. Please don’t enter other people’s personal information.',
       ],
     },
     {
@@ -242,28 +242,28 @@ export const TERMS: LegalDoc = {
       heading: 'Acceptable use',
       paragraphs: ['Please don’t:'],
       bullets: [
-        'Use Circadia unlawfully or to harm anyone.',
+        'Use Wildhour unlawfully or to harm anyone.',
         'Try to get around usage limits, access other people’s data, or disrupt or probe our systems.',
         'Copy, resell or reverse-engineer the service except where the law allows.',
-        'Use Ask Circadia to generate harmful or unlawful content.',
+        'Use Ask Wildhour to generate harmful or unlawful content.',
       ],
     },
     {
       heading: 'Your content',
       paragraphs: [
-        'Your check-ins and answers belong to you. You give us permission to store and process them only to run Circadia for you, as described in our Privacy Policy.',
+        'Your check-ins and answers belong to you. You give us permission to store and process them only to run Wildhour for you, as described in our Privacy Policy.',
       ],
     },
     {
       heading: 'Our content',
       paragraphs: [
-        'Circadia’s software, design, text, illustrations and sounds belong to us or our licensors. We give you a personal, non-transferable licence to use the app for your own non-commercial purposes. If you send us feedback, we may use it without owing you anything.',
+        'Wildhour’s software, design, text, illustrations and sounds belong to us or our licensors. We give you a personal, non-transferable licence to use the app for your own non-commercial purposes. If you send us feedback, we may use it without owing you anything.',
       ],
     },
     {
       heading: 'Changes and availability',
       paragraphs: [
-        'Circadia is currently free. We may change, pause or discontinue features, and we will try to give notice of significant changes. We may suspend accounts that break these terms. You can stop using Circadia and delete your data or account at any time.',
+        'Wildhour is currently free. We may change, pause or discontinue features, and we will try to give notice of significant changes. We may suspend accounts that break these terms. You can stop using Wildhour and delete your data or account at any time.',
       ],
     },
     {
@@ -275,31 +275,31 @@ export const TERMS: LegalDoc = {
     {
       heading: 'Disclaimers',
       paragraphs: [
-        'To the extent the law allows, Circadia is provided “as is” and “as available”, without warranties of any kind, including fitness for a particular purpose. We don’t promise that it will be uninterrupted, error-free or right for your situation.',
+        'To the extent the law allows, Wildhour is provided “as is” and “as available”, without warranties of any kind, including fitness for a particular purpose. We don’t promise that it will be uninterrupted, error-free or right for your situation.',
       ],
     },
     {
       heading: 'Limitation of liability',
       paragraphs: [
-        'To the extent the law allows, we aren’t liable for indirect, incidental, special or consequential losses. Our total liability for any claim relating to Circadia is limited to the greater of USD 50 or the amount you paid us in the 12 months before the claim. Nothing in these terms limits liability that cannot be limited by law, or takes away rights you have as a consumer.',
+        'To the extent the law allows, we aren’t liable for indirect, incidental, special or consequential losses. Our total liability for any claim relating to Wildhour is limited to the greater of USD 50 or the amount you paid us in the 12 months before the claim. Nothing in these terms limits liability that cannot be limited by law, or takes away rights you have as a consumer.',
       ],
     },
     {
       heading: 'Governing law',
       paragraphs: [
-        'These terms are governed by the laws of the place where the operator of Circadia is established, without regard to conflict-of-law rules. If you are a consumer, you also keep the protection of the mandatory laws of the country where you live, and you may bring claims in your local courts.',
+        'These terms are governed by the laws of the place where the operator of Wildhour is established, without regard to conflict-of-law rules. If you are a consumer, you also keep the protection of the mandatory laws of the country where you live, and you may bring claims in your local courts.',
       ],
     },
     {
       heading: 'App store terms',
       paragraphs: [
-        'If you downloaded Circadia from the Apple App Store, these terms are between you and us, not Apple. Apple has no obligation to provide maintenance or support. If the app fails to meet any applicable warranty, you may tell Apple, which may refund the purchase price (if any). Apple has no other warranty obligation and is not responsible for claims relating to the app, including product-liability, legal-compliance, consumer-protection or intellectual-property claims. You confirm you are not in a country subject to a US Government embargo and are not on a US Government list of prohibited or restricted parties. Apple and its subsidiaries are third-party beneficiaries of these terms and may enforce them. Google Play’s terms apply to downloads from Google Play.',
+        'If you downloaded Wildhour from the Apple App Store, these terms are between you and us, not Apple. Apple has no obligation to provide maintenance or support. If the app fails to meet any applicable warranty, you may tell Apple, which may refund the purchase price (if any). Apple has no other warranty obligation and is not responsible for claims relating to the app, including product-liability, legal-compliance, consumer-protection or intellectual-property claims. You confirm you are not in a country subject to a US Government embargo and are not on a US Government list of prohibited or restricted parties. Apple and its subsidiaries are third-party beneficiaries of these terms and may enforce them. Google Play’s terms apply to downloads from Google Play.',
       ],
     },
     {
       heading: 'Changes to these terms',
       paragraphs: [
-        'We will update the date above when these terms change, and tell you in the app about significant changes. If you keep using Circadia after a change takes effect, you accept the updated terms.',
+        'We will update the date above when these terms change, and tell you in the app about significant changes. If you keep using Wildhour after a change takes effect, you accept the updated terms.',
       ],
     },
     {
@@ -311,14 +311,14 @@ export const TERMS: LegalDoc = {
 
 export const DELETE_ACCOUNT: LegalDoc = {
   id: 'delete-account',
-  title: 'Delete your Circadia account',
+  title: 'Delete your Wildhour account',
   shortTitle: 'Delete account',
-  intro: `How to delete your Circadia account and data. Circadia is published by ${LEGAL.operator}.`,
+  intro: `How to delete your Wildhour account and data. Wildhour is published by ${LEGAL.operator}.`,
   sections: [
     {
       heading: 'In the app (fastest)',
       bullets: [
-        'Open Circadia and go to Settings.',
+        'Open Wildhour and go to Settings.',
         'Under Data & privacy, tap “Delete my account permanently”, then confirm.',
         'Your account and all data stored with it are deleted immediately, and you are signed out.',
       ],
@@ -329,7 +329,7 @@ export const DELETE_ACCOUNT: LegalDoc = {
     {
       heading: 'Without the app',
       paragraphs: [
-        `Email ${E} from the email address on your account, with the subject “Delete my Circadia account”. We will confirm the request and delete your account within 30 days, then email you to confirm it is done.`,
+        `Email ${E} from the email address on your account, with the subject “Delete my Wildhour account”. We will confirm the request and delete your account within 30 days, then email you to confirm it is done.`,
       ],
     },
     {
@@ -348,7 +348,7 @@ export const DELETE_ACCOUNT: LegalDoc = {
 
 export const SUPPORT: LegalDoc = {
   id: 'support',
-  title: 'Circadia support',
+  title: 'Wildhour support',
   shortTitle: 'Support',
   intro: `Need help? Email ${E} and we will get back to you, usually within a few working days.`,
   sections: [
@@ -365,7 +365,7 @@ export const SUPPORT: LegalDoc = {
     {
       heading: 'Important',
       paragraphs: [
-        'Circadia is a self-awareness tool, not a medical service. If you may be experiencing a medical or mental-health emergency, contact your local emergency services. In the US you can call or text 988.',
+        'Wildhour is a self-awareness tool, not a medical service. If you may be experiencing a medical or mental-health emergency, contact your local emergency services. In the US you can call or text 988.',
       ],
     },
   ],

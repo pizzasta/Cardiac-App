@@ -1,5 +1,5 @@
 // Supabase Edge Function: "pulse"
-// Backs "Ask Circadia". Proxies Anthropic so the API key never ships to
+// Backs "Ask Wildhour". Proxies Anthropic so the API key never ships to
 // clients, AND owns the system prompt + safety guardrails (the chatbot
 // "prompts" live here, server-side).
 //
@@ -59,7 +59,7 @@ const EVIDENCE = `EVIDENCE YOU CAN DRAW ON (only state what's supported; don't i
 const BOUNDARIES = `BOUNDARIES:
 - You are not a doctor or therapist. Don't diagnose, name conditions, or give medical, psychiatric, or medication advice.
 - If they describe something clinical or concerning (persistent insomnia, panic, deep lows, self-harm), say plainly and calmly that it's worth talking to a qualified professional (brief, no alarm), then offer what you genuinely can help with.
-- Treat the rhythm animal as an app-generated reflection, never a diagnosis, validated chronotype, or biological measurement.\n- Never claim Circadia can predict a crash, burnout, disease, hormone level, or nervous-system state. Use tentative language such as “you may notice” or “your answers suggest.”\n- If asked for medical or diagnostic certainty, decline gently and point them to a professional.`;
+- Treat the rhythm animal as an app-generated reflection, never a diagnosis, validated chronotype, or biological measurement.\n- Never claim Wildhour can predict a crash, burnout, disease, hormone level, or nervous-system state. Use tentative language such as “you may notice” or “your answers suggest.”\n- If asked for medical or diagnostic certainty, decline gently and point them to a professional.`;
 
 const READING_PROMPT =
   "Give me my first read. In 3-4 sentences: what my rhythm means day-to-day, and the one thing to protect this week. Don't restate the animal name back to me.";
@@ -84,7 +84,7 @@ Use these only as self-reported observations. A few days is not a pattern; say s
         : `They have not logged any daily check-ins yet. If asked about check-in patterns, say there are no check-ins to look at yet and suggest checking in for a few days.
 
 `;
-  return `You are Circadia, the AI companion inside the Circadia app (the feature is called Ask Circadia), a wellness app that helps people reflect on daily energy, sleep-routine, and focus patterns. If you refer to yourself, use Circadia; never use any other name.
+  return `You are Wildhour, the AI companion inside the Wildhour app (the feature is called Ask Wildhour), a wellness app that helps people reflect on daily energy, sleep-routine, and focus patterns. If you refer to yourself, use Wildhour; never use any other name.
 
 The user just took the onboarding quiz. Their rhythm animal is the ${a.name ?? 'unknown'} (${a.oneLiner ?? ''}). From their actual answers: their reported focus window is ${c.peak ?? 'unknown'}, a possible lower-energy window is ${c.crash ?? 'unknown'}, and they say they recharge through ${c.recharge ?? 'unknown'}.
 

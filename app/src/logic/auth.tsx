@@ -14,7 +14,7 @@ import {
 } from './sync';
 import { disable as disableNotifications } from './notifications';
 
-// Auth for Circadia. Backend is chosen automatically:
+// Auth for Wildhour. Backend is chosen automatically:
 //   • Supabase — when EXPO_PUBLIC_SUPABASE_URL + EXPO_PUBLIC_SUPABASE_ANON_KEY
 //     are set: real email/password, Google OAuth, and persistent sessions
 //     (AsyncStorage-backed, auto-refreshed).

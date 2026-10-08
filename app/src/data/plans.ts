@@ -1,6 +1,6 @@
 import { AnimalId } from './archetypes';
 
-// Per-archetype Circadia rhythm plan: a time-anchored daily flow plus targeted
+// Per-archetype Wildhour rhythm plan: a time-anchored daily flow plus targeted
 // tips. Grounded in each animal's traits (peak window, crash, failure mode,
 // recharge) so it reads as a real plan, not generic wellness filler.
 

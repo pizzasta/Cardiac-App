@@ -134,7 +134,7 @@ export default function SignInScreen({
               <Text style={styles.agreeLink} onPress={onLegal}>
                 Terms and Privacy Policy
               </Text>
-              , including Circadia storing my check-ins and quiz answers (health-related data) in my
+              , including Wildhour storing my check-ins and quiz answers (health-related data) in my
               account.
             </Text>
           </Pressable>

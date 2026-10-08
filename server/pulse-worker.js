@@ -1,5 +1,5 @@
 // Pulse backend proxy — a Cloudflare Worker that calls the Anthropic API with a
-// server-side key, so no secret ever ships to the app. The Circadia client
+// server-side key, so no secret ever ships to the app. The Wildhour client
 // (app/src/logic/ai.ts) POSTs here when EXPO_PUBLIC_PULSE_ENDPOINT is set.
 //
 // Deploy (free tier works):

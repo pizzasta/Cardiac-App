@@ -97,7 +97,7 @@ export default function LandingScreen({
           </View>
 
           <View style={styles.heroBody}>
-            <Text style={styles.kicker}>CIRCADIA</Text>
+            <Text style={styles.kicker}>WILDHOUR</Text>
             <Text style={styles.h1}>You’re not tired.{'\n'}You’re out of rhythm.</Text>
             <Text style={styles.sub}>
               A 90-second read of how your energy, stress, and sleep tend to work, then a daily

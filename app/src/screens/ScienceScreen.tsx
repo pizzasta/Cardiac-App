@@ -53,7 +53,7 @@ export default function ScienceScreen({
 
         <Text style={styles.footer}>
           These are research findings, not promises. Many are population-level associations, and
-          individual results vary. Circadia is for self-awareness, not medical advice.
+          individual results vary. Wildhour is for self-awareness, not medical advice.
         </Text>
       </ScrollView>
     </View>

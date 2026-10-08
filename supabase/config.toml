@@ -1,4 +1,4 @@
-# Supabase CLI config for Circadia. Used by `supabase start` (local stack),
+# Supabase CLI config for Wildhour. Used by `supabase start` (local stack),
 # `supabase db push`/`reset` (migrations), and `supabase gen types`.
 # Docs: https://supabase.com/docs/guides/cli/config
 
@@ -32,6 +32,7 @@ enabled = true
 # dashboard (e.g. your GitHub Pages URL).
 site_url = "http://localhost:8081"
 additional_redirect_urls = [
+  "wildhour://",
   "circadia://",
   "http://localhost:8081",
   "https://pizzasta.github.io/Cardiac-App/",

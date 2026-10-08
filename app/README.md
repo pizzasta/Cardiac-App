@@ -1,10 +1,10 @@
-# Circadia — Onboarding Prototype
+# Wildhour — Onboarding Prototype
 
-A runnable Expo (React Native) prototype of Circadia's onboarding loop:
+A runnable Expo (React Native) prototype of Wildhour's onboarding loop:
 **hook → 8-question quiz → "reading" beat → animated archetype reveal**, with
 real archetype-scoring logic and personalized result chips.
 
-See [`../CIRCADIA.md`](../CIRCADIA.md) for the full product concept.
+See [`../WILDHOUR.md`](../WILDHOUR.md) for the full product concept.
 
 ## Run it
 
@@ -64,7 +64,7 @@ Pulse is voice-activated:
 ## The 3D rainforest backdrop
 
 The Hook screen ("What's your rhythm animal?") renders an immersive, stylized
-Amazon-rainforest scene tuned to Circadia's dusk palette — deep teal-green
+Amazon-rainforest scene tuned to Wildhour's dusk palette — deep teal-green
 depth fog, an instanced layered canopy, a faint shaft of canopy light, and
 bioluminescent spores drifting up through the trees, under a slow breathing
 camera.
@@ -84,7 +84,7 @@ credentials path the app never executes).
 
 `src/logic/ai.ts` calls Claude (`claude-opus-4-8`) via the official
 `@anthropic-ai/sdk`. It feeds the user's **actual quiz answers + archetype**
-into a system prompt that enforces Circadia's voice (perceptive friend who
+into a system prompt that enforces Wildhour's voice (perceptive friend who
 knows neuroscience — specific, calm, one concrete action, never fake-deep), then:
 
 - **`generateReading`** — the opening personalized read on the Pulse screen.
@@ -109,6 +109,6 @@ reveal's **Peak focus / Crash risk / Recharge** chips come from the user's
 
 ## Not yet built (next steps)
 
-The Today dashboard and weekly report are specced in `CIRCADIA.md` but not yet
+The Today dashboard and weekly report are specced in `WILDHOUR.md` but not yet
 built. The reveal's "See my rhythm" button now opens **Pulse** (the AI
 companion); the adaptive Today dashboard is the next screen to add.

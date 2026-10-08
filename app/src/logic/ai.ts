@@ -12,7 +12,7 @@ const RATE_LIMITED = '__rate_limited__';
 
 // User-facing copy for the chat's error states. Plain and neutral: never
 // mention keys, endpoints or other setup details.
-export const AI_UNAVAILABLE_MSG = 'Ask Circadia isn’t available right now.';
+export const AI_UNAVAILABLE_MSG = 'Ask Wildhour isn’t available right now.';
 export const AI_ERROR_MSG = 'That didn’t go through. Check your connection and try again.';
 export const AI_TIMEOUT_MSG = 'That took too long to answer. Try again in a moment.';
 export const AI_RATE_LIMIT_MSG = 'You’re asking a little fast. Give it a few seconds and try again.';
@@ -86,9 +86,9 @@ async function readText(res: Response): Promise<string> {
 // question and (truncated) answer prefilled.
 export function buildReportMailto(email: string, question: string, answer: string, maxLen = 1500): string {
   const clip = (s: string) => (s.length > maxLen ? `${s.slice(0, maxLen).trimEnd()}…` : s);
-  const subject = 'Report: Ask Circadia answer';
+  const subject = 'Report: Ask Wildhour answer';
   const body = [
-    'I’d like to report this answer from Ask Circadia.',
+    'I’d like to report this answer from Ask Wildhour.',
     '',
     'What I asked:',
     clip(question || '(no question)'),
@@ -103,7 +103,7 @@ export function buildReportMailto(email: string, question: string, answer: strin
 }
 
 // ---------------------------------------------------------------------------
-// Ask Circadia: the app's AI companion (internally "pulse").
+// Ask Wildhour: the app's AI companion (internally "pulse").
 //
 // Three ways to reach Claude, in priority order:
 //   1. A Supabase Edge Function (EXPO_PUBLIC_PULSE_FN) that holds the key AND
@@ -114,7 +114,7 @@ export function buildReportMailto(email: string, question: string, answer: strin
 //      but takes a client-built prompt (e.g. the Cloudflare worker).
 //   3. Direct from the client with EXPO_PUBLIC_ANTHROPIC_API_KEY — dev only,
 //      since EXPO_PUBLIC_* values are bundled into the app.
-// If none is set, Ask Circadia degrades to static copy so the app still runs.
+// If none is set, Ask Wildhour degrades to static copy so the app still runs.
 // ---------------------------------------------------------------------------
 
 const MODEL = 'claude-opus-4-8';
@@ -128,10 +128,10 @@ const ENDPOINT = process.env.EXPO_PUBLIC_PULSE_ENDPOINT;
 const API_KEY = __DEV__ ? process.env.EXPO_PUBLIC_ANTHROPIC_API_KEY : undefined;
 
 /**
- * Whether Ask Circadia can reach a model at all: true when the Edge Function
+ * Whether Ask Wildhour can reach a model at all: true when the Edge Function
  * (EXPO_PUBLIC_PULSE_FN), the backend proxy (EXPO_PUBLIC_PULSE_ENDPOINT) or,
  * in dev builds only, a direct API key is configured. Screens use this to hide
- * or disable Ask Circadia entry points when it would only show an error.
+ * or disable Ask Wildhour entry points when it would only show an error.
  * Constant for the lifetime of the bundle (read from build-time env vars).
  */
 export function hasAI(): boolean {
@@ -204,7 +204,7 @@ function systemPrompt(result: RhythmResult, answers: Option[], checkins?: string
     .map((opt, i) => `- ${QUIZ[i].prompt} → ${opt.label}`)
     .join('\n');
 
-  return `You are Circadia, the AI companion inside the Circadia app (the feature is called Ask Circadia), a wellness app that helps people reflect on daily energy, sleep-routine, and focus patterns. If you refer to yourself, use Circadia; never use any other name.
+  return `You are Wildhour, the AI companion inside the Wildhour app (the feature is called Ask Wildhour), a wellness app that helps people reflect on daily energy, sleep-routine, and focus patterns. If you refer to yourself, use Wildhour; never use any other name.
 
 The user just took the onboarding quiz. Their rhythm animal is the ${a.name} (${describe(result)}). From their actual answers: peak focus ${result.peak}, crash risk around ${result.crash}, recharges through ${result.recharge}.
 
@@ -214,7 +214,7 @@ ${profile}
 ${checkInSection(checkins)}${checkins === undefined ? '' : '\n\n'}VOICE (follow exactly):
 - Talk like a perceptive friend who happens to know neuroscience. Never a therapist, never a hype coach, never a fortune cookie.
 - Smart, calm, personal, a little mysterious. Specific over vague.
-- Reference only patterns supported by the Circadia context provided to you. If the context is insufficient, say you do not have enough information yet.
+- Reference only patterns supported by the Wildhour context provided to you. If the context is insufficient, say you do not have enough information yet.
 - Always give one concrete, doable thing. Always leave them an out; never moralize about rest, food, or productivity.
 - No fake-deep poetry, no "manifest your best self", no corporate-wellness "wellness journey" language, no emoji spam.
 - Write in plain sentences. Never use em dashes (—); use a period, comma or colon instead.
@@ -233,7 +233,7 @@ EVIDENCE YOU CAN DRAW ON (only state what's supported; don't invent studies or n
 BOUNDARIES:
 - You are not a doctor or therapist. Don't diagnose, name conditions, or give medical, psychiatric, or medication advice.
 - If they describe something clinical or concerning (e.g. persistent insomnia, panic, deep lows, self-harm), say plainly that this is worth talking to a qualified professional about (calm, brief, no alarm), then offer what you genuinely can help with.
-- Do not claim Circadia can diagnose, prevent, treat, cure, predict, or rule out a disease or mental-health condition.`;
+- Do not claim Wildhour can diagnose, prevent, treat, cure, predict, or rule out a disease or mental-health condition.`;
 }
 
 type Msg = { role: 'user' | 'assistant'; content: string };
@@ -316,7 +316,7 @@ async function complete(system: string, messages: Msg[], maxTokens: number, sign
   return callClient(system, messages, maxTokens, signal);
 }
 
-// Session cache of AI readings, keyed by profile, so reopening Ask Circadia
+// Session cache of AI readings, keyed by profile, so reopening Ask Wildhour
 // doesn't spend another request. Holds the in-flight promise too, so two
 // quick opens share one request. Static fallbacks are not cached: a failed
 // request is retried on the next open.
@@ -331,7 +331,7 @@ export function clearReadingCache(): void {
   readingCache.clear();
 }
 
-// The opening personalized reading shown when Ask Circadia first loads.
+// The opening personalized reading shown when Ask Wildhour first loads.
 // Falls back to the archetype's static reading if AI is unavailable or errors.
 export function generateReading(result: RhythmResult, answers: Option[]): Promise<string> {
   const fallback = ARCHETYPES[result.animal].reading;

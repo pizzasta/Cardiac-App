@@ -1,4 +1,4 @@
-// Shown once before the first Ask Circadia request: says plainly which data
+// Shown once before the first Ask Wildhour request: says plainly which data
 // goes to the third-party AI service, and asks permission (App Store 5.1.2).
 import React from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
@@ -23,9 +23,9 @@ export default function AiConsentScreen({
       <LinearGradient colors={T.bgGradient} style={StyleSheet.absoluteFill} />
       <ScrollView contentContainerStyle={[styles.body, { paddingTop: topInset + 24 }]}>
         <Text style={[styles.kicker, { color: accent }]}>BEFORE YOU ASK</Text>
-        <Text style={styles.title}>Ask Circadia uses an AI service</Text>
+        <Text style={styles.title}>Ask Wildhour uses an AI service</Text>
         <Text style={styles.p}>
-          Answers come from an AI model made by Anthropic. To answer you, Circadia sends it:
+          Answers come from an AI model made by Anthropic. To answer you, Wildhour sends it:
         </Text>
         {[
           'Your question and the conversation so far',

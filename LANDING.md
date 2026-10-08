@@ -1,11 +1,11 @@
-# Circadia — Landing copy
+# Wildhour — Landing copy
 
 Voice: smart, calm, a little mysterious. Human, not corporate, not clinical, not cheesy.
 
 ## Hero headline (chosen)
 **You're not tired. You're out of rhythm.**
 
-Alternates: "Your body has a rhythm. Circadia reads it." · "Know your nervous system. Work with it, not against it." · "The operating system for your nervous system."
+Alternates: "Your body has a rhythm. Wildhour reads it." · "Know your nervous system. Work with it, not against it." · "The operating system for your nervous system."
 
 ## Subheadline
 A 90-second read of how your energy, stress, and sleep actually work — then a daily plan built around it.

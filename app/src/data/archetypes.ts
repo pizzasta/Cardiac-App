@@ -1,6 +1,6 @@
 // The six core rhythm archetypes.
 // The animal is the identity skin; under it sit the axes the AI actually uses
-// (arousal, peak window, failure mode, recharge). See CIRCADIA.md.
+// (arousal, peak window, failure mode, recharge). See WILDHOUR.md.
 
 export type AnimalId =
   | 'dolphin'
