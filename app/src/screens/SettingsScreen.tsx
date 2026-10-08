@@ -233,14 +233,14 @@ export default function SettingsScreen({
         <View style={styles.card}>
           <View style={styles.rowBetween}>
             <View style={{ flex: 1, paddingRight: 12 }}>
-              <Text style={styles.rowTitle}>Rainforest ambience</Text>
-              <Text style={styles.rowSub}>{muted ? 'Muted' : 'Playing across the app'}</Text>
+              <Text style={styles.rowTitle}>Nature sounds</Text>
+              <Text style={styles.rowSub}>{muted ? 'Muted' : 'The sounds of your world, changing with the time of day'}</Text>
             </View>
             <Pressable
               style={[styles.toggle, muted ? styles.toggleOff : { backgroundColor: accent }]}
               onPress={onToggleMute}
               accessibilityRole="switch"
-              accessibilityLabel="Rainforest ambience"
+              accessibilityLabel="Nature sounds"
               accessibilityState={{ checked: !muted }}
             >
               <View style={[styles.knob, muted ? styles.knobOff : styles.knobOn]} />
