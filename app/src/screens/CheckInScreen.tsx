@@ -236,7 +236,7 @@ const styles = StyleSheet.create({
   headerTitle: { color: '#fff', fontSize: 18, fontFamily: F.display },
   trendsBtn: { width: 64, alignItems: 'flex-end' },
   trendsText: { fontSize: 14, fontWeight: '700' },
-  body: { paddingHorizontal: 22, paddingBottom: 48 },
+  body: { paddingHorizontal: 22, paddingBottom: 96 },
   companion: { height: 150, marginTop: 4, marginHorizontal: -22 },
   kicker: { color: 'rgba(255,255,255,0.6)', fontSize: 12, fontFamily: F.mono, letterSpacing: 1.5, marginTop: 14 },
   question: { color: '#fff', fontSize: 30, fontFamily: F.display, marginTop: 10 },

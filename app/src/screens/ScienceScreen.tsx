@@ -20,11 +20,13 @@ export default function ScienceScreen({
       <LinearGradient colors={['#08080A', '#141016', '#08080A']} style={StyleSheet.absoluteFill} />
 
       <View style={[styles.header, { paddingTop: topInset }]}>
-        <Pressable onPress={onClose} hitSlop={12}>
-          <Text style={styles.back}>‹ Back</Text>
+        <Pressable onPress={onClose} hitSlop={12} accessibilityRole="button" accessibilityLabel="Back">
+          <Text style={styles.back} numberOfLines={1}>
+            ‹ Back
+          </Text>
         </Pressable>
         <Text style={styles.headerTitle}>The science</Text>
-        <View style={{ width: 48 }} />
+        <View style={{ width: 64 }} />
       </View>
 
       <ScrollView contentContainerStyle={styles.body}>
@@ -68,7 +70,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 18,
     paddingBottom: 8,
   },
-  back: { color: 'rgba(255,255,255,0.85)', fontSize: 16, fontWeight: '600', width: 48 },
+  back: { color: 'rgba(255,255,255,0.85)', fontSize: 16, fontWeight: '600', width: 64 },
   headerTitle: { color: '#fff', fontSize: 18, fontWeight: '800' },
   body: { paddingHorizontal: 22, paddingBottom: 44 },
   intro: { color: 'rgba(255,255,255,0.78)', fontSize: 15, lineHeight: 22, marginTop: 8, marginBottom: 18 },

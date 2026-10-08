@@ -387,7 +387,7 @@ function Stat({ value, label }: { value: string; label: string }) {
 
 const styles = StyleSheet.create({
   root: { ...StyleSheet.absoluteFillObject, backgroundColor: 'transparent' },
-  content: { paddingHorizontal: 20, paddingBottom: 24 },
+  content: { paddingHorizontal: 20, paddingBottom: 96 },
   header: { borderRadius: 20, padding: 20, marginBottom: 24, overflow: 'hidden' },
   companion: { position: 'absolute', right: -6, top: 26, width: 120, height: 96 },
   close: { position: 'absolute', top: 16, right: 16 },
@@ -399,7 +399,8 @@ const styles = StyleSheet.create({
     letterSpacing: 1,
     opacity: 0.85,
   },
-  greeting: { color: T.text, fontFamily: F.display, fontSize: 30, marginTop: 8 },
+  // Keeps clear of the animal companion on the right, even on small phones.
+  greeting: { color: T.text, fontFamily: F.display, fontSize: 30, marginTop: 8, paddingRight: 92 },
   headerCopy: {
     color: T.text,
     fontSize: 15,

@@ -231,7 +231,7 @@ const styles = StyleSheet.create({
   },
   back: { color: 'rgba(255,255,255,0.85)', fontSize: 16, fontWeight: '600', width: 64 },
   headerTitle: { color: '#fff', fontSize: 18, fontFamily: F.display },
-  body: { paddingHorizontal: 22, paddingBottom: 48 },
+  body: { paddingHorizontal: 22, paddingBottom: 96 },
   kickerRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 14 },
   kicker: { color: 'rgba(255,255,255,0.6)', fontSize: 12, fontFamily: F.mono, letterSpacing: 1.5 },
   synced: { fontSize: 11, fontFamily: F.mono, letterSpacing: 1 },

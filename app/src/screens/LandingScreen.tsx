@@ -175,7 +175,7 @@ export default function LandingScreen({
         {/* SCIENCE STRIP */}
         <Section>
           <Text style={styles.scienceLine}>Grounded in circadian research, not vibes.</Text>
-          <Pressable onPress={onScience} hitSlop={8}>
+          <Pressable onPress={onScience} hitSlop={8} style={styles.scienceLinkPill} accessibilityRole="link">
             <Text style={styles.scienceLink}>Read the science  ↗</Text>
           </Pressable>
         </Section>
@@ -216,7 +216,7 @@ function Section({ label, children }: { label?: string; children: React.ReactNod
 
 const styles = StyleSheet.create({
   fill: { flex: 1, backgroundColor: 'transparent' },
-  scroll: { paddingBottom: 40 },
+  scroll: { paddingBottom: 96 },
 
   hero: { paddingHorizontal: 28, justifyContent: 'flex-end', paddingBottom: 56 },
   topLinks: {
@@ -270,7 +270,16 @@ const styles = StyleSheet.create({
   stayText: { flex: 1, color: '#fff', fontSize: 15, lineHeight: 22 },
 
   scienceLine: { color: '#fff', fontSize: 17, fontWeight: '600', lineHeight: 24 },
-  scienceLink: { color: ACCENT, fontSize: 15, fontWeight: '700', marginTop: 10 },
+  // A dark pill keeps the pink link readable over the pink sunset.
+  scienceLinkPill: {
+    alignSelf: 'flex-start',
+    marginTop: 12,
+    backgroundColor: 'rgba(8,8,10,0.6)',
+    borderRadius: 16,
+    paddingVertical: 7,
+    paddingHorizontal: 14,
+  },
+  scienceLink: { color: ACCENT, fontSize: 15, fontWeight: '700' },
 
   cta: { backgroundColor: '#fff', borderRadius: 30, paddingVertical: 17, alignItems: 'center', marginTop: 20, alignSelf: 'center', width: '100%', maxWidth: 380 },
   ctaText: { color: '#08080A', fontSize: 17, fontWeight: '700' },

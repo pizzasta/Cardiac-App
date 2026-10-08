@@ -185,7 +185,7 @@ function Chip({ label, value, accent }: { label: string; value: string; accent: 
 
 const styles = StyleSheet.create({
   fill: { flex: 1, backgroundColor: 'transparent' },
-  body: { paddingHorizontal: 24, paddingTop: 70, paddingBottom: 44, alignItems: 'center' },
+  body: { paddingHorizontal: 24, paddingTop: 70, paddingBottom: 96, alignItems: 'center' },
   kicker: {
     color: 'rgba(255,255,255,0.7)',
     letterSpacing: 4,

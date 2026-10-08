@@ -309,9 +309,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 18,
     paddingBottom: 10,
   },
-  back: { color: 'rgba(255,255,255,0.85)', fontSize: 16, fontWeight: '600', width: 48 },
+  back: { color: 'rgba(255,255,255,0.85)', fontSize: 16, fontWeight: '600', width: 64 },
   headerTitle: { color: '#fff', fontSize: 18, fontFamily: F.display },
-  speaker: { width: 48, alignItems: 'flex-end' },
+  speaker: { width: 64, alignItems: 'flex-end' },
   speakerIcon: { fontSize: 18, color: 'rgba(255,255,255,0.6)' },
   body: { paddingHorizontal: 18, paddingBottom: 18 },
   readingCard: {

@@ -401,7 +401,7 @@ const styles = StyleSheet.create({
   headerTitle: { color: '#fff', fontSize: 18, fontFamily: F.display },
   gear: { width: 64, alignItems: 'flex-end' },
   gearIcon: { color: 'rgba(255,255,255,0.85)', fontSize: 20 },
-  body: { paddingHorizontal: 22, paddingBottom: 40 },
+  body: { paddingHorizontal: 22, paddingBottom: 96 },
   animal: { color: '#fff', fontSize: 30, fontFamily: F.display, marginTop: 8 },
   intro: { color: 'rgba(255,255,255,0.82)', fontSize: 15, lineHeight: 22, marginTop: 8 },
   chips: { flexDirection: 'row', gap: 10, marginTop: 18 },
