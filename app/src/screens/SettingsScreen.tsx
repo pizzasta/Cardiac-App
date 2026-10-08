@@ -42,6 +42,9 @@ export default function SettingsScreen({
   muted,
   volume,
   onToggleMute,
+  simpleBackground,
+  lowPower,
+  onToggleSimpleBackground,
   onSetVolume,
   onSignIn,
   onDeleted,
@@ -53,6 +56,10 @@ export default function SettingsScreen({
   muted: boolean;
   volume: number;
   onToggleMute: () => void;
+  simpleBackground: boolean;
+  // Low Power Mode is on, so the simple background is used regardless.
+  lowPower: boolean;
+  onToggleSimpleBackground: () => void;
   onSetVolume: (v: number) => void;
   onSignIn: () => void;
   onDeleted: () => void;
@@ -292,6 +299,31 @@ export default function SettingsScreen({
               ? 'Your browser may need a tap before sound can start.'
               : 'Sounds follow your phone’s silent switch.'}
           </Text>
+        </View>
+
+        {/* DISPLAY */}
+        <Text style={styles.section}>DISPLAY</Text>
+        <View style={styles.card}>
+          <View style={styles.rowBetween}>
+            <View style={{ flex: 1, paddingRight: 12 }}>
+              <Text style={styles.rowTitle}>Simple background</Text>
+              <Text style={styles.rowSub}>
+                A still, time-of-day gradient instead of the moving 3D world. Saves battery on older phones.
+              </Text>
+            </View>
+            <Pressable
+              style={[styles.toggle, simpleBackground ? { backgroundColor: accent } : styles.toggleOff]}
+              onPress={onToggleSimpleBackground}
+              accessibilityRole="switch"
+              accessibilityLabel="Simple background"
+              accessibilityState={{ checked: simpleBackground }}
+            >
+              <View style={[styles.knob, simpleBackground ? styles.knobOn : styles.knobOff]} />
+            </Pressable>
+          </View>
+          {lowPower && !simpleBackground && (
+            <Text style={styles.note}>Low Power Mode is on, so the simple background is in use for now.</Text>
+          )}
         </View>
 
         {/* NOTIFICATIONS */}

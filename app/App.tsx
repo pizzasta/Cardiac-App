@@ -32,6 +32,8 @@ import { Option } from './src/data/quiz';
 import { QUIZ } from './src/data/quiz';
 import { ARCHETYPES, TINTS } from './src/data/archetypes';
 import World from './src/world/World';
+import SimpleBackdrop from './src/world/SimpleBackdrop';
+import { loadSimpleBackground, saveSimpleBackground, useLowPowerMode } from './src/logic/background';
 import type { Mood, WorldMode } from './src/world/rig';
 import { getToday, load as loadLog } from './src/logic/pulselog';
 import { useBottomInset, useReducedMotion } from './src/hooks';
@@ -80,6 +82,18 @@ function Flow() {
   // App-wide rainforest ambience + persistent mute/volume (remembered across visits).
   const [muted, setMuted] = useState(false);
   const [volume, setVolume] = useState(0.6);
+  // Battery saver: a still backdrop instead of the 3D world, chosen in
+  // Settings or automatic in Low Power Mode.
+  const [simpleBg, setSimpleBg] = useState(false);
+  const lowPower = useLowPowerMode();
+  useEffect(() => {
+    loadSimpleBackground().then(setSimpleBg);
+  }, []);
+  const toggleSimpleBg = () => {
+    const next = !simpleBg;
+    setSimpleBg(next);
+    saveSimpleBackground(next);
+  };
   const { completeOnboarding } = useAuth();
 
   // Returning users: restore their rhythm and open straight onto Today.
@@ -288,14 +302,18 @@ function Flow() {
 
   return (
     <>
-      <World
-        mode={worldMode}
-        animal={showAnimal ? result!.animal : null}
-        tint={showAnimal ? TINTS[result!.animal] : T.accent}
-        mood={mood}
-        hop={hop}
-        still={reducedMotion}
-      />
+      {simpleBg || lowPower ? (
+        <SimpleBackdrop />
+      ) : (
+        <World
+          mode={worldMode}
+          animal={showAnimal ? result!.animal : null}
+          tint={showAnimal ? TINTS[result!.animal] : T.accent}
+          mood={mood}
+          hop={hop}
+          still={reducedMotion}
+        />
+      )}
       {/* While a world-backed overlay is open, hide the stage screen underneath
           (kept mounted) so the overlay floats over the world, not the plan. */}
       <View style={worldOverlay ? styles.hidden : styles.stage}>
@@ -378,6 +396,9 @@ function Flow() {
           muted={muted}
           volume={volume}
           onToggleMute={toggleMute}
+          simpleBackground={simpleBg}
+          lowPower={lowPower}
+          onToggleSimpleBackground={toggleSimpleBg}
           onSetVolume={applyVolume}
           onSignIn={() => {
             setShowSettings(false);

@@ -9,6 +9,7 @@ import {
 } from 'react-native';
 import { useTopInset } from '../hooks';
 import { haptic } from '../logic/haptics';
+import { maybeAskForReview } from '../logic/review';
 import { ARCHETYPES } from '../data/archetypes';
 import { RhythmResult } from '../logic/score';
 import {
@@ -74,7 +75,10 @@ export default function CheckInScreen({
 
   const save = async () => {
     if (!level) return;
-    setLog(await logToday(level, reason));
+    const next = await logToday(level, reason);
+    setLog(next);
+    // A steady day is a good moment to ask for a rating (rarely; see review.ts).
+    if (level === 'steady') maybeAskForReview('steady-checkin', next.length);
     // Re-time the smart nudge to the emerging pattern (native; no-op on web).
     refreshSmartNudge(result.animal).catch(() => {});
     setSaved(true);
